@@ -356,6 +356,53 @@ export async function launchDesktop(
 
 // ─── Public fixtures ────────────────────────────────────────────────────
 
+/** localStorage prefix the desktop's first-run wizard state is written under. */
+const ONBOARDING_STATE_KEY_PREFIX = 'ai-evolution-jarvis-onboarding-v1'
+
+/**
+ * Mark the Jarvis first-run wizard as skipped for the app's active connection
+ * + profile, then reload so the shell boots without it.
+ *
+ * Patching the record the app already wrote is preferred, because that record
+ * carries the real connection + profile scope. When the wizard has not written
+ * anything yet, the default scope the app falls back to (`local`/`default`) is
+ * used — `normalizeScope` maps a null connection/profile onto exactly those.
+ *
+ * `skipped` is the product's own "I'll finish later" flag: it hides the wizard
+ * without claiming any step was completed, and unlike the wizard's Close button
+ * it leaves the app on the default route instead of navigating to Settings.
+ *
+ * @returns the localStorage keys that were written.
+ */
+export async function seedOnboardingSkipped(page: Page): Promise<string[]> {
+  const written = await page.evaluate((prefix: string) => {
+    const existing = Object.keys(localStorage).filter(key => key.startsWith(prefix))
+    const targets = existing.length > 0 ? existing : [`${prefix}:local::default`]
+
+    for (const key of targets) {
+      let current: Record<string, unknown> = {}
+
+      try {
+        current = JSON.parse(localStorage.getItem(key) ?? '{}') as Record<string, unknown>
+      } catch {
+        current = {}
+      }
+
+      localStorage.setItem(
+        key,
+        JSON.stringify({ completedSteps: [], currentStep: 'welcome', version: 3, ...current, skipped: true }),
+      )
+    }
+
+    return targets
+  }, ONBOARDING_STATE_KEY_PREFIX)
+
+  await page.reload()
+  await page.waitForLoadState('domcontentloaded').catch(() => undefined)
+
+  return written
+}
+
 export interface MockBackendFixture {
   app: ElectronApplication
   page: Page
@@ -387,6 +434,12 @@ export interface MockBackendOptions {
  */
 export interface MockBackendOptions {
   mockServer?: MockServerOptions
+  /**
+   * Dismiss the first-run wizard before the test touches the app (default
+   * true). Set to `false` only in a spec that asserts the wizard itself — the
+   * chat-shell specs all need it gone, because its modal overlay blocks clicks.
+   */
+  skipOnboarding?: boolean
 }
 
 export async function setupMockBackend(options: MockBackendOptions = {}): Promise<MockBackendFixture> {
@@ -407,6 +460,16 @@ export async function setupMockBackend(options: MockBackendOptions = {}): Promis
   // 3. Build env + launch
   const env = buildAppEnv(sandbox)
   const { app, page } = await launchDesktop(env)
+
+  // 4. Take the app out of the first-run wizard. A fresh sandbox has no
+  //    onboarding record, so the product-shell wizard mounts on every boot and
+  //    its modal overlay swallows clicks — every chat-shell spec then dies on
+  //    elements that are visible but unclickable. Specs that want the wizard
+  //    use setupNoProvider (see onboarding.spec.ts); a spec that genuinely
+  //    needs it here can opt out with `{ skipOnboarding: false }`.
+  if (options.skipOnboarding !== false) {
+    await seedOnboardingSkipped(page)
+  }
 
   return {
     app,

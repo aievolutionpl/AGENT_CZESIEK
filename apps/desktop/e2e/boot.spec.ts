@@ -32,9 +32,11 @@ test.afterAll(async () => {
 })
 
 test.describe('dev-mode boot with mock backend', () => {
-  test('window opens with Hermes title', async () => {
+  test('window opens with the product title', async () => {
     const title = await fixture!.page.title()
-    expect(title).toContain('Hermes')
+    // The renderer replaces the html template's <title>Hermes</title> with the
+    // i18n product name, so the window carries the product's current identity.
+    expect(title).toContain('Agent Czesiek')
   })
 
   test('renderer mounts and shows DOM content', async () => {

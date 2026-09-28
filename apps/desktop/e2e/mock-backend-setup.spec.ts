@@ -40,19 +40,17 @@ test.describe('mock backend gets past setup screen', () => {
   test('onboarding overlay is not shown', async () => {
     const page = fixture!.page
 
-    // The onboarding overlay renders "Let's get you setup with Hermes Agent"
-    // when the runtime check fails to find a working provider. With the mock
-    // backend configured, the runtime check should pass and the overlay
-    // returns null — this text should NOT be present in the DOM.
-    await page.waitForFunction(
-      () => {
-        const text = document.body.textContent ?? ''
-
-        return !text.includes("Let's get you setup")
-      },
-      undefined,
-      { timeout: 30_000 },
-    )
+    // The first-run wizard (data-testid="jarvis-onboarding") mounts whenever
+    // the active connection + profile has no onboarding record, and its modal
+    // dialog-overlay then swallows every click — the composer stays "visible"
+    // to Playwright but is never clickable. The fixture records the scope as
+    // skipped before the test body runs, so neither may be in the DOM.
+    //
+    // Asserted by testid, not by the old English copy ("Let's get you setup
+    // with Hermes Agent"): the product no longer renders that string, so the
+    // text check passed while the wizard was open and blocking.
+    await expect(page.locator('[data-testid="jarvis-onboarding"]')).toHaveCount(0)
+    await expect(page.locator('[data-slot="dialog-overlay"]')).toHaveCount(0)
   })
 
   test('chat composer is visible', async () => {

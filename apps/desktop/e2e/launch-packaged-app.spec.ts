@@ -34,9 +34,11 @@ test.afterAll(async () => {
   fixture = null
 })
 
-test('window opens with the Hermes title', async () => {
+test('window opens with the product title', async () => {
   const title = await fixture!.page.title()
-  expect(title).toContain('Hermes')
+  // Same source as boot.spec.ts: the renderer's i18n product name, not the
+  // html template's <title>Hermes</title>.
+  expect(title).toContain('Agent Czesiek')
 })
 
 test('renderer loads and shows DOM content', async () => {
