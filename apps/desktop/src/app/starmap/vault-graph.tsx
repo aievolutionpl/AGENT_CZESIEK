@@ -14,6 +14,11 @@ interface Body {
   y: number
 }
 
+interface Highlight {
+  matches: null | ReadonlySet<string>
+  selected: null | string
+}
+
 interface View {
   k: number
   x: number
@@ -48,15 +53,11 @@ export function VaultGraphCanvas({
   selected: null | string
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const live = useRef({ matches, selected })
-  const wake = useRef<() => void>(() => undefined)
+  // The simulation's imperative handle: the effect below builds it, and a
+  // second effect pushes the current highlight into it as arguments.
+  const sim = useRef<null | { highlight: (next: Highlight) => void }>(null)
 
-  live.current = { matches, selected }
-
-  useEffect(() => {
-    wake.current()
-  }, [matches, selected])
-
+  // eslint-disable-next-line no-restricted-syntax -- `sim` is the simulation's instance handle, not a mirrored prop
   useEffect(() => {
     const canvas = canvasRef.current
     const ctx = canvas?.getContext('2d')
@@ -110,6 +111,8 @@ export function VaultGraphCanvas({
     let alpha = 1
     let frame = 0
     let hover: Body | null = null
+    let live: Highlight = { matches: null, selected: null }
+    let userView = false
     let drag: { body?: Body; moved: boolean; px: number; py: number } | null = null
 
     const toWorld = (px: number, py: number) => ({ x: (px - width / 2 - view.x) / view.k, y: (py - height / 2 - view.y) / view.k })
@@ -143,12 +146,12 @@ export function VaultGraphCanvas({
           let dy = b.y - a.y
           const d2 = dx * dx + dy * dy + 0.01
 
-          if (d2 > 90000) {
+          if (d2 > 160000) {
             continue
           }
 
           const d = Math.sqrt(d2)
-          const force = (1400 * alpha) / d2
+          const force = (3200 * alpha) / d2
           dx = (dx / d) * force
           dy = (dy / d) * force
           a.vx -= dx
@@ -162,7 +165,7 @@ export function VaultGraphCanvas({
         const dx = b.x - a.x
         const dy = b.y - a.y
         const d = Math.hypot(dx, dy) || 1
-        const pull = ((d - 70) / d) * 0.06 * alpha
+        const pull = ((d - 90) / d) * 0.05 * alpha
         a.vx += dx * pull
         a.vy += dy * pull
         b.vx -= dx * pull
@@ -170,8 +173,8 @@ export function VaultGraphCanvas({
       }
 
       for (const b of bodies) {
-        b.vx -= b.x * 0.012 * alpha
-        b.vy -= b.y * 0.012 * alpha
+        b.vx -= b.x * 0.006 * alpha
+        b.vy -= b.y * 0.006 * alpha
 
         if (b.fx !== undefined && b.fy !== undefined) {
           b.x = b.fx
@@ -186,11 +189,11 @@ export function VaultGraphCanvas({
         }
       }
 
-      alpha *= 0.985
+      alpha *= 0.988
     }
 
     const paint = () => {
-      const { matches: match, selected: sel } = live.current
+      const { matches: match, selected: sel } = live
       const focus = sel ?? hover?.node.id ?? null
       const near = focus ? neighbours.get(focus) : undefined
 
@@ -203,7 +206,7 @@ export function VaultGraphCanvas({
 
       for (const [a, b] of links) {
         const lit = focus !== null && (a.node.id === focus || b.node.id === focus)
-        ctx.strokeStyle = lit ? `hsla(${a.hue}, 85%, 62%, 0.85)` : `hsla(${a.hue}, 30%, 60%, ${focus ? 0.1 : 0.28})`
+        ctx.strokeStyle = lit ? `hsla(${a.hue}, 85%, 62%, 0.85)` : `hsla(${a.hue}, 45%, 50%, ${focus ? 0.12 : 0.42})`
         ctx.lineWidth = (lit ? 1.6 : 0.8) / view.k
         ctx.beginPath()
         ctx.moveTo(a.x, a.y)
@@ -241,7 +244,7 @@ export function VaultGraphCanvas({
 
       for (const b of bodies) {
         const id = b.node.id
-        const show = id === focus || near?.has(id) === true || (view.k > 0.9 && b.node.links >= 3) || view.k > 1.8
+        const show = id === focus || near?.has(id) === true || bodies.length <= 40 || (view.k > 0.9 && b.node.links >= 3) || view.k > 1.8
 
         if (show && (match === null || match.has(id) || id === focus)) {
           ctx.fillText(b.node.label.slice(0, 28), b.x, b.y + b.r + 13 / view.k)
@@ -249,8 +252,34 @@ export function VaultGraphCanvas({
       }
     }
 
+    // Until the user pans or zooms, the view eases to keep the whole graph in
+    // frame while it settles (and after every resize).
+    const fit = () => {
+      if (userView || bodies.length === 0) {
+        return
+      }
+
+      let minX = Infinity
+      let maxX = -Infinity
+      let minY = Infinity
+      let maxY = -Infinity
+
+      for (const b of bodies) {
+        minX = Math.min(minX, b.x - b.r)
+        maxX = Math.max(maxX, b.x + b.r)
+        minY = Math.min(minY, b.y - b.r)
+        maxY = Math.max(maxY, b.y + b.r)
+      }
+
+      const k = Math.min(1.6, Math.max(0.25, Math.min((width * 0.8) / (maxX - minX || 1), (height * 0.74) / (maxY - minY || 1))))
+      view.k += (k - view.k) * 0.12
+      view.x += (-((minX + maxX) / 2) * view.k - view.x) * 0.12
+      view.y += (-((minY + maxY) / 2) * view.k - view.y) * 0.12
+    }
+
     const tick = () => {
       frame = 0
+      fit()
 
       if (alpha > 0.02 || drag?.body) {
         step()
@@ -258,7 +287,7 @@ export function VaultGraphCanvas({
 
       paint()
 
-      if (alpha > 0.02 || drag) {
+      if (alpha > 0.02 || drag || (!userView && alpha > 0.005)) {
         frame = requestAnimationFrame(tick)
       }
     }
@@ -271,7 +300,12 @@ export function VaultGraphCanvas({
       }
     }
 
-    wake.current = () => kick(0)
+    sim.current = {
+      highlight: next => {
+        live = next
+        kick(0)
+      }
+    }
 
     const resize = () => {
       const rect = canvas.getBoundingClientRect()
@@ -324,6 +358,7 @@ export function VaultGraphCanvas({
         drag.body.fy = p.y
         alpha = Math.max(alpha, 0.3)
       } else if (!drag.body) {
+        userView = true
         view.x += dx
         view.y += dy
       }
@@ -350,6 +385,7 @@ export function VaultGraphCanvas({
 
     const onWheel = (event: WheelEvent) => {
       event.preventDefault()
+      userView = true
       const { px, py } = local(event)
       const before = toWorld(px, py)
       view.k = Math.min(4, Math.max(0.25, view.k * Math.exp(-event.deltaY * 0.0012)))
@@ -371,7 +407,7 @@ export function VaultGraphCanvas({
 
     return () => {
       cancelAnimationFrame(frame)
-      wake.current = () => undefined
+      sim.current = null
       observer.disconnect()
       canvas.removeEventListener('pointerdown', onDown)
       canvas.removeEventListener('pointermove', onMove)
@@ -380,6 +416,10 @@ export function VaultGraphCanvas({
       canvas.removeEventListener('wheel', onWheel)
     }
   }, [graph, onSelect])
+
+  useEffect(() => {
+    sim.current?.highlight({ matches, selected })
+  }, [graph, matches, selected])
 
   return <canvas aria-label="Vault graph" className="absolute inset-0 size-full touch-none" ref={canvasRef} role="img" />
 }

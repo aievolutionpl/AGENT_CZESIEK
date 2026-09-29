@@ -194,7 +194,7 @@ export function VaultView() {
   const empty = graph.nodes.length === 0
 
   return (
-    <div className="relative flex min-h-0 flex-1 overflow-hidden" data-testid="vault-view">
+    <div className="relative flex min-h-0 flex-1 gap-3 overflow-hidden" data-testid="vault-view">
       <div className="relative min-w-0 flex-1">
         {empty ? (
           <div className="absolute inset-0 grid place-items-center px-6 text-center">
@@ -263,7 +263,7 @@ export function VaultView() {
             {[...hues].map(([folder, hue]) => (
               <li className="flex items-center gap-1.5" key={folder}>
                 <span className="size-2 rounded-full" style={{ background: `hsl(${hue}, 72%, 58%)` }} />
-                {folder || '/'}
+                {folder || 'vault'}
               </li>
             ))}
           </ul>
@@ -271,7 +271,7 @@ export function VaultView() {
       </div>
 
       {selected && draft?.id === selected ? (
-        <aside className="flex w-[min(26rem,45%)] shrink-0 flex-col gap-3 border-l border-(--ui-stroke-tertiary) bg-(--ui-widget-surface-background) p-4">
+        <aside className="flex w-[min(26rem,45%)] shrink-0 flex-col gap-3 rounded-xl bg-(--ui-widget-surface-background) p-4">
           <header className="flex items-center gap-2">
             <h2 className="min-w-0 flex-1 truncate text-sm font-semibold text-(--ui-text-primary)">
               {byId.get(selected)?.label ?? selected}

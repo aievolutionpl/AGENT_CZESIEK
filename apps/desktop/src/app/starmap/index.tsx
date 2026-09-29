@@ -12,8 +12,8 @@ import { Panel, PanelEmpty } from '../overlays/panel'
 
 import { MemoryList } from './memory-list'
 import { StarMap } from './star-map'
-import { VaultView } from './vault-view'
 import type { MemoryGraphSource } from './types'
+import { VaultView } from './vault-view'
 
 // Star map overlay: a top-down map of what Hermes has learned for a profile,
 // over a radial time axis. Data is fetched on demand into the $starmap* atoms;
