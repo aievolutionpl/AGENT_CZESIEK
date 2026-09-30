@@ -13,6 +13,7 @@ import { canCaptureScreen, captureScreenDataUrl } from '@/lib/screen-capture'
 import { notify, notifyError } from '@/store/notifications'
 import { requestForOwnedSession } from '@/store/session-states'
 import { $subagentsBySession } from '@/store/subagents'
+import { $speakerMuted } from '@/store/voice-output'
 
 import { type AgentReply, type ReplyMessage, submitAndAwaitReply } from './agent-reply'
 import type { ConversationStatus } from './use-voice-conversation'
@@ -365,12 +366,15 @@ export function useRealtimeConversation({
   const end = useCallback(async () => {
     sessionRef.current?.stop()
     sessionRef.current = null
+    $speakerMuted.set(false)
     clapDetector.current.reset()
     listeningRef.current = false
     setMuted(false)
     setStatus('idle')
     setLevel(0)
   }, [])
+
+  useEffect(() => $speakerMuted.subscribe(muted => sessionRef.current?.setSpeakerMuted?.(muted)), [])
 
   // eslint-disable-next-line no-restricted-syntax -- session lifecycle (open/close a WebRTC call), not an atom mirror
   useEffect(() => {
@@ -420,6 +424,7 @@ export function useRealtimeConversation({
           session.stop()
         } else {
           sessionRef.current = session
+          session.setSpeakerMuted?.($speakerMuted.get())
         }
       },
       error => {

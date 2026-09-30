@@ -2,7 +2,7 @@ import { useStore } from '@nanostores/react'
 
 import { useI18n } from '@/i18n'
 import { triggerHaptic } from '@/lib/haptics'
-import { LayoutDashboard, Mic, Search, Sparkles, Square } from '@/lib/icons'
+import { LayoutDashboard, Mic, Search, Sparkles } from '@/lib/icons'
 import { cn } from '@/lib/utils'
 import { $character } from '@/store/character'
 
@@ -38,8 +38,6 @@ export interface JarvisHomeHeroProps {
   connected: boolean
   listening: boolean
   onStartListening: () => void
-  /** Ends the live conversation; the hero's chip becomes this action while it runs. */
-  onStopListening?: () => void
   profileDisplayName?: string
 }
 
@@ -56,7 +54,6 @@ export function JarvisHomeHero({
   connected,
   listening,
   onStartListening,
-  onStopListening,
   profileDisplayName
 }: JarvisHomeHeroProps) {
   useLiveAutostart(connected)
@@ -110,21 +107,7 @@ export function JarvisHomeHero({
         {/* One primary action, then three quiet suggestions. Briefing and the
             floating-orb switch live in the command palette and settings. */}
         <div className="jarvis-home__cta flex flex-col items-center gap-3">
-          {listening ? (
-            // The conversation is live: this is the end-conversation action, so
-            // the chip stops being a microphone — the voice dock below already
-            // owns that control, and two microphones on one screen is the
-            // duplicate this screen exists without.
-            <button aria-pressed className={cn('jarvis-action', FOCUS_RING)} onClick={() => {
-                triggerHaptic('close')
-                onStopListening?.()
-              }}
-              type="button"
-            >
-              <Square />
-              {copy.stopTalking}
-            </button>
-          ) : (
+          {listening ? null : (
             <button
               className={cn('jarvis-action jarvis-action--talk', FOCUS_RING)}
               disabled={!connected}

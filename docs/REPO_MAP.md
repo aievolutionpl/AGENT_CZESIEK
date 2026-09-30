@@ -160,3 +160,9 @@ Instrukcja użytkownika: [własne umiejętności i role](SKILLS_AND_ASSISTANT.md
 - `app/jarvis/rail-layout.ts` — `$railLayout` (order + hidden cards, persisted `czesiek:rail-layout:v1`), `normalizeRailLayout` (a new card slots in after its default predecessor), `applyVisibleOrder`, `moveRailCard`; `$railHidden` remembers the whole rail folded away.
 - `rail-board.tsx` — `RailBoard` (dnd-kit sortable over `chat/sidebar/reorderable-list.tsx`; drag from a card header, Space/arrows on the grip; hidden cards are not mounted) and `RailCustomizeMenu` (show/hide, move up/down, reset). `rail-card.tsx` — `RailCard` (animated fold, content unmounted after the fold; grip via `RailSlotContext`); `rail-copy.ts` — pl/en words and screen-reader announcements.
 - `insights-stats.ts` + `insights-card.tsx` — stats card with metric (sessions/tokens/cost) and range (7/14/30 d) choice persisted, change vs the equal window before, scrubbable chart, top model/tool/skill. `news-read.ts` + `rail-news-card.tsx` — read/unread tracking, mark-all, "Brief me".
+
+## Voice screen: simple controls and the model switcher
+
+- `app/jarvis/voice-controls.tsx` — the dock is two buttons: mute the assistant's voice (`store/voice-output.ts` `$speakerMuted`; Live sessions mute their own audio through `setSpeakerMuted`, reset when the conversation ends) and start/end the conversation. Home shows no status pills; the hero no longer repeats the end-conversation chip.
+- `app/jarvis/dashboard.tsx` `HomeTopBar` — "Workspace" on the left; the `switcher` slot and one "more" menu (daily report, tips, focus mode, desktop orb) on the right.
+- `app/jarvis/model-switcher.tsx` (+ `model-switcher-options.ts`, `live-model-choice.ts`) — two pills with maker icons: the Hermes model (flagship models of each usable provider, through `onSelectModel`) and the Live voice model (`useLiveVoiceModel`, same config write as the rail picker).

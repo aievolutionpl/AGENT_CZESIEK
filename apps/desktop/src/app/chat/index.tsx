@@ -67,6 +67,7 @@ import { JarvisDashboard } from '../jarvis/dashboard'
 import { JarvisHomeHero } from '../jarvis/home-hero'
 import { JarvisInsightsCard } from '../jarvis/insights-card'
 import { deriveJarvisMetrics } from '../jarvis/metrics'
+import { ModelSwitcher } from '../jarvis/model-switcher'
 import { buildJarvisNews } from '../jarvis/news'
 import { JarvisQuickAccessCard } from '../jarvis/quick-access'
 import { RailBoard, RailCustomizeMenu } from '../jarvis/rail-board'
@@ -502,18 +503,15 @@ function JarvisDashboardFrame({
       }
       railActions={<RailCustomizeMenu />}
       state={dashboardState}
+      switcher={<ModelSwitcher connected={connected} onSelectModel={onSelectModel} providers={modelProviders} />}
       voiceControls={
         <VoiceControls
-          cancelTask={onCancel}
           disabled={!connected}
           listening={listening}
-          muted={mainVoiceConversation?.muted === true}
           speaking={speaking}
           startListening={requestVoiceConversationStart}
           stopListening={() => mainVoiceConversation?.stop()}
           stopPlayback={stopVoicePlayback}
-          taskRunning={taskRunning}
-          toggleMute={mainVoiceConversation ? () => mainVoiceConversation.toggleMute() : undefined}
         />
       }
     >
@@ -818,11 +816,10 @@ const ChatViewContent = memo(function ChatViewContent({
           connected={gatewayOpen}
           listening={heroListening}
           onStartListening={requestVoiceConversationStart}
-          onStopListening={stopMainVoiceConversation}
           profileDisplayName={activeProfileName}
         />
       ) : undefined,
-    [activeProfileName, dashboardHome, gatewayOpen, heroListening, stopMainVoiceConversation]
+    [activeProfileName, dashboardHome, gatewayOpen, heroListening]
   )
 
   const threadLoading = threadLoadingState(loadingSession, busy, awaitingResponse, lastVisibleIsUser)

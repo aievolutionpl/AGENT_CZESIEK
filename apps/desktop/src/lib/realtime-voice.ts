@@ -103,6 +103,8 @@ export function createRealtimeEventHandler(sink: RealtimeEventSink, handlers: Re
 export interface RealtimeVoiceSession {
   notify?: (text: string) => boolean
   setMuted: (muted: boolean) => void
+  /** Silence or restore what the assistant says aloud; the conversation itself carries on. */
+  setSpeakerMuted?: (muted: boolean) => void
   stop: () => void
 }
 
@@ -297,6 +299,9 @@ export async function startRealtimeVoice(
       return true
     },
     setMuted: muted => mic.getAudioTracks().forEach(track => (track.enabled = !muted)),
+    setSpeakerMuted: muted => {
+      audio.muted = muted
+    },
     stop
   }
 }

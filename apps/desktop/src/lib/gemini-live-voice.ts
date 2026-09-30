@@ -503,6 +503,9 @@ export async function startGeminiLiveVoice(
       muted = next
       mic.getAudioTracks().forEach(track => (track.enabled = !next))
     },
+    setSpeakerMuted: next => {
+      audio.muted = next
+    },
     stop
   }
 }

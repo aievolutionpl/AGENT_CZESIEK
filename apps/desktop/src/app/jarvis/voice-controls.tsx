@@ -1,160 +1,124 @@
-import { useRef, useState } from 'react'
+import { useStore } from '@nanostores/react'
+import { useState } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { useI18n } from '@/i18n'
 import { triggerHaptic } from '@/lib/haptics'
-import { Loader2, Mic, MicOff, Square, VolumeX } from '@/lib/icons'
+import { Loader2, Mic, Square, Volume2, VolumeX } from '@/lib/icons'
 import { cn } from '@/lib/utils'
-
-import { useMicLevelVar } from './audio-level'
+import { $speakerMuted, toggleSpeakerMuted } from '@/store/voice-output'
 
 type VoiceAction = () => Promise<void> | void
 
 export interface VoiceControlsProps {
-  cancelTask: VoiceAction
   disabled?: boolean
   error?: null | string
   listening: boolean
   loading?: boolean
-  /** True when the conversation is running with its microphone muted. */
-  muted?: boolean
   speaking: boolean
   startListening: VoiceAction
   stopListening: VoiceAction
+  /** Cuts off speech that is playing right now (the classic, non-Live voice). */
   stopPlayback: VoiceAction
-  taskRunning: boolean
-  /** Omitted when the active conversation cannot be muted. */
-  toggleMute?: VoiceAction
 }
 
-type PendingAction = 'cancelTask' | 'startListening' | 'stopListening' | 'stopPlayback' | 'toggleMute' | null
+const COPY = {
+  en: {
+    end: 'End conversation',
+    label: 'Voice controls',
+    mute: 'Mute the voice',
+    start: 'Start talking',
+    unmute: 'Unmute the voice'
+  },
+  pl: {
+    end: 'Zakończ rozmowę',
+    label: 'Sterowanie głosem',
+    mute: 'Wycisz głos',
+    start: 'Zacznij rozmowę',
+    unmute: 'Włącz głos'
+  }
+} as const
 
 /**
- * The conversation's voice dock: a hairline level bar first, then the four
- * controls a live conversation actually needs — the microphone, its mute, the
- * playback stop and the task stop. Nothing else belongs here. The voice itself
- * is drawn by the ring round the orb (`voice-aura.tsx`), not in the dock.
- *
- * Only one control is a microphone: the mute button wears the slashed icon in
- * both states, so an idle dock never shows two identical microphones side by
- * side (the duplicate this row used to have).
+ * The conversation's voice dock, reduced to the two things a live conversation needs: silence the
+ * assistant's voice, and end (or start) the conversation. The level of the voice is drawn by the ring
+ * round the orb (`voice-aura.tsx`), so nothing else belongs here.
  */
 export function VoiceControls({
-  cancelTask,
   disabled = false,
   error = null,
   listening,
   loading = false,
-  muted = false,
   speaking,
   startListening,
   stopListening,
-  stopPlayback,
-  taskRunning,
-  toggleMute
+  stopPlayback
 }: VoiceControlsProps) {
-  const { t } = useI18n()
-  const copy = t.jarvisShell.dashboard.voiceControls
-  const [pendingAction, setPendingAction] = useState<PendingAction>(null)
-  const meterRef = useRef<HTMLDivElement>(null)
-  const busy = loading || pendingAction !== null
+  const { locale } = useI18n()
+  const copy = locale === 'pl' ? COPY.pl : COPY.en
+  const speakerMuted = useStore($speakerMuted)
+  const [pending, setPending] = useState(false)
+  const busy = loading || pending
+  const iconButton = 'jarvis-icon-btn size-10 min-h-10 min-w-10 rounded-full'
 
-  // The meter reads the real recorder through CSS variables. Live input must
-  // not re-render the dashboard on every animation frame.
-  useMicLevelVar(meterRef, listening && !muted)
+  const toggleSpeaker = () => {
+    triggerHaptic('tap')
+    toggleSpeakerMuted()
 
-  const run = async (action: Exclude<PendingAction, null>, handler: VoiceAction) => {
+    // Speech already playing is cut off when the voice is muted; Live sessions mute their own audio.
+    if (!speakerMuted && speaking) {
+      void stopPlayback()
+    }
+  }
+
+  const toggleConversation = async () => {
     if (disabled || busy) {
       return
     }
 
-    // Start and stop are the moments worth a sound; the rest are quiet taps.
-    triggerHaptic(action === 'startListening' ? 'open' : action === 'stopListening' ? 'close' : 'tap')
-    setPendingAction(action)
+    triggerHaptic(listening ? 'close' : 'open')
+    setPending(true)
 
     try {
-      await handler()
+      await (listening ? stopListening() : startListening())
     } finally {
-      setPendingAction(null)
+      setPending(false)
     }
   }
 
-  const listenLabel = listening ? copy.stopListening : copy.startListening
-  const listenAction = listening ? stopListening : startListening
-  const listenPending = pendingAction === 'startListening' || pendingAction === 'stopListening'
-  const muteLabel = muted ? copy.unmute : copy.mute
-  const iconButton = 'jarvis-icon-btn size-9 min-h-9 min-w-9 rounded-full'
+  const speakerLabel = speakerMuted ? copy.unmute : copy.mute
+  const conversationLabel = listening ? copy.end : copy.start
 
   return (
     <section
       aria-label={copy.label}
-      className="jarvis-voice-dock mx-auto flex w-fit max-w-full items-center"
+      className="jarvis-voice-dock mx-auto flex w-fit max-w-full items-center gap-1"
       data-testid="jarvis-voice-controls"
     >
-      <div
-        aria-label={copy.micLevel}
-        aria-valuemax={100}
-        aria-valuemin={0}
-        aria-valuenow={0}
-        className="jarvis-voice-dock__meter"
-        data-testid="jarvis-mic-meter"
-        ref={meterRef}
-        role="meter"
-        style={{ '--jarvis-audio-level': '0' } as React.CSSProperties}
+      <Button
+        aria-label={speakerLabel}
+        aria-pressed={speakerMuted}
+        className={cn(iconButton, speakerMuted && 'jarvis-icon-btn--live')}
+        disabled={disabled}
+        onClick={toggleSpeaker}
+        size="icon"
+        title={speakerLabel}
+        type="button"
       >
-        <span className="jarvis-voice-dock__level" />
-      </div>
+        {speakerMuted ? <VolumeX /> : <Volume2 />}
+      </Button>
 
       <Button
-        aria-label={listenLabel}
+        aria-label={conversationLabel}
         aria-pressed={listening}
-        className={cn(iconButton, listening && 'jarvis-icon-btn--live')}
+        className={cn(iconButton, listening && 'jarvis-icon-btn--danger')}
         disabled={disabled || busy}
-        onClick={() => void run(listening ? 'stopListening' : 'startListening', listenAction)}
+        onClick={() => void toggleConversation()}
         size="icon"
-        title={listenLabel}
+        title={conversationLabel}
         type="button"
       >
-        {listenPending ? <Loader2 className="animate-spin" /> : listening ? <Square /> : <Mic />}
-      </Button>
-
-      {toggleMute && (
-        <Button
-          aria-label={muteLabel}
-          aria-pressed={muted}
-          className={cn(iconButton, muted && 'jarvis-icon-btn--live')}
-          disabled={disabled || busy || !listening}
-          onClick={() => void run('toggleMute', toggleMute)}
-          size="icon"
-          title={muteLabel}
-          type="button"
-        >
-          {pendingAction === 'toggleMute' ? <Loader2 className="animate-spin" /> : <MicOff />}
-        </Button>
-      )}
-
-      <Button
-        aria-label={copy.stopSpeaking}
-        className={iconButton}
-        disabled={disabled || busy || !speaking}
-        onClick={() => void run('stopPlayback', stopPlayback)}
-        size="icon"
-        title={copy.stopSpeaking}
-        type="button"
-      >
-        {pendingAction === 'stopPlayback' ? <Loader2 className="animate-spin" /> : <VolumeX />}
-      </Button>
-
-      <Button
-        aria-label={copy.cancelTask}
-        className={cn(iconButton, taskRunning && 'jarvis-icon-btn--danger')}
-        disabled={disabled || busy || !taskRunning}
-        onClick={() => void run('cancelTask', cancelTask)}
-        size="icon"
-        title={copy.cancelTask}
-        type="button"
-      >
-        {pendingAction === 'cancelTask' ? <Loader2 className="animate-spin" /> : <Square />}
+        {pending ? <Loader2 className="animate-spin" /> : listening ? <Square /> : <Mic />}
       </Button>
 
       {error ? (
