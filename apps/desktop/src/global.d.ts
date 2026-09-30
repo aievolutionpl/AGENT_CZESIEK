@@ -3,6 +3,7 @@ import type { TranslucencyState } from '@hermes/shared/translucency'
 
 import type { HermesNotification } from '../electron/notification-types'
 import type { PoolLimits } from '../electron/pool-limits'
+import type { ScreenShot } from '../electron/screen-capture'
 
 import type { WakeIndicatorState } from './lib/wake-indicator'
 import type { DesktopShortcutReport } from './store/desktop-shortcut'
@@ -313,6 +314,8 @@ declare global {
         webContentsId: number
       }) => Promise<string>
       saveClipboardImage: () => Promise<string>
+      /** One screenshot of the primary display, taken on request (the voice agent's `look_at_screen`). */
+      captureScreen?: () => Promise<ScreenShot>
       getPathForFile: (file: File) => string
       normalizePreviewTarget: (target: string, baseDir?: string) => Promise<HermesPreviewTarget | null>
       watchPreviewFile: (url: string) => Promise<HermesPreviewWatch>

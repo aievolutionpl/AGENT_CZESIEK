@@ -1160,6 +1160,8 @@ DEFAULT_CONFIG = {
                 "voice": "Puck",
             },
         },
+        # Live voice may take one look at the screen when asked (desktop captures it on request only).
+        "vision": {"enabled": True},
     },
     # "Hey Hermes" hands-free wake word: always-on, on-device hotword detection that starts a fresh
     # voice session. Off by default; toggle with /wake.

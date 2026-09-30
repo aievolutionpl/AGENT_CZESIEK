@@ -946,6 +946,7 @@ from hermes_cli.web_routers import (  # noqa: E402
     drive_memory as _drive_memory_routes,
     secrets_audit as _secrets_audit_routes,
     trust as _trust_routes,
+    voice_desk as _voice_desk_routes,
 )
 
 app.include_router(_files_routes.router)
@@ -988,6 +989,7 @@ app.include_router(_browser_routes.router)
 app.include_router(_drive_memory_routes.router)
 app.include_router(_secrets_audit_routes.router)
 app.include_router(_trust_routes.router)
+app.include_router(_voice_desk_routes.router)
 
 # Plugin API routes and the dashboard auth routes (/login, /auth/*, /api/auth/*)
 # mount before the SPA catch-all so /{full_path:path} doesn't swallow them. Auth

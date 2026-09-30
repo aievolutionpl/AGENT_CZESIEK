@@ -1,11 +1,16 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
+import { getVoiceDesk } from '@/api/voice-desk'
 import { createRealtimeVoiceSession } from '@/api/voice-realtime'
+import { useI18n } from '@/i18n'
 import { createDoubleClapDetector } from '@/lib/double-clap'
 import { isJarvisIntroMusicPlaying, isJarvisMusicPhrase, startJarvisIntroMusic } from '@/lib/jarvis-intro-music'
+import { createDeskTools } from '@/lib/live-voice/desk-tools'
+import { startDeskWatcher } from '@/lib/live-voice/desk-watcher'
 import { startLiveVoice } from '@/lib/live-voice/start'
 import type { RealtimeVoiceSession, RealtimeVoiceStatus } from '@/lib/realtime-voice'
-import { notifyError } from '@/store/notifications'
+import { canCaptureScreen, captureScreenDataUrl } from '@/lib/screen-capture'
+import { notify, notifyError } from '@/store/notifications'
 import { requestForOwnedSession } from '@/store/session-states'
 import { $subagentsBySession } from '@/store/subagents'
 
@@ -27,7 +32,10 @@ const ANNOUNCEMENT_DRAIN_MS = 400
 
 /** The answer to an `ask_jarvis` call, or null when the inline budget ran out. */
 function withInlineBudget(answer: Promise<AgentReply>): Promise<AgentReply | null> {
-  return Promise.race([answer, new Promise<null>(resolve => window.setTimeout(() => resolve(null), ASK_INLINE_BUDGET_MS))])
+  return Promise.race([
+    answer,
+    new Promise<null>(resolve => window.setTimeout(() => resolve(null), ASK_INLINE_BUDGET_MS))
+  ])
 }
 
 /**
@@ -123,6 +131,44 @@ export function useRealtimeConversation({
   }
 
   currentSession.current = sessionId
+
+  const { locale } = useI18n()
+  const lang = useRef<'en' | 'pl'>('pl')
+  lang.current = locale === 'pl' ? 'pl' : 'en'
+
+  // The board and the screen: the voice's tools besides Hermes. The session id is read when a tool runs.
+  const deskTools = useMemo(
+    () =>
+      createDeskTools({
+        capture: canCaptureScreen() ? captureScreenDataUrl : undefined,
+        lang: () => lang.current,
+        onLook: () =>
+          notify({
+            kind: 'info',
+            message:
+              lang.current === 'pl'
+                ? 'Robię jedno zdjęcie ekranu, bo o to poprosiłeś.'
+                : 'Taking one picture of the screen because you asked.',
+            title: lang.current === 'pl' ? 'Czesiek patrzy na ekran' : 'Czesiek is looking at the screen'
+          }),
+        sessionId: () => currentSession.current
+      }),
+    []
+  )
+
+  // Reads the board on a timer; what finished goes to the announcement queue.
+  useEffect(() => {
+    if (!enabled) {
+      return undefined
+    }
+
+    return startDeskWatcher({
+      fetchDesk: getVoiceDesk,
+      lang: () => lang.current,
+      push: text => announcements.current.push(text),
+      sessionId: () => currentSession.current
+    })
+  }, [enabled])
 
   // eslint-disable-next-line no-restricted-syntax -- queues backend transition events; does not mirror reactive state
   useEffect(() => {
@@ -340,6 +386,7 @@ export function useRealtimeConversation({
       {
         onAsk: ask,
         onDelegate: delegate,
+        onTool: deskTools,
         onTranscript: (role, text) => {
           if (role === 'user' && isJarvisMusicPhrase(text)) {
             startJarvisIntroMusic(true)
@@ -366,7 +413,7 @@ export function useRealtimeConversation({
           setStatus(STATUS[next])
         }
       },
-      { createSession: createRealtimeVoiceSession }
+      { createSession: () => createRealtimeVoiceSession({ screen: canCaptureScreen() }) }
     ).then(
       session => {
         if (cancelled) {
@@ -388,7 +435,7 @@ export function useRealtimeConversation({
       cancelled = true
       void end()
     }
-  }, [ask, delegate, enabled, end])
+  }, [ask, deskTools, delegate, enabled, end])
 
   const toggleMute = useCallback(() => {
     setMuted(value => {

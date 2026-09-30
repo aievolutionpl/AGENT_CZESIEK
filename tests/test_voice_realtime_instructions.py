@@ -79,14 +79,14 @@ def test_gemini_setup_declares_both_bridge_tools():
     setup = voice_realtime.gemini_setup(voice_realtime.realtime_settings({}))
 
     declarations = setup["tools"][0]["functionDeclarations"]
-    assert [f["name"] for f in declarations] == ["ask_jarvis", "delegate_to_hermes"]
+    assert [f["name"] for f in declarations][:2] == ["ask_jarvis", "delegate_to_hermes"]
     assert "front agent" in setup["systemInstruction"]["parts"][0]["text"]
 
 
 def test_openai_session_config_declares_both_bridge_tools():
     session = voice_realtime.session_config(voice_realtime.realtime_settings({}))
 
-    assert [tool["name"] for tool in session["tools"]] == ["ask_jarvis", "delegate_to_hermes"]
+    assert [tool["name"] for tool in session["tools"]][:2] == ["ask_jarvis", "delegate_to_hermes"]
     assert "front agent" in session["instructions"]
 
 
@@ -174,4 +174,5 @@ def test_persona_did_not_drop_the_original_voice_contract():
     ]
     missing = [fragment for fragment in required if fragment not in instructions]
     assert missing == []
+
 

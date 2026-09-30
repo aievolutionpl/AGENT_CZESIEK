@@ -18,8 +18,14 @@
 
 import type { GeminiLiveVoiceSessionResponse } from '@/api/voice-realtime'
 
+import { runVoiceTool, type VoiceToolArgs } from './live-voice/tools'
 import { bytesToBase64, downsample, floatToInt16LE, pcm16Base64ToFloat32, pcmRate } from './pcm-audio'
-import { canInjectReport, type RealtimeVoiceHandlers, type RealtimeVoiceSession, type RealtimeVoiceStatus } from './realtime-voice'
+import {
+  canInjectReport,
+  type RealtimeVoiceHandlers,
+  type RealtimeVoiceSession,
+  type RealtimeVoiceStatus
+} from './realtime-voice'
 
 const INPUT_RATE = 16_000
 const OUTPUT_RATE = 24_000
@@ -28,7 +34,7 @@ const MAX_RECONNECTS = 3
 type GeminiServerMessage = Record<string, unknown>
 
 interface FunctionCall {
-  args?: { request?: unknown }
+  args?: VoiceToolArgs
   id?: string
   name?: string
 }
@@ -87,22 +93,7 @@ export function createGeminiLiveHandler(sink: GeminiLiveSink, player: GeminiAudi
     answered.add(id)
     events.onStatus('thinking')
 
-    let output: string
-
-    if (name !== 'ask_jarvis' && name !== 'delegate_to_hermes') {
-      output = `Unknown tool: ${name || '(none)'}`
-    } else {
-      const request = text(call.args?.request).trim()
-      const delegate = name === 'delegate_to_hermes'
-
-      try {
-        output = request
-          ? (await (delegate ? events.onDelegate(request) : events.onAsk(request))).trim() || 'Done.'
-          : 'The request was empty.'
-      } catch (error) {
-        output = `Jarvis could not finish that: ${error instanceof Error ? error.message : String(error)}`
-      }
-    }
+    const output = await runVoiceTool(name, call.args ?? {}, events)
 
     if (cancelled.has(id)) {
       return

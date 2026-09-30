@@ -285,7 +285,11 @@ export const ENUM_OPTIONS: Record<string, string[]> = {
   'voice.realtime.provider': ['openai', 'gemini'],
   'voice.realtime.model': ['gpt-realtime', 'gpt-realtime-2.1', 'gpt-realtime-2.1-mini'],
   'voice.realtime.voice': ['marin', 'cedar', 'alloy', 'ash', 'ballad', 'coral', 'echo', 'sage', 'shimmer', 'verse'],
-  'voice.realtime.gemini.model': ['gemini-3.8-live', 'gemini-3.8-live-extended-thinking'],
+  'voice.realtime.gemini.model': [
+    'gemini-3.8-live',
+    'gemini-3.8-live-extended-thinking',
+    'gemini-3.1-flash-live-preview'
+  ],
   'voice.realtime.gemini.voice': ['Charon', 'Kore', 'Puck', 'Zephyr', 'Fenrir', 'Leda', 'Orus', 'Aoede'],
   // Gemini TTS prebuilt voice set.
   'tts.gemini.voice': [
@@ -450,6 +454,9 @@ export const FIELD_LABELS: Record<string, string> = defineFieldCopy({
     maxRecordingSeconds: 'Max Recording Length',
     autoTts: 'Read Responses Aloud',
     engine: 'Voice Conversation Engine',
+    vision: {
+      enabled: 'Live Voice Can Look At The Screen'
+    },
     realtime: {
       provider: 'Live Voice Provider',
       model: 'OpenAI Realtime Model',
@@ -621,7 +628,12 @@ export const FIELD_DESCRIPTIONS: Record<string, string> = defineFieldCopy({
   },
   voice: {
     autoTts: 'Automatically speak assistant responses.',
-    engine: 'classic = speech-to-text → agent → text-to-speech; realtime = Live voice (the model listens and speaks, Jarvis does the work).',
+    engine:
+      'classic = speech-to-text → agent → text-to-speech; realtime = Live voice (the model listens and speaks, Jarvis does the work).',
+    vision: {
+      enabled:
+        'Lets the Live voice take one screenshot when you ask about your screen. Nothing is captured otherwise, and the picture is not kept.'
+    },
     realtime: {
       provider: 'openai = OpenAI Realtime (OPENAI_API_KEY); gemini = Gemini Live (GEMINI_API_KEY).'
     }
@@ -742,6 +754,7 @@ export const SECTIONS: DesktopConfigSection[] = [
       'voice.realtime.model',
       'voice.realtime.voice',
       'voice.realtime.language',
+      'voice.vision.enabled',
       'tts.edge.voice',
       'tts.openai.model',
       'tts.openai.voice',

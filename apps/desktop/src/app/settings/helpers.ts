@@ -164,6 +164,10 @@ export function clearsEnabledToolsets(prev: HermesConfigRecord, next: HermesConf
 // Live voice fields: only with the Live engine on, and only the chosen
 // provider's own (OpenAI's model/voice, or Gemini's under `gemini.`).
 function liveVoiceFieldVisible(key: string, config: HermesConfigRecord): boolean | null {
+  if (key.startsWith('voice.vision.')) {
+    return getNested(config, 'voice.engine') === 'realtime'
+  }
+
   if (!key.startsWith('voice.realtime.')) {
     return null
   }
