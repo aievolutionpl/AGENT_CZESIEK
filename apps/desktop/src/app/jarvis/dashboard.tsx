@@ -19,6 +19,7 @@ import { deriveJarvisMetrics } from './metrics'
 import type { JarvisNewsItem } from './news'
 import type { JarvisInsightsView } from './panel-copy'
 import { jarvisDaypart } from './pulse'
+import { $railHidden, setRailHidden } from './rail-layout'
 import { JarvisStatusStrip } from './status-strip'
 import { JarvisTipsLauncher } from './tips'
 import type { JarvisUiState } from './types'
@@ -44,6 +45,8 @@ export interface JarvisDashboardProps {
   profileDisplayName?: string
   /** Cards stacked above the insights panel in the desktop rail. */
   rail?: ReactNode
+  /** Controls that sit beside the rail's hide button (e.g. the layout menu). */
+  railActions?: ReactNode
   state: JarvisUiState
   voiceControls?: ReactNode
 }
@@ -210,6 +213,7 @@ export function JarvisDashboard({
   onOpenUpdate,
   profileDisplayName,
   rail,
+  railActions,
   state,
   voiceControls
 }: JarvisDashboardProps) {
@@ -218,7 +222,7 @@ export function JarvisDashboard({
   const copy = t.jarvisShell.dashboard
   const layout = useDashboardLayout(layoutOverride)
   const focus = useStore($jarvisFocusMode)
-  const [railCollapsed, setRailCollapsed] = useState(false)
+  const railCollapsed = useStore($railHidden)
   const showRail = layout === 'desktop' && !focus && !railCollapsed
   const [activityOpen, setActivityOpen] = useState(layout === 'desktop')
   const [view, setView] = useState<JarvisInsightsView>('activity')
@@ -268,7 +272,7 @@ export function JarvisDashboard({
         <Button
           aria-label={t.jarvisShell.home.showRail}
           className="absolute right-4 top-16 z-10 jarvis-glass jarvis-glass-hover"
-          onClick={() => setRailCollapsed(false)}
+          onClick={() => setRailHidden(false)}
           size="icon"
           title={t.jarvisShell.home.showRail}
           type="button"
@@ -360,8 +364,7 @@ export function JarvisDashboard({
   const insightsPanel = (
     <JarvisInsightsPanel
       className={cn(
-        layout === 'desktop' &&
-          (rail ? 'min-h-[22rem] shrink-0 rounded-2xl border-0!' : 'w-80'),
+        layout === 'desktop' && (rail ? 'min-h-[22rem] shrink-0 rounded-2xl border-0!' : 'w-80'),
         layout === 'tablet' && 'absolute inset-y-4 right-4 z-20 w-80 rounded-md',
         layout === 'mobile' && 'absolute inset-x-3 bottom-16 z-20 max-h-[60vh] rounded-md'
       )}
@@ -406,17 +409,20 @@ export function JarvisDashboard({
             className="jarvis-dashboard__rail flex w-80 shrink-0 flex-col gap-3 overflow-y-auto border-l border-(--ui-stroke-tertiary) p-3 backdrop-blur-2xl"
             data-testid="jarvis-rail"
           >
-            <Button
-              aria-label={t.jarvisShell.home.hideRail}
-              className="self-end jarvis-glass jarvis-glass-hover"
-              onClick={() => setRailCollapsed(true)}
-              size="icon"
-              title={t.jarvisShell.home.hideRail}
-              type="button"
-              variant="secondary"
-            >
-              <ChevronRight />
-            </Button>
+            <div className="flex items-center justify-end gap-2">
+              {railActions}
+              <Button
+                aria-label={t.jarvisShell.home.hideRail}
+                className="jarvis-glass jarvis-glass-hover"
+                onClick={() => setRailHidden(true)}
+                size="icon"
+                title={t.jarvisShell.home.hideRail}
+                type="button"
+                variant="secondary"
+              >
+                <ChevronRight />
+              </Button>
+            </div>
             {rail}
             {insightsPanel}
             <p className="mt-auto flex items-center justify-end gap-2 px-1 pt-2 text-xs text-(--ui-text-tertiary)">
@@ -432,7 +438,7 @@ export function JarvisDashboard({
             <Button
               aria-label={t.jarvisShell.home.hideRail}
               className="absolute right-3 top-2 z-10"
-              onClick={() => setRailCollapsed(true)}
+              onClick={() => setRailHidden(true)}
               size="icon"
               type="button"
               variant="ghost"

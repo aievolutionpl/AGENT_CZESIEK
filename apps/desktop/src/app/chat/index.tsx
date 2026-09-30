@@ -69,6 +69,7 @@ import { JarvisInsightsCard } from '../jarvis/insights-card'
 import { deriveJarvisMetrics } from '../jarvis/metrics'
 import { buildJarvisNews } from '../jarvis/news'
 import { JarvisQuickAccessCard } from '../jarvis/quick-access'
+import { RailBoard, RailCustomizeMenu } from '../jarvis/rail-board'
 import { JarvisAgentsCard, JarvisModelCard } from '../jarvis/rail-cards'
 import { JarvisConnectCard } from '../jarvis/rail-connect-card'
 import { JarvisMemoryCard } from '../jarvis/rail-memory-card'
@@ -473,26 +474,33 @@ function JarvisDashboardFrame({
       onOpenUpdate={openUpdateOverlayFor}
       profileDisplayName={activeProfileRow ? profileLabel(activeProfileRow) : undefined}
       rail={
-        <>
-          <JarvisStartCard
-            connected={connected}
-            hasHistory={dashboardState.activity.length > 0}
-            modelReady={connected && Boolean(currentModel)}
-          />
-          <JarvisMemoryCard connected={connected} />
-          <JarvisConnectCard connected={connected} />
-          <JarvisQuickAccessCard connected={connected} />
-          <JarvisNewsLiveCard connected={connected} />
-          <JarvisInsightsCard connected={connected} state={dashboardState} />
-          <JarvisModelCard
-            connected={connected}
-            onSelectModel={onSelectModel}
-            providers={modelProviders}
-            requestGateway={requestGateway}
-          />
-          <JarvisAgentsCard />
-        </>
+        <RailBoard
+          cards={{
+            agents: <JarvisAgentsCard />,
+            connect: <JarvisConnectCard connected={connected} />,
+            insights: <JarvisInsightsCard connected={connected} state={dashboardState} />,
+            memory: <JarvisMemoryCard connected={connected} />,
+            model: (
+              <JarvisModelCard
+                connected={connected}
+                onSelectModel={onSelectModel}
+                providers={modelProviders}
+                requestGateway={requestGateway}
+              />
+            ),
+            news: <JarvisNewsLiveCard connected={connected} />,
+            'quick-access': <JarvisQuickAccessCard connected={connected} />,
+            start: (
+              <JarvisStartCard
+                connected={connected}
+                hasHistory={dashboardState.activity.length > 0}
+                modelReady={connected && Boolean(currentModel)}
+              />
+            )
+          }}
+        />
       }
+      railActions={<RailCustomizeMenu />}
       state={dashboardState}
       voiceControls={
         <VoiceControls

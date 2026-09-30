@@ -1,3 +1,4 @@
+import { useStore } from '@nanostores/react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
 
@@ -5,13 +6,14 @@ import { createVaultNote, VAULT_RAIL_KEY } from '@/api/vault'
 import { Button } from '@/components/ui/button'
 import { getAiNews } from '@/hermes'
 import { useI18n } from '@/i18n'
-import { Bookmark, Loader2, RefreshCw, Sparkles, Zap } from '@/lib/icons'
+import { Bookmark, Checks, Loader2, RefreshCw, Sparkles, Zap } from '@/lib/icons'
 import { cn } from '@/lib/utils'
 import { notify, notifyError } from '@/store/notifications'
 
 import { requestComposerInsert } from '../chat/composer/focus'
 
-import { RailCard } from './rail-cards'
+import { $newsRead, markNewsRead } from './news-read'
+import { RailCard } from './rail-card'
 
 const NEWS_REFRESH_MS = 15 * 60_000
 const NEWS_FETCH = 15
@@ -25,7 +27,11 @@ const COPY = {
     ask: 'Ask Czesiek about this',
     askPrompt: (title: string, link: string) =>
       `Summarise this in three sentences and tell me what it means for my work: ${title} ${link}`,
+    brief: 'Brief me',
+    briefPrompt: (titles: string) =>
+      `Brief me on these AI headlines in a few sentences and tell me which one matters most for my work:\n${titles}`,
     less: 'Show less',
+    markAll: 'Mark all as read',
     more: (n: number) => `Show ${n} more`,
     saved: 'Saved to memory',
     savedAlready: 'Already in memory',
@@ -38,7 +44,11 @@ const COPY = {
     ask: 'Zapytaj Cześka o to',
     askPrompt: (title: string, link: string) =>
       `Streść to w trzech zdaniach i powiedz, co to oznacza dla mojej pracy: ${title} ${link}`,
+    brief: 'Podsumuj newsy',
+    briefPrompt: (titles: string) =>
+      `Podsumuj te newsy AI w kilku zdaniach i powiedz, który jest najważniejszy dla mojej pracy:\n${titles}`,
     less: 'Pokaż mniej',
+    markAll: 'Oznacz wszystko jako przeczytane',
     more: (n: number) => `Pokaż jeszcze ${n}`,
     saved: 'Zapisano w pamięci',
     savedAlready: 'Już jest w pamięci',
@@ -56,7 +66,10 @@ export function topSources(items: readonly { source: string }[], limit = SOURCE_
     counts.set(source, (counts.get(source) ?? 0) + 1)
   }
 
-  return [...counts].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, limit).map(([name]) => name)
+  return [...counts]
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .slice(0, limit)
+    .map(([name]) => name)
 }
 
 function relativeAge(publishedSeconds: null | number, locale: string, nowMs = Date.now()): string {
@@ -89,6 +102,7 @@ export function JarvisNewsLiveCard({ connected }: { connected: boolean }) {
   const [expanded, setExpanded] = useState(false)
   const [saving, setSaving] = useState<null | string>(null)
   const queryClient = useQueryClient()
+  const read = useStore($newsRead)
 
   const news = useQuery({
     enabled: connected,
@@ -102,17 +116,28 @@ export function JarvisNewsLiveCard({ connected }: { connected: boolean }) {
   const chips = useMemo(() => topSources(all), [all])
   const filtered = source && chips.includes(source) ? all.filter(item => item.source === source) : all
   const items = expanded ? filtered : filtered.slice(0, NEWS_SHOWN)
+  const unread = all.filter(item => !read.includes(item.link))
 
   const save = async (item: (typeof all)[number]) => {
     setSaving(item.link)
 
     try {
       const body = `# ${item.title}\n\n${item.summary ? `${item.summary}\n\n` : ''}Źródło: ${item.source}\n${item.link}\n`
+
       // The link is the identity: the same headline again is "already there",
       // a different one with the same file name gets its own note.
-      const made = await createVaultNote(item.title, { content: body, dedupeKey: item.link, externalSource: `${item.source} (${item.link})`, folder: NEWS_FOLDER })
+      const made = await createVaultNote(item.title, {
+        content: body,
+        dedupeKey: item.link,
+        externalSource: `${item.source} (${item.link})`,
+        folder: NEWS_FOLDER
+      })
 
-      notify({ kind: made.existed ? 'info' : 'success', message: made.existed ? copy.savedAlready : copy.saved, durationMs: 2000 })
+      notify({
+        kind: made.existed ? 'info' : 'success',
+        message: made.existed ? copy.savedAlready : copy.saved,
+        durationMs: 2000
+      })
       void queryClient.invalidateQueries({ queryKey: [VAULT_RAIL_KEY] })
     } catch (error) {
       notifyError(error, copy.save)
@@ -124,16 +149,31 @@ export function JarvisNewsLiveCard({ connected }: { connected: boolean }) {
   return (
     <RailCard
       action={
-        <Button
-          aria-label={state.refresh}
-          disabled={!connected || news.isFetching}
-          onClick={() => void news.refetch()}
-          size="icon-sm"
-          type="button"
-          variant="ghost"
-        >
-          <RefreshCw className={cn(news.isFetching && 'animate-spin')} />
-        </Button>
+        <span className="flex items-center">
+          {unread.length > 0 ? (
+            <Button
+              aria-label={`${copy.markAll} (${unread.length})`}
+              onClick={() => markNewsRead(all.map(item => item.link))}
+              size="xs"
+              title={copy.markAll}
+              type="button"
+              variant="ghost"
+            >
+              <Checks />
+              {unread.length}
+            </Button>
+          ) : null}
+          <Button
+            aria-label={state.refresh}
+            disabled={!connected || news.isFetching}
+            onClick={() => void news.refetch()}
+            size="icon-sm"
+            type="button"
+            variant="ghost"
+          >
+            <RefreshCw className={cn(news.isFetching && 'animate-spin')} />
+          </Button>
+        </span>
       }
       icon={Zap}
       testId="news"
@@ -175,10 +215,16 @@ export function JarvisNewsLiveCard({ connected }: { connected: boolean }) {
           ) : null}
           <ul className="grid grid-cols-1 gap-1">
             {items.map((item, index) => (
-              <li className="group relative" key={item.link}>
+              <li
+                className={cn('group relative transition-opacity', read.includes(item.link) && 'opacity-60')}
+                key={item.link}
+              >
                 <button
                   className="flex min-h-11 w-full items-start gap-3 rounded-lg px-2 py-2 text-left outline-none hover:bg-(--chrome-action-hover) focus-visible:outline focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-(--ui-accent)"
-                  onClick={() => void window.hermesDesktop?.openExternal?.(item.link)}
+                  onClick={() => {
+                    markNewsRead([item.link])
+                    void window.hermesDesktop?.openExternal?.(item.link)
+                  }}
                   title={item.summary || item.title}
                   type="button"
                 >
@@ -190,7 +236,14 @@ export function JarvisNewsLiveCard({ connected }: { connected: boolean }) {
                     )}
                   />
                   <span className="min-w-0 flex-1 pr-12">
-                    <span className="line-clamp-2 text-sm leading-5 text-(--ui-text-primary)">{item.title}</span>
+                    <span
+                      className={cn(
+                        'line-clamp-2 text-sm leading-5 text-(--ui-text-primary)',
+                        !read.includes(item.link) && 'font-medium'
+                      )}
+                    >
+                      {item.title}
+                    </span>
                     <span className="mt-0.5 flex gap-2 text-xs text-(--ui-text-tertiary)">
                       <span className="truncate">{item.source}</span>
                       {item.published ? <span className="shrink-0">{relativeAge(item.published, locale)}</span> : null}
@@ -223,6 +276,26 @@ export function JarvisNewsLiveCard({ connected }: { connected: boolean }) {
               </li>
             ))}
           </ul>
+          <Button
+            className="mt-1 w-full"
+            onClick={() =>
+              requestComposerInsert(
+                copy.briefPrompt(
+                  (unread.length ? unread : filtered)
+                    .slice(0, 6)
+                    .map(item => `- ${item.title} (${item.source}) ${item.link}`)
+                    .join('\n')
+                ),
+                { mode: 'block', target: 'main' }
+              )
+            }
+            size="sm"
+            type="button"
+            variant="secondary"
+          >
+            <Sparkles />
+            {copy.brief}
+          </Button>
           {filtered.length > NEWS_SHOWN ? (
             <Button className="mt-1" onClick={() => setExpanded(v => !v)} size="sm" type="button" variant="text">
               {expanded ? copy.less : copy.more(filtered.length - NEWS_SHOWN)}

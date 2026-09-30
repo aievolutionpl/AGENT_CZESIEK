@@ -6,14 +6,13 @@ import { useStore } from '@nanostores/react'
  * failure states, so one broken source never blanks the rail.
  */
 import { useQueryClient } from '@tanstack/react-query'
-import { type ReactNode, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
 
 import { ModelBrandIcon } from '@/components/model-brand-icon'
 import { getGlobalModelOptions } from '@/hermes'
 import { useI18n } from '@/i18n'
-import { triggerHaptic } from '@/lib/haptics'
-import { ArrowUpRight, Brain, Check, ChevronDown, Cpu, Loader2, Sparkles, Users, Zap } from '@/lib/icons'
+import { ArrowUpRight, Brain, Check, Cpu, Loader2, Sparkles, Users, Zap } from '@/lib/icons'
 import { cn } from '@/lib/utils'
 import { notify, notifyError } from '@/store/notifications'
 import { $activeGatewayProfile, $profiles, profileLabel } from '@/store/profile'
@@ -42,57 +41,9 @@ import {
   workModeForEffort
 } from './openrouter-presets'
 import { OpenRouterQuickConnect } from './openrouter-quick-connect'
-import { $railCollapsed, setRailCardCollapsed } from './rail-collapse'
+import { RailCard } from './rail-card'
 
 type GatewayRequest = <T>(method: string, params?: Record<string, unknown>) => Promise<T>
-
-export function RailCard({
-  action,
-  children,
-  defaultCollapsed = false,
-  icon: Icon,
-  title,
-  testId
-}: {
-  action?: ReactNode
-  children: ReactNode
-  /** Where the card starts until the user folds or opens it. */
-  defaultCollapsed?: boolean
-  icon: React.ComponentType<{ className?: string }>
-  title: string
-  testId: string
-}) {
-  const headingId = `jarvis-rail-${testId}`
-  const folded = useStore($railCollapsed)[testId] ?? defaultCollapsed
-
-  return (
-    <section aria-labelledby={headingId} className="jarvis-panel jarvis-rise p-4" data-testid={`jarvis-rail-${testId}`}>
-      <div className={cn('flex min-h-9 items-center gap-2', !folded && 'mb-3')}>
-        <button
-          aria-expanded={!folded}
-          className="flex min-w-0 flex-1 items-center gap-2 rounded-md text-left outline-none focus-visible:outline focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--ui-accent)"
-          onClick={() => {
-            triggerHaptic(folded ? 'open' : 'close')
-            setRailCardCollapsed(testId, !folded)
-          }}
-          type="button"
-        >
-          <span className="jarvis-icon-chip grid size-7 shrink-0 place-items-center rounded-lg">
-            <Icon className="size-4" />
-          </span>
-          <h2 className="min-w-0 flex-1 truncate text-sm font-semibold text-(--ui-text-primary)" id={headingId}>
-            {title}
-          </h2>
-          <ChevronDown
-            className={cn('size-3.5 shrink-0 text-(--ui-text-tertiary) transition-transform', folded && '-rotate-90')}
-          />
-        </button>
-        {action}
-      </div>
-      {folded ? null : children}
-    </section>
-  )
-}
 
 function LinkAction({ label, onClick }: { label: string; onClick: () => void }) {
   return (
@@ -181,7 +132,10 @@ export function JarvisModelCard({ connected, onSelectModel, providers, requestGa
 
   const presetLabel = (id: OpenRouterPresetId) => copy.presets[id]
   const chatGptModel = chatGptWorkModel(providers)
-  const chatGptActive = chatGptModel !== undefined && currentProvider === CHATGPT_PROVIDER_SLUG && currentModel === chatGptModel
+
+  const chatGptActive =
+    chatGptModel !== undefined && currentProvider === CHATGPT_PROVIDER_SLUG && currentModel === chatGptModel
+
   const chatGpt = locale === 'pl' ? CHATGPT_COPY.pl : CHATGPT_COPY.en
 
   return (
@@ -192,7 +146,9 @@ export function JarvisModelCard({ connected, onSelectModel, providers, requestGa
       title={copy.title}
     >
       <LiveModelPicker connected={connected} />
-      <p className="mb-2 text-xs font-medium text-(--ui-text-secondary)">{t.jarvisShell.home.model.modeLabel} · Hermes</p>
+      <p className="mb-2 text-xs font-medium text-(--ui-text-secondary)">
+        {t.jarvisShell.home.model.modeLabel} · Hermes
+      </p>
       <div className="jarvis-well mb-3 flex min-w-0 items-center gap-3 px-3 py-2.5">
         <ModelBrandIcon hints={[currentProvider]} model={currentModel} />
         <div className="min-w-0">
@@ -203,11 +159,7 @@ export function JarvisModelCard({ connected, onSelectModel, providers, requestGa
         </div>
       </div>
 
-      <div
-        aria-label={copy.modeLabel}
-        className="jarvis-well mb-3 grid grid-cols-3 gap-1 p-1"
-        role="radiogroup"
-      >
+      <div aria-label={copy.modeLabel} className="jarvis-well mb-3 grid grid-cols-3 gap-1 p-1" role="radiogroup">
         {JARVIS_WORK_MODES.map(item => (
           <button
             aria-checked={mode === item.id}
@@ -232,7 +184,9 @@ export function JarvisModelCard({ connected, onSelectModel, providers, requestGa
         ))}
       </div>
 
-      <p className="mb-2 text-xs font-medium uppercase tracking-[0.16em] text-(--ui-text-tertiary)">{chatGpt.heading}</p>
+      <p className="mb-2 text-xs font-medium uppercase tracking-[0.16em] text-(--ui-text-tertiary)">
+        {chatGpt.heading}
+      </p>
       {chatGptModel ? (
         <button
           aria-pressed={chatGptActive}
