@@ -19,7 +19,6 @@ set -euo pipefail
 BUNDLE=1
 SIGN=0
 DRY_RUN=0
-PYTHON_VERSION="3.11"
 
 say() { printf '\033[1;36m▸\033[0m %s\n' "$*"; }
 fail() { printf '\033[1;31m✗\033[0m %s\n' "$*" >&2; exit 1; }
@@ -43,7 +42,6 @@ esac
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DESKTOP="$REPO/apps/desktop"
-WORK="$DESKTOP/build/mac-runtime-work"
 
 command -v node >/dev/null || fail "Brak Node.js (https://nodejs.org)."
 command -v git >/dev/null || fail "Brak git (xcode-select --install)."
@@ -62,29 +60,7 @@ cd "$DESKTOP"
 rm -rf build/runtime
 
 if [ "$BUNDLE" = 1 ]; then
-    if ! command -v uv >/dev/null; then
-        say "Instaluję uv (menedżer Pythona)…"
-        curl -LsSf https://astral.sh/uv/install.sh | sh
-        export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
-    fi
-    rm -rf "$WORK"
-    mkdir -p "$WORK"
-
-    say "Pobieram przenośnego Pythona $PYTHON_VERSION…"
-    export UV_PYTHON_INSTALL_DIR="$WORK/python"
-    uv python install "$PYTHON_VERSION"
-    PY_BIN="$(uv python find "$PYTHON_VERSION")"
-    # …/cpython-<wersja>-macos-<arch>-none/bin/python3 → katalog główny dystrybucji
-    PY_ROOT="$(cd "$(dirname "$PY_BIN")/.." && pwd -P)"
-
-    say "Instaluję zależności silnika (uv.lock)…"
-    unset UV_PYTHON
-    UV_PROJECT_ENVIRONMENT="$WORK/venv" uv sync --project "$REPO" --python "$PY_ROOT/bin/python3" --extra all --locked
-    SITE="$(echo "$WORK"/venv/lib/python3.*/site-packages)"
-
-    say "Składam silnik…"
-    node scripts/stage-macos-runtime.mjs --python-root="$PY_ROOT" --site-packages="$SITE"
-    rm -rf "$WORK"
+    "$REPO/scripts/stage-macos-runtime.sh"
 fi
 
 say "Buduję aplikację…"

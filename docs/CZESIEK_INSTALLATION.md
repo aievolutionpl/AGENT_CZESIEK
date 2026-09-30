@@ -233,6 +233,16 @@ Bez instalatora NSIS robi to aplikacja przy pierwszym zasianiu vaultu:
 niego oficjalny DMG do `~/Applications`), z logiem w `…/hermes-home/logs/obsidian-install.log`.
 Niepowodzenie nie blokuje aplikacji. Binarek Obsidiana nie redystrybuujemy.
 
+### Wydanie w CI
+
+`release-desktop.yml` buduje osobno Windows x64, macOS arm64 (`macos-latest`),
+macOS x64 (`macos-15-intel`) i Linux. Legi Windows i macOS najpierw składają
+wbudowany silnik (`scripts/stage-windows-runtime.sh`, `scripts/stage-macos-runtime.sh`),
+bo silnik jest zależny od architektury. Bramka na poziomie legu sprawdza tylko jego
+architekturę (`verify-release-gate.mjs --archs`); bramka zbiorcza nadal wymaga
+obu DMG i obu ZIP. Nie uruchamiano tego workflow: pierwszy przebieg (najlepiej
+`workflow_dispatch` bez publikacji) jest próbą, a nazwa runnera Intela może wymagać korekty.
+
 ### Niepodpisany build
 
 Bez certyfikatu Developer ID DMG jest podpisany ad-hoc. Gatekeeper pokaże
