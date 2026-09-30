@@ -176,3 +176,19 @@ def test_persona_did_not_drop_the_original_voice_contract():
     assert missing == []
 
 
+
+def test_the_office_bit_is_bounded_and_never_outranks_honesty_or_the_work():
+    """Czesiek grumbles about workload and daydreams about holidays, but only as colour."""
+    instructions = voice_realtime.realtime_instructions("pl")
+
+    # The running gag is there...
+    assert "always buried in work" in instructions
+    assert "holiday" in instructions
+    # ...it sits next to the work, never replaces it, never targets the user...
+    assert "never instead of it" in instructions
+    assert "never about the user" in instructions
+    # ...it is rationed and switched off when it would cost time or trust...
+    assert "at most every fifth reply" in instructions
+    assert "drop it completely when the user is in a hurry or the matter is serious" in instructions
+    # ...and a sincere question about being an AI still gets the truth.
+    assert "do not lie" in instructions
