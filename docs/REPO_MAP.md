@@ -141,3 +141,8 @@ Instrukcja użytkownika: [własne umiejętności i role](SKILLS_AND_ASSISTANT.md
 ## News ticker fairness
 
 - `web_routers/news.py`: `cap_per_source` (no source over 8 of a page while others have items, backfilled on quiet days; also used by the briefing) and same-host feeds fetched one after another with a 1.5 s gap (issue #24).
+
+## ChatGPT subscription and model logos in setup
+
+- `apps/desktop/src/app/jarvis/chatgpt-connect.ts` (+ `chatgpt-quick-connect.tsx`) — "Sign in with ChatGPT": the engine's existing `openai-codex` device-code login (`/api/providers/oauth/openai-codex/*`) driven from the wizard's engine step and the rail's model card; `chatGptWorkModel` picks the newest GPT the subscription lists (`gpt-6` first). OpenRouter (DeepSeek) stays as the alternative.
+- Model cards with maker logos: wizard model step (`quickModels`), provider cards, rail model card (ChatGPT row). Logos: `components/model-brand-icon.tsx`.
