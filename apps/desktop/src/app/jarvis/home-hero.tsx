@@ -15,6 +15,7 @@ import { JarvisQuickAccess } from './quick-access'
 import { $jarvisUi } from './store'
 import type { JarvisVoiceState } from './types'
 import { useLiveAutostart } from './use-live-autostart'
+import { VoiceWave } from './voice-wave'
 
 type IconComponent = React.ComponentType<{ className?: string }>
 
@@ -90,19 +91,22 @@ export function JarvisHomeHero({
         )}
         data-testid="jarvis-home-hero"
       >
-        <div className="jarvis-home__caption flex flex-col items-center gap-2 rounded-2xl px-5 py-3">
-          <h1
-            className="text-2xl font-semibold leading-tight tracking-tight text-(--ui-text-primary) @2xl:text-3xl"
-            id="jarvis-home-title"
-          >
-            {name ? `${name}, ${greeting.charAt(0).toLowerCase()}${greeting.slice(1)}` : greeting}
-          </h1>
-          <p className="text-base text-(--ui-text-secondary) @2xl:text-lg">{copy.subtitle}</p>
-        </div>
+        {listening ? null : (
+          <div className="jarvis-home__caption flex flex-col items-center gap-2 rounded-2xl px-5 py-3">
+            <h1
+              className="text-2xl font-semibold leading-tight tracking-tight text-(--ui-text-primary) @2xl:text-3xl"
+              id="jarvis-home-title"
+            >
+              {name ? `${name}, ${greeting.charAt(0).toLowerCase()}${greeting.slice(1)}` : greeting}
+            </h1>
+            <p className="text-base text-(--ui-text-secondary) @2xl:text-lg">{copy.subtitle}</p>
+          </div>
+        )}
 
         <div className="jarvis-home__orb relative my-2 grid w-(--jarvis-hero-size) max-w-full shrink-0 place-items-center">
           <JarvisCore live taskPhase={state.task.phase} variant="hero" voice={orbVoice} />
         </div>
+        {listening ? <VoiceWave active={orbVoice === 'listening' || orbVoice === 'speaking'} /> : null}
 
         {/* One primary action, then three quiet suggestions. Briefing and the
             floating-orb switch live in the command palette and settings. */}

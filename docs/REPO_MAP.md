@@ -172,3 +172,8 @@ Instrukcja użytkownika: [własne umiejętności i role](SKILLS_AND_ASSISTANT.md
 - Defaults: male voices (`voice.realtime.voice: cedar`, Gemini `Puck`); `agent.reasoning_effort: low` (the rail's "Szybki" mode; the desktop falls back to it too).
 - `app/jarvis/live-voices.ts` — voices per provider (male first, character and feel); `app/settings/live-voice-picker.tsx` — the Voice settings picker with a play button per voice (replaces the two plain dropdowns; `voiceFieldVisible` hides them). Preview: `POST /api/voice/realtime/preview` (`voice_realtime.py`: OpenAI `audio/speech` or Gemini TTS, returned as a base64 WAV).
 - Home while live is only the orb; the dock (mic switch, voice mute, end) sits at the bottom (`dashboard.tsx`, `voice-controls.tsx`).
+
+## Voice screen: orb, mini wave, side controls
+
+- The spectrum ring round the orb is gone (`voice-aura.tsx` removed). `app/jarvis/voice-wave.tsx` (`VoiceWave`, `waveTargets`) draws a small wave under the orb from the real audio level; used by the home hero and the conversation header.
+- While live, home shows only orb, wave and dock; everything else sits at the sides of `HomeTopBar`: left-panel toggle + "Workspace" on the left; model pills, "more" and a right-panel toggle on the right. The task-model label no longer says "Hermes".

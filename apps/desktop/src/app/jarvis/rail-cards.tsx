@@ -146,9 +146,7 @@ export function JarvisModelCard({ connected, onSelectModel, providers, requestGa
       title={copy.title}
     >
       <LiveModelPicker connected={connected} />
-      <p className="mb-2 text-xs font-medium text-(--ui-text-secondary)">
-        {t.jarvisShell.home.model.modeLabel} · Hermes
-      </p>
+      <p className="mb-2 text-xs font-medium text-(--ui-text-secondary)">{t.jarvisShell.home.model.modeLabel}</p>
       <div className="jarvis-well mb-3 flex min-w-0 items-center gap-3 px-3 py-2.5">
         <ModelBrandIcon hints={[currentProvider]} model={currentModel} />
         <div className="min-w-0">

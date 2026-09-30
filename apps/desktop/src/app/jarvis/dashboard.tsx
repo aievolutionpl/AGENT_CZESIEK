@@ -16,10 +16,13 @@ import {
   Lightbulb,
   Maximize,
   MoreHorizontal,
-  Newspaper
+  Newspaper,
+  PanelLeftIcon,
+  PanelRightIcon
 } from '@/lib/icons'
 import { cn } from '@/lib/utils'
 import { requestBriefing } from '@/store/composer'
+import { $sidebarOpen, toggleSidebarOpen } from '@/store/layout'
 import { $petOverlayActive, popOutDesktopOrb } from '@/store/pet-overlay'
 
 import { JarvisCore } from './core'
@@ -34,6 +37,7 @@ import { $railHidden, setRailHidden } from './rail-layout'
 import { JarvisStatusStrip } from './status-strip'
 import { JarvisTipsLauncher } from './tips'
 import type { JarvisUiState } from './types'
+import { VoiceWave } from './voice-wave'
 
 type DashboardLayout = 'desktop' | 'mobile' | 'tablet'
 
@@ -139,6 +143,8 @@ function HomeTopBar({
   const focus = useStore($jarvisFocusMode)
   const [menuOpen, setMenuOpen] = useState(false)
   const pl = locale === 'pl'
+  const sidebarOpen = useStore($sidebarOpen)
+  const railHidden = useStore($railHidden)
   const orbActive = useStore($petOverlayActive)
   const orbMode = useStore($desktopOrbMode)
   const orbShown = orbActive && orbMode
@@ -177,6 +183,18 @@ function HomeTopBar({
   return (
     <div className="flex w-full items-center gap-3">
       <div className="flex min-w-0 items-center gap-2 text-sm font-medium text-(--ui-text-secondary)">
+        <Button
+          aria-label={pl ? 'Pokaż lub ukryj lewy panel' : 'Show or hide the left panel'}
+          aria-pressed={sidebarOpen}
+          className="jarvis-glass jarvis-glass-hover size-10 min-h-10 min-w-10 rounded-full"
+          onClick={toggleSidebarOpen}
+          size="icon"
+          title={pl ? 'Lewy panel' : 'Left panel'}
+          type="button"
+          variant="secondary"
+        >
+          <PanelLeftIcon />
+        </Button>
         <LayoutDashboard className="size-4 shrink-0 text-(--ui-accent)" />
         <span className="truncate">Workspace</span>
       </div>
@@ -214,6 +232,18 @@ function HomeTopBar({
             ))}
           </PopoverContent>
         </Popover>
+        <Button
+          aria-label={pl ? 'Pokaż lub ukryj prawy panel' : 'Show or hide the right panel'}
+          aria-pressed={!railHidden}
+          className="jarvis-glass jarvis-glass-hover size-10 min-h-10 min-w-10 rounded-full"
+          onClick={() => setRailHidden(!railHidden)}
+          size="icon"
+          title={pl ? 'Prawy panel' : 'Right panel'}
+          type="button"
+          variant="secondary"
+        >
+          <PanelRightIcon />
+        </Button>
       </div>
     </div>
   )
@@ -373,6 +403,7 @@ export function JarvisDashboard({
         {home ? null : (
           <JarvisCore compact={compactCore && !voiceActive} live taskPhase={state.task.phase} voice={state.voice} />
         )}
+        {home ? null : <VoiceWave active={voiceActive} />}
         {home ? (
           <>
             <HomeTopBar connected={connected} openTips={() => openTipsRef.current()} switcher={switcher} />

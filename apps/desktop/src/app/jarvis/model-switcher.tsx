@@ -14,13 +14,13 @@ import { hermesModelGroups, shortModelName } from './model-switcher-options'
 
 const COPY = {
   en: {
-    hermes: 'Hermes model (tasks)',
+    hermes: 'Task model',
     none: 'No model',
     voice: 'Voice model (conversation)',
     voiceNote: 'Applies to the next call.'
   },
   pl: {
-    hermes: 'Model Hermesa (zadania)',
+    hermes: 'Model zadań',
     none: 'Brak modelu',
     voice: 'Model głosowy (rozmowa)',
     voiceNote: 'Działa od następnej rozmowy.'
@@ -38,7 +38,7 @@ export interface ModelSwitcherProps {
   providers?: readonly ModelOptionProvider[]
 }
 
-/** The two models that matter, always in reach: Hermes (does the work) and the voice (talks to you). */
+/** The two models that matter, always in reach: the task model (does the work) and the voice (talks to you). */
 export function ModelSwitcher({ connected, onSelectModel, providers }: ModelSwitcherProps) {
   const { locale } = useI18n()
   const copy = locale === 'pl' ? COPY.pl : COPY.en
