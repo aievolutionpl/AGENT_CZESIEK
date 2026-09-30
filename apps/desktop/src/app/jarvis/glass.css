@@ -864,3 +864,19 @@ main[data-home='true'] .jarvis-tips-corner {
     transform: none;
   }
 }
+
+/* Supplied one-colour artwork (GPT knot, Nous portrait) drawn in the theme's text colour. */
+.model-brand-mask {
+  display: block;
+  background: #141a2e;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+}
+
+:root.dark .model-brand-mask {
+  background: #e8edff;
+}
