@@ -176,13 +176,18 @@ function liveVoiceFieldVisible(key: string, config: HermesConfigRecord): boolean
     return false
   }
 
+  // The voices have their own picker (with previews), so their plain dropdowns stay out of the list.
+  if (key === 'voice.realtime.voice' || key === 'voice.realtime.gemini.voice') {
+    return false
+  }
+
   const gemini = getNested(config, 'voice.realtime.provider') === 'gemini'
 
   if (key.startsWith('voice.realtime.gemini.')) {
     return gemini
   }
 
-  return key === 'voice.realtime.model' || key === 'voice.realtime.voice' ? !gemini : true
+  return key === 'voice.realtime.model' ? !gemini : true
 }
 
 export function voiceFieldVisible(key: string, config: HermesConfigRecord): boolean {

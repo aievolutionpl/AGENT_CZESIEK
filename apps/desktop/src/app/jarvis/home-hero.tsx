@@ -81,11 +81,11 @@ export function JarvisHomeHero({
   return (
     // Laid out by the chat column's width, not the window's: the sidebar, the
     // rail and a split pane all eat into it.
-    <div className="@container flex w-full justify-center">
+    <div className="@container flex h-full w-full justify-center">
       <section
         aria-labelledby="jarvis-home-title"
         className={cn(
-          'jarvis-home relative flex w-full max-w-4xl flex-col items-center gap-2 px-3 pt-3 pb-24 text-center [--jarvis-hero-size:min(468px,42vh,88cqw)] @2xl:[--jarvis-hero-size:min(550px,46vh,70cqw)]',
+          'jarvis-home relative flex h-full w-full max-w-4xl flex-col items-center justify-center gap-2 px-3 pt-3 pb-24 text-center [--jarvis-hero-size:min(468px,42vh,88cqw)] @2xl:[--jarvis-hero-size:min(550px,46vh,70cqw)]',
           className
         )}
         data-testid="jarvis-home-hero"
@@ -106,8 +106,9 @@ export function JarvisHomeHero({
 
         {/* One primary action, then three quiet suggestions. Briefing and the
             floating-orb switch live in the command palette and settings. */}
-        <div className="jarvis-home__cta flex flex-col items-center gap-3">
-          {listening ? null : (
+        {/* While the conversation is live the screen is just the orb and the dock below. */}
+        {listening ? null : (
+          <div className="jarvis-home__cta flex flex-col items-center gap-3">
             <button
               className={cn('jarvis-action jarvis-action--talk', FOCUS_RING)}
               disabled={!connected}
@@ -120,24 +121,24 @@ export function JarvisHomeHero({
               <Mic />
               {copy.talk}
             </button>
-          )}
 
-          <div aria-label={copy.actionsLabel} className="jarvis-home__actions" role="group">
-            {HOME_ACTIONS.map(({ icon: Icon, id }) => (
-              <button
-                className={cn('jarvis-action', FOCUS_RING)}
-                key={id}
-                onClick={() => requestComposerInsert(copy.actions[id].prompt, { mode: 'prefix', target: 'main' })}
-                type="button"
-              >
-                <Icon className="text-(--ui-accent)" />
-                {copy.actions[id].label}
-              </button>
-            ))}
+            <div aria-label={copy.actionsLabel} className="jarvis-home__actions" role="group">
+              {HOME_ACTIONS.map(({ icon: Icon, id }) => (
+                <button
+                  className={cn('jarvis-action', FOCUS_RING)}
+                  key={id}
+                  onClick={() => requestComposerInsert(copy.actions[id].prompt, { mode: 'prefix', target: 'main' })}
+                  type="button"
+                >
+                  <Icon className="text-(--ui-accent)" />
+                  {copy.actions[id].label}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
-        {railVisible ? null : (
+        {railVisible || listening ? null : (
           <div className="flex w-full max-w-sm flex-col gap-2 pt-2 text-left">
             <p className="text-xs font-medium uppercase tracking-[0.2em] text-(--ui-text-tertiary)">
               {copy.shortcutsLabel}

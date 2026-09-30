@@ -50,6 +50,8 @@ DEFAULT_CONFIG = {
         # Turn cap. null = unlimited (default; caps caused silent mid-task truncation). Positive int
         # caps; "none"/"unlimited"/"inf"/0/-1 also mean unlimited (resolve_turn_limit).
         "max_turns": None,
+        # Quick answers by default ("low"); the desktop's Szybki / Zrównoważony / Głęboki switch changes it.
+        "reasoning_effort": "low",
         # Optional one-time model-visible checkpoint warning before a finite turn cap is exhausted.
         # null = off; set a ratio strictly between 0 and 1 (for example, 0.75).
         "budget_warning_ratio": None,
@@ -1151,7 +1153,7 @@ DEFAULT_CONFIG = {
         "realtime": {
             "provider": "gemini",  # openai (OpenAI Realtime) | gemini (Gemini Live)
             "model": "gpt-realtime",  # or a pinned snapshot, e.g. gpt-realtime-2.1 / gpt-realtime-2.1-mini
-            "voice": "marin",
+            "voice": "cedar",  # male; any OpenAI Realtime voice
             "language": "pl",
             "base_url": "https://api.openai.com/v1",
             # Gemini Live: key GEMINI_API_KEY / GOOGLE_API_KEY (Google AI Studio).

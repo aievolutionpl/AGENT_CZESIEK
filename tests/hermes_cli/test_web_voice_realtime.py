@@ -205,3 +205,44 @@ def test_status_can_ask_about_a_provider_before_it_is_chosen(client, monkeypatch
 
 def test_unknown_provider_falls_back_to_openai():
     assert voice_realtime.realtime_settings({"voice": {"realtime": {"provider": "skype"}}})["provider"] == "openai"
+
+
+def test_new_installs_speak_with_a_male_voice_and_answer_fast():
+    from hermes_cli.config_defaults import DEFAULT_CONFIG
+
+    male = {"openai": {"cedar", "ash", "echo", "ballad", "verse"}, "gemini": {"Puck", "Charon", "Fenrir", "Orus"}}
+    realtime = DEFAULT_CONFIG["voice"]["realtime"]
+
+    assert realtime["voice"] in male["openai"] and realtime["gemini"]["voice"] in male["gemini"]
+    assert voice_realtime.DEFAULT_REALTIME_VOICE == realtime["voice"]
+    assert DEFAULT_CONFIG["agent"]["reasoning_effort"] == "low"
+
+
+def test_preview_returns_a_playable_wav_of_the_chosen_voice(client, monkeypatch):
+    import wave, io, base64
+
+    monkeypatch.setattr(voice_realtime, "load_config", lambda: {"voice": {"realtime": {}}})
+    monkeypatch.setattr(voice_realtime, "_resolve_key", lambda provider: "key")
+    seen = {}
+
+    async def fake_gemini(key, voice, text):
+        seen.update(key=key, voice=voice, text=text)
+        return voice_realtime.pcm16_to_wav(b"\x00\x01" * 2400)
+
+    monkeypatch.setattr(voice_realtime, "_preview_gemini", fake_gemini)
+    resp = client.post("/api/voice/realtime/preview", json={"provider": "gemini", "voice": "Charon"})
+
+    assert resp.status_code == 200 and resp.json()["mime"] == "audio/wav"
+    assert seen["voice"] == "Charon" and "Czesiek" in seen["text"]
+    with wave.open(io.BytesIO(base64.b64decode(resp.json()["audio"]))) as wav:
+        assert (wav.getnchannels(), wav.getsampwidth(), wav.getframerate()) == (1, 2, 24_000)
+
+
+def test_preview_refuses_what_it_should(client, monkeypatch):
+    monkeypatch.setattr(voice_realtime, "load_config", lambda: {})
+    monkeypatch.setattr(voice_realtime, "_resolve_key", lambda provider: "")
+
+    assert client.post("/api/voice/realtime/preview", json={"provider": "x", "voice": "Puck"}).status_code == 400
+    assert client.post("/api/voice/realtime/preview", json={"provider": "openai", "voice": "../etc"}).status_code == 400
+    no_key = client.post("/api/voice/realtime/preview", json={"provider": "openai", "voice": "cedar"})
+    assert no_key.status_code == 400 and "OPENAI_API_KEY" in no_key.json()["detail"]

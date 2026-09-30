@@ -90,7 +90,7 @@ export function JarvisModelCard({ connected, onSelectModel, providers, requestGa
   const [pending, setPending] = useState<null | string>(null)
   const queryClient = useQueryClient()
   const openRouter = useMemo(() => resolveOpenRouterPresets(providers), [providers])
-  const mode = workModeForEffort(currentEffort || defaultEffort || 'medium')
+  const mode = workModeForEffort(currentEffort || defaultEffort || 'low')
 
   const setMode = async (next: JarvisWorkModeId) => {
     const effort = JARVIS_WORK_MODES.find(item => item.id === next)?.effort

@@ -26,12 +26,17 @@ shared. Keys are resolved under the request's profile: the OpenAI audio key
 from __future__ import annotations
 
 import asyncio
+import base64
+import io
+import re
 import ssl
+import wave
 from datetime import datetime, timedelta, timezone
 from typing import Any, Callable, Dict, Optional
 
 import httpx
 from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
 
 from hermes_cli.web_deps import late
 
@@ -41,7 +46,7 @@ load_config = late("load_config", "hermes_cli.config")
 _config_profile_scope = late("_config_profile_scope", "hermes_cli.web_server_profiles")
 
 DEFAULT_REALTIME_MODEL = "gpt-realtime"
-DEFAULT_REALTIME_VOICE = "marin"
+DEFAULT_REALTIME_VOICE = "cedar"  # a male voice; Gemini's default, Puck, is male too
 DEFAULT_REALTIME_BASE_URL = "https://api.openai.com/v1"
 DEFAULT_TRANSCRIPTION_MODEL = "gpt-4o-mini-transcribe"
 _MINT_TIMEOUT_S = 15.0
@@ -484,3 +489,96 @@ async def realtime_session(profile: Optional[str] = None, screen: bool = False):
         "voice": settings["voice"],
         "calls_url": f"{settings['base_url']}/realtime/calls",
     }
+
+
+# -- Voice preview -------------------------------------------------------------------------------
+# A voice is chosen by ear: one short Polish sentence, spoken by the selected voice through the
+# provider's text-to-speech (the Live models themselves cannot be asked for a sample).
+
+PREVIEW_TEXT = {
+    "pl": "Cześć, jestem Czesiek. Jak ci się podoba mój głos?",
+    "en": "Hi, I'm Czesiek. How do you like my voice?",
+}
+OPENAI_TTS_MODEL = "gpt-4o-mini-tts"
+GEMINI_TTS_MODEL = "gemini-2.5-flash-preview-tts"
+_GEMINI_TTS_RATE = 24_000
+_VOICE_NAME = re.compile(r"^[A-Za-z][A-Za-z0-9_-]{1,31}$")
+
+
+class PreviewBody(BaseModel):
+    provider: str
+    voice: str
+    language: str = "pl"
+    profile: Optional[str] = None
+
+
+def pcm16_to_wav(pcm: bytes, rate: int = _GEMINI_TTS_RATE) -> bytes:
+    """Raw 16-bit mono PCM wrapped as a WAV file a browser can play."""
+    out = io.BytesIO()
+    with wave.open(out, "wb") as wav:
+        wav.setnchannels(1)
+        wav.setsampwidth(2)
+        wav.setframerate(rate)
+        wav.writeframes(pcm)
+    return out.getvalue()
+
+
+def _provider_error(name: str, response: httpx.Response) -> HTTPException:
+    detail = ""
+    try:
+        detail = str((response.json().get("error") or {}).get("message") or "")
+    except ValueError:
+        pass
+    return HTTPException(status_code=502, detail=f"{name} refused the preview ({response.status_code}){': ' + detail if detail else ''}")
+
+
+async def _preview_openai(base_url: str, api_key: str, voice: str, text: str) -> bytes:
+    async with httpx.AsyncClient(timeout=_MINT_TIMEOUT_S, verify=ssl.create_default_context()) as client:
+        response = await client.post(
+            f"{base_url}/audio/speech",
+            headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+            json={"model": OPENAI_TTS_MODEL, "voice": voice, "input": text, "response_format": "wav"},
+        )
+    if response.status_code >= 400:
+        raise _provider_error("OpenAI", response)
+    return response.content
+
+
+async def _preview_gemini(api_key: str, voice: str, text: str) -> bytes:
+    body = {
+        "contents": [{"parts": [{"text": text}]}],
+        "generationConfig": {
+            "responseModalities": ["AUDIO"],
+            "speechConfig": {"voiceConfig": {"prebuiltVoiceConfig": {"voiceName": voice}}},
+        },
+    }
+    async with httpx.AsyncClient(timeout=_MINT_TIMEOUT_S * 2, verify=ssl.create_default_context()) as client:
+        response = await client.post(
+            f"{GEMINI_API_BASE}/v1beta/models/{GEMINI_TTS_MODEL}:generateContent",
+            headers={"x-goog-api-key": api_key, "Content-Type": "application/json"},
+            json=body,
+        )
+    if response.status_code >= 400:
+        raise _provider_error("Gemini", response)
+    try:
+        part = response.json()["candidates"][0]["content"]["parts"][0]["inlineData"]
+        return pcm16_to_wav(base64.b64decode(part["data"]))
+    except (KeyError, IndexError, ValueError, TypeError):
+        raise HTTPException(status_code=502, detail="Gemini returned no audio for the preview.")
+
+
+@router.post("/api/voice/realtime/preview")
+async def realtime_preview(body: PreviewBody):
+    """``{mime, audio}``: a short WAV sample of ``voice`` for ``provider``, as base64."""
+    if body.provider not in PROVIDERS or not _VOICE_NAME.match(body.voice):
+        raise HTTPException(status_code=400, detail="Unknown provider or voice.")
+    settings, _ = await _scoped(body.profile, lambda: _settings_and_key(body.provider))
+    key = await _scoped(body.profile, lambda: _resolve_key(body.provider))
+    if not key:
+        raise HTTPException(status_code=400, detail=_MISSING_KEY[body.provider])
+    text = PREVIEW_TEXT.get(body.language, PREVIEW_TEXT["pl"])
+    if body.provider == "gemini":
+        wav = await _preview_gemini(key, body.voice, text)
+    else:
+        wav = await _preview_openai(settings["base_url"], key, body.voice, text)
+    return {"mime": "audio/wav", "audio": base64.b64encode(wav).decode("ascii")}

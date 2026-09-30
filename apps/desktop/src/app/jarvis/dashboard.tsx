@@ -393,13 +393,17 @@ export function JarvisDashboard({
           </div>
         )}
       </div>
-      {/* On home at rest the hero's talk button is the voice entry point; in a
-          conversation the controls sit centred under the orb. */}
-      {voiceControls && (!home || busy || state.voice !== 'idle') ? (
+      {/* In a conversation the controls sit under the orb; on home they sit at the bottom, out of the orb's way. */}
+      {voiceControls && !home ? (
         <div className="mx-auto w-full max-w-2xl shrink-0 px-4 pt-3 md:px-5">{voiceControls}</div>
       ) : null}
       {home ? null : <ResultHeader copy={copy} profileDisplayName={profileDisplayName} state={state} />}
       <div className="min-h-0 flex-1 overflow-hidden">{children}</div>
+      {voiceControls && home && (busy || state.voice !== 'idle') ? (
+        <div className="mx-auto w-full max-w-2xl shrink-0 px-4 pb-5 pt-2 md:px-5" data-testid="jarvis-voice-bottom">
+          {voiceControls}
+        </div>
+      ) : null}
     </main>
   )
 

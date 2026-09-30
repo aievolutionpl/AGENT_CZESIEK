@@ -71,3 +71,17 @@ export async function createRealtimeVoiceSession({
     throw error
   }
 }
+
+/** A short spoken sample of one voice: a base64 WAV the renderer can play. */
+export function previewRealtimeVoice(
+  provider: LiveVoiceProviderId,
+  voice: string,
+  language: string
+): Promise<{ audio: string; mime: string }> {
+  return hermesApi<{ audio: string; mime: string }>({
+    ...profileScoped(),
+    body: { language, provider, voice },
+    method: 'POST',
+    path: '/api/voice/realtime/preview'
+  })
+}

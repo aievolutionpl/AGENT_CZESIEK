@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { useI18n } from '@/i18n'
 import { triggerHaptic } from '@/lib/haptics'
-import { Loader2, Mic, Square, Volume2, VolumeX } from '@/lib/icons'
+import { Loader2, Mic, MicOff, Square, Volume2, VolumeX } from '@/lib/icons'
 import { cn } from '@/lib/utils'
 import { $speakerMuted, toggleSpeakerMuted } from '@/store/voice-output'
 
@@ -15,17 +15,23 @@ export interface VoiceControlsProps {
   error?: null | string
   listening: boolean
   loading?: boolean
+  /** True while the microphone is switched off inside a running conversation. */
+  muted?: boolean
   speaking: boolean
   startListening: VoiceAction
   stopListening: VoiceAction
   /** Cuts off speech that is playing right now (the classic, non-Live voice). */
   stopPlayback: VoiceAction
+  /** Omitted when the conversation's microphone cannot be switched off. */
+  toggleMute?: VoiceAction
 }
 
 const COPY = {
   en: {
     end: 'End conversation',
     label: 'Voice controls',
+    micOff: 'Turn the microphone off',
+    micOn: 'Turn the microphone on',
     mute: 'Mute the voice',
     start: 'Start talking',
     unmute: 'Unmute the voice'
@@ -33,6 +39,8 @@ const COPY = {
   pl: {
     end: 'Zakończ rozmowę',
     label: 'Sterowanie głosem',
+    micOff: 'Wyłącz mikrofon',
+    micOn: 'Włącz mikrofon',
     mute: 'Wycisz głos',
     start: 'Zacznij rozmowę',
     unmute: 'Włącz głos'
@@ -40,8 +48,8 @@ const COPY = {
 } as const
 
 /**
- * The conversation's voice dock, reduced to the two things a live conversation needs: silence the
- * assistant's voice, and end (or start) the conversation. The level of the voice is drawn by the ring
+ * The conversation's voice dock, reduced to what a live conversation needs: the microphone's switch
+ * (only while live), silence for the assistant's voice, and end (or start) the conversation. The level of the voice is drawn by the ring
  * round the orb (`voice-aura.tsx`), so nothing else belongs here.
  */
 export function VoiceControls({
@@ -49,10 +57,12 @@ export function VoiceControls({
   error = null,
   listening,
   loading = false,
+  muted = false,
   speaking,
   startListening,
   stopListening,
-  stopPlayback
+  stopPlayback,
+  toggleMute
 }: VoiceControlsProps) {
   const { locale } = useI18n()
   const copy = locale === 'pl' ? COPY.pl : COPY.en
@@ -95,6 +105,24 @@ export function VoiceControls({
       className="jarvis-voice-dock mx-auto flex w-fit max-w-full items-center gap-1"
       data-testid="jarvis-voice-controls"
     >
+      {toggleMute && listening ? (
+        <Button
+          aria-label={muted ? copy.micOn : copy.micOff}
+          aria-pressed={muted}
+          className={cn(iconButton, muted && 'jarvis-icon-btn--live')}
+          disabled={disabled}
+          onClick={() => {
+            triggerHaptic('tap')
+            void toggleMute()
+          }}
+          size="icon"
+          title={muted ? copy.micOn : copy.micOff}
+          type="button"
+        >
+          {muted ? <MicOff /> : <Mic />}
+        </Button>
+      ) : null}
+
       <Button
         aria-label={speakerLabel}
         aria-pressed={speakerMuted}

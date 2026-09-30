@@ -508,10 +508,12 @@ function JarvisDashboardFrame({
         <VoiceControls
           disabled={!connected}
           listening={listening}
+          muted={mainVoiceConversation?.muted === true}
           speaking={speaking}
           startListening={requestVoiceConversationStart}
           stopListening={() => mainVoiceConversation?.stop()}
           stopPlayback={stopVoicePlayback}
+          toggleMute={mainVoiceConversation ? () => mainVoiceConversation.toggleMute() : undefined}
         />
       }
     >
