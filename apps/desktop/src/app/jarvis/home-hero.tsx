@@ -2,7 +2,7 @@ import { useStore } from '@nanostores/react'
 
 import { useI18n } from '@/i18n'
 import { triggerHaptic } from '@/lib/haptics'
-import { LayoutDashboard, Mic, Search, Sparkles, Square } from '@/lib/icons'
+import { LayoutDashboard, Mic, Search, Sparkles } from '@/lib/icons'
 import { cn } from '@/lib/utils'
 import { $character } from '@/store/character'
 
@@ -15,6 +15,7 @@ import { JarvisQuickAccess } from './quick-access'
 import { $jarvisUi } from './store'
 import type { JarvisVoiceState } from './types'
 import { useLiveAutostart } from './use-live-autostart'
+import { VoiceWave } from './voice-wave'
 
 type IconComponent = React.ComponentType<{ className?: string }>
 
@@ -38,8 +39,6 @@ export interface JarvisHomeHeroProps {
   connected: boolean
   listening: boolean
   onStartListening: () => void
-  /** Ends the live conversation; the hero's chip becomes this action while it runs. */
-  onStopListening?: () => void
   profileDisplayName?: string
 }
 
@@ -56,7 +55,6 @@ export function JarvisHomeHero({
   connected,
   listening,
   onStartListening,
-  onStopListening,
   profileDisplayName
 }: JarvisHomeHeroProps) {
   useLiveAutostart(connected)
@@ -84,47 +82,37 @@ export function JarvisHomeHero({
   return (
     // Laid out by the chat column's width, not the window's: the sidebar, the
     // rail and a split pane all eat into it.
-    <div className="@container flex w-full justify-center">
+    <div className="@container flex h-full w-full justify-center">
       <section
         aria-labelledby="jarvis-home-title"
         className={cn(
-          'jarvis-home relative flex w-full max-w-4xl flex-col items-center gap-2 px-3 pt-3 pb-24 text-center [--jarvis-hero-size:min(468px,42vh,88cqw)] @2xl:[--jarvis-hero-size:min(550px,46vh,70cqw)]',
+          'jarvis-home relative flex h-full w-full max-w-4xl flex-col items-center justify-center gap-2 px-3 pt-3 pb-24 text-center [--jarvis-hero-size:min(468px,42vh,88cqw)] @2xl:[--jarvis-hero-size:min(550px,46vh,70cqw)]',
           className
         )}
         data-testid="jarvis-home-hero"
       >
-        <div className="jarvis-home__caption flex flex-col items-center gap-2 rounded-2xl px-5 py-3">
-          <h1
-            className="text-2xl font-semibold leading-tight tracking-tight text-(--ui-text-primary) @2xl:text-3xl"
-            id="jarvis-home-title"
-          >
-            {name ? `${name}, ${greeting.charAt(0).toLowerCase()}${greeting.slice(1)}` : greeting}
-          </h1>
-          <p className="text-base text-(--ui-text-secondary) @2xl:text-lg">{copy.subtitle}</p>
-        </div>
+        {listening ? null : (
+          <div className="jarvis-home__caption flex flex-col items-center gap-2 rounded-2xl px-5 py-3">
+            <h1
+              className="text-2xl font-semibold leading-tight tracking-tight text-(--ui-text-primary) @2xl:text-3xl"
+              id="jarvis-home-title"
+            >
+              {name ? `${name}, ${greeting.charAt(0).toLowerCase()}${greeting.slice(1)}` : greeting}
+            </h1>
+            <p className="text-base text-(--ui-text-secondary) @2xl:text-lg">{copy.subtitle}</p>
+          </div>
+        )}
 
         <div className="jarvis-home__orb relative my-2 grid w-(--jarvis-hero-size) max-w-full shrink-0 place-items-center">
           <JarvisCore live taskPhase={state.task.phase} variant="hero" voice={orbVoice} />
         </div>
+        {listening ? <VoiceWave active={orbVoice === 'listening' || orbVoice === 'speaking'} /> : null}
 
         {/* One primary action, then three quiet suggestions. Briefing and the
             floating-orb switch live in the command palette and settings. */}
-        <div className="jarvis-home__cta flex flex-col items-center gap-3">
-          {listening ? (
-            // The conversation is live: this is the end-conversation action, so
-            // the chip stops being a microphone — the voice dock below already
-            // owns that control, and two microphones on one screen is the
-            // duplicate this screen exists without.
-            <button aria-pressed className={cn('jarvis-action', FOCUS_RING)} onClick={() => {
-                triggerHaptic('close')
-                onStopListening?.()
-              }}
-              type="button"
-            >
-              <Square />
-              {copy.stopTalking}
-            </button>
-          ) : (
+        {/* While the conversation is live the screen is just the orb and the dock below. */}
+        {listening ? null : (
+          <div className="jarvis-home__cta flex flex-col items-center gap-3">
             <button
               className={cn('jarvis-action jarvis-action--talk', FOCUS_RING)}
               disabled={!connected}
@@ -137,24 +125,24 @@ export function JarvisHomeHero({
               <Mic />
               {copy.talk}
             </button>
-          )}
 
-          <div aria-label={copy.actionsLabel} className="jarvis-home__actions" role="group">
-            {HOME_ACTIONS.map(({ icon: Icon, id }) => (
-              <button
-                className={cn('jarvis-action', FOCUS_RING)}
-                key={id}
-                onClick={() => requestComposerInsert(copy.actions[id].prompt, { mode: 'prefix', target: 'main' })}
-                type="button"
-              >
-                <Icon className="text-(--ui-accent)" />
-                {copy.actions[id].label}
-              </button>
-            ))}
+            <div aria-label={copy.actionsLabel} className="jarvis-home__actions" role="group">
+              {HOME_ACTIONS.map(({ icon: Icon, id }) => (
+                <button
+                  className={cn('jarvis-action', FOCUS_RING)}
+                  key={id}
+                  onClick={() => requestComposerInsert(copy.actions[id].prompt, { mode: 'prefix', target: 'main' })}
+                  type="button"
+                >
+                  <Icon className="text-(--ui-accent)" />
+                  {copy.actions[id].label}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
-        {railVisible ? null : (
+        {railVisible || listening ? null : (
           <div className="flex w-full max-w-sm flex-col gap-2 pt-2 text-left">
             <p className="text-xs font-medium uppercase tracking-[0.2em] text-(--ui-text-tertiary)">
               {copy.shortcutsLabel}

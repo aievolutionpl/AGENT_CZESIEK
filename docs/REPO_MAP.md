@@ -146,3 +146,34 @@ Instrukcja użytkownika: [własne umiejętności i role](SKILLS_AND_ASSISTANT.md
 
 - `apps/desktop/src/app/jarvis/chatgpt-connect.ts` (+ `chatgpt-quick-connect.tsx`) — "Sign in with ChatGPT": the engine's existing `openai-codex` device-code login (`/api/providers/oauth/openai-codex/*`) driven from the wizard's engine step and the rail's model card; `chatGptWorkModel` picks the newest GPT the subscription lists (`gpt-6` first). OpenRouter (DeepSeek) stays as the alternative.
 - Model cards with maker logos: wizard model step (`quickModels`), provider cards, rail model card (ChatGPT row). Logos: `components/model-brand-icon.tsx`.
+
+## Voice: work board and eyes (research: `docs/product/VOICE_RESEARCH.md`)
+
+- `hermes_cli/kanban_voice_desk.py` — the kanban board as the voice agent's ledger: `dispatch` (job for a profile, idempotent for 2 min, tagged `created_by: voice`), `digest` / `render_digest` (what needs the user, what runs, what finished), `report`, `steer`, `cancel`, `nudge` (one dispatcher tick on demand: the embedded dispatcher only lives in the gateway), `dispatcher_state`. `verdict_for` is the one place that decides where a task really stands (`done` only with a report, else `done_unreported`; `stalled` after 15 min of silence). Worker text is fenced with `agent/external_content.fence`.
+- `hermes_cli/web_routers/voice_desk.py` — `/api/voice/desk*` over the above, plus `/api/voice/vision` (`agent/screen_vision.py`: a screenshot in, a fenced description out). Every answer carries `text`, the wording the voice model gets.
+- `hermes_cli/web_routers/voice_realtime.py` — the tool declarations (`voice_tools(screen)`: `ask_jarvis`, `delegate_to_hermes`, `assign_work`, `work_status`, `steer_work`, `+look_at_screen` only for `POST /session?screen=true` and `voice.vision.enabled`) and the instruction blocks `_DESK_INSTRUCTIONS` / `_VISION_INSTRUCTIONS`.
+- `apps/desktop/src/lib/live-voice/tools.ts` — the one runner both providers call (`runVoiceTool`); `desk-tools.ts` (`createDeskTools`: board tools + the look, with the on-screen notice before the capture); `desk-watcher.ts` (`diffDesk` / `startDeskWatcher`: polls the board every 8 s and pushes reports for this conversation's tasks, first read is baseline only); `src/api/voice-desk.ts`; `src/lib/screen-capture.ts`. Hook wiring: `app/chat/composer/hooks/use-realtime-conversation.ts`.
+- `apps/desktop/electron/screen-capture.ts` — `hermes:captureScreen` (primary display, ≤1600 px JPEG, macOS permission reported as `denied`), exposed as `hermesDesktop.captureScreen`.
+
+## Dashboard right rail: board, fold, stats, news
+
+- `app/jarvis/rail-layout.ts` — `$railLayout` (order + hidden cards, persisted `czesiek:rail-layout:v1`), `normalizeRailLayout` (a new card slots in after its default predecessor), `applyVisibleOrder`, `moveRailCard`; `$railHidden` remembers the whole rail folded away.
+- `rail-board.tsx` — `RailBoard` (dnd-kit sortable over `chat/sidebar/reorderable-list.tsx`; drag from a card header, Space/arrows on the grip; hidden cards are not mounted) and `RailCustomizeMenu` (show/hide, move up/down, reset). `rail-card.tsx` — `RailCard` (animated fold, content unmounted after the fold; grip via `RailSlotContext`); `rail-copy.ts` — pl/en words and screen-reader announcements.
+- `insights-stats.ts` + `insights-card.tsx` — stats card with metric (sessions/tokens/cost) and range (7/14/30 d) choice persisted, change vs the equal window before, scrubbable chart, top model/tool/skill. `news-read.ts` + `rail-news-card.tsx` — read/unread tracking, mark-all, "Brief me".
+
+## Voice screen: simple controls and the model switcher
+
+- `app/jarvis/voice-controls.tsx` — the dock is two buttons: mute the assistant's voice (`store/voice-output.ts` `$speakerMuted`; Live sessions mute their own audio through `setSpeakerMuted`, reset when the conversation ends) and start/end the conversation. Home shows no status pills; the hero no longer repeats the end-conversation chip.
+- `app/jarvis/dashboard.tsx` `HomeTopBar` — "Workspace" on the left; the `switcher` slot and one "more" menu (daily report, tips, focus mode, desktop orb) on the right.
+- `app/jarvis/model-switcher.tsx` (+ `model-switcher-options.ts`, `live-model-choice.ts`) — two pills with maker icons: the Hermes model (flagship models of each usable provider, through `onSelectModel`) and the Live voice model (`useLiveVoiceModel`, same config write as the rail picker).
+
+## Voice: voices, preview, bottom dock, fast default
+
+- Defaults: male voices (`voice.realtime.voice: cedar`, Gemini `Puck`); `agent.reasoning_effort: low` (the rail's "Szybki" mode; the desktop falls back to it too).
+- `app/jarvis/live-voices.ts` — voices per provider (male first, character and feel); `app/settings/live-voice-picker.tsx` — the Voice settings picker with a play button per voice (replaces the two plain dropdowns; `voiceFieldVisible` hides them). Preview: `POST /api/voice/realtime/preview` (`voice_realtime.py`: OpenAI `audio/speech` or Gemini TTS, returned as a base64 WAV).
+- Home while live is only the orb; the dock (mic switch, voice mute, end) sits at the bottom (`dashboard.tsx`, `voice-controls.tsx`).
+
+## Voice screen: orb, mini wave, side controls
+
+- The spectrum ring round the orb is gone (`voice-aura.tsx` removed). `app/jarvis/voice-wave.tsx` (`VoiceWave`, `waveTargets`) draws a small wave under the orb from the real audio level; used by the home hero and the conversation header.
+- While live, home shows only orb, wave and dock; everything else sits at the sides of `HomeTopBar`: left-panel toggle + "Workspace" on the left; model pills, "more" and a right-panel toggle on the right. The task-model label no longer says "Hermes".

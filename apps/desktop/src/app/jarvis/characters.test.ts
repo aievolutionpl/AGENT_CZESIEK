@@ -197,3 +197,24 @@ describe('briefing wiring', () => {
     expect($characterId.get()).toBe(FALLBACK_CHARACTER_ID)
   })
 })
+
+describe("Czesiek's office persona", () => {
+  it('keeps the bit on a leash: honest when asked, silent in earnest, never aimed at third parties', () => {
+    const { soul } = czesiek()
+
+    // A sincere "are you an AI?" gets the truth.
+    expect(soul).toMatch(/Pytasz serio, czy jestem AI — mówię prawdę/)
+    // The bit never reaches people the user writes to.
+    expect(soul).toMatch(/Wobec osób trzecich nie udaję człowieka/)
+    // Serious matters and quiet mode switch the jokes, the grumbling and the holidays off.
+    expect(soul).toMatch(/Sprawy poważne = zero bajki/)
+    expect(soul).toMatch(/zero żartów, zero narzekania i wakacji/)
+  })
+
+  it('greets like someone at the office at every time of day', () => {
+    const greetings = Object.values(czesiek().greetings ?? {})
+
+    expect(greetings).toHaveLength(4)
+    expect(new Set(greetings).size).toBe(4)
+  })
+})

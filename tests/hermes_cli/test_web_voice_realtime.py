@@ -92,7 +92,9 @@ def test_session_returns_only_the_ephemeral_secret(client, monkeypatch):
     assert sent["api_key"] == "sk-live-never-leaves"
     assert sent["session"]["model"] == body["model"] == "gpt-realtime-2.1-mini"
     assert sent["session"]["audio"]["output"]["voice"] == body["voice"] == "cedar"
-    assert [t["name"] for t in sent["session"]["tools"]] == ["ask_jarvis", "delegate_to_hermes"]
+    names = [t["name"] for t in sent["session"]["tools"]]
+    assert {"ask_jarvis", "delegate_to_hermes", "assign_work", "work_status", "steer_work"} <= set(names)
+    assert "look_at_screen" not in names  # the client did not say it can capture a screen
     assert body["calls_url"].startswith(sent["base_url"])
 
 
@@ -174,7 +176,7 @@ def test_gemini_session_hands_out_a_one_use_token_with_the_setup_locked_in(clien
     assert locked == body["setup"]
     assert locked["model"] == f"models/{voice_realtime.DEFAULT_GEMINI_MODEL}" and body["model"] == voice_realtime.DEFAULT_GEMINI_MODEL
     assert locked["generationConfig"]["speechConfig"]["voiceConfig"]["prebuiltVoiceConfig"]["voiceName"] == "Kore"
-    assert [f["name"] for f in locked["tools"][0]["functionDeclarations"]] == ["ask_jarvis", "delegate_to_hermes"]
+    assert [f["name"] for f in locked["tools"][0]["functionDeclarations"]][:2] == ["ask_jarvis", "delegate_to_hermes"]
     assert minted["body"]["uses"] == 1
     for field in ("model", "systemInstruction", "tools", "generationConfig"):
         assert field in minted["body"]["fieldMask"].split(",")
@@ -203,3 +205,44 @@ def test_status_can_ask_about_a_provider_before_it_is_chosen(client, monkeypatch
 
 def test_unknown_provider_falls_back_to_openai():
     assert voice_realtime.realtime_settings({"voice": {"realtime": {"provider": "skype"}}})["provider"] == "openai"
+
+
+def test_new_installs_speak_with_a_male_voice_and_answer_fast():
+    from hermes_cli.config_defaults import DEFAULT_CONFIG
+
+    male = {"openai": {"cedar", "ash", "echo", "ballad", "verse"}, "gemini": {"Puck", "Charon", "Fenrir", "Orus"}}
+    realtime = DEFAULT_CONFIG["voice"]["realtime"]
+
+    assert realtime["voice"] in male["openai"] and realtime["gemini"]["voice"] in male["gemini"]
+    assert voice_realtime.DEFAULT_REALTIME_VOICE == realtime["voice"]
+    assert DEFAULT_CONFIG["agent"]["reasoning_effort"] == "low"
+
+
+def test_preview_returns_a_playable_wav_of_the_chosen_voice(client, monkeypatch):
+    import wave, io, base64
+
+    monkeypatch.setattr(voice_realtime, "load_config", lambda: {"voice": {"realtime": {}}})
+    monkeypatch.setattr(voice_realtime, "_resolve_key", lambda provider: "key")
+    seen = {}
+
+    async def fake_gemini(key, voice, text):
+        seen.update(key=key, voice=voice, text=text)
+        return voice_realtime.pcm16_to_wav(b"\x00\x01" * 2400)
+
+    monkeypatch.setattr(voice_realtime, "_preview_gemini", fake_gemini)
+    resp = client.post("/api/voice/realtime/preview", json={"provider": "gemini", "voice": "Charon"})
+
+    assert resp.status_code == 200 and resp.json()["mime"] == "audio/wav"
+    assert seen["voice"] == "Charon" and "Czesiek" in seen["text"]
+    with wave.open(io.BytesIO(base64.b64decode(resp.json()["audio"]))) as wav:
+        assert (wav.getnchannels(), wav.getsampwidth(), wav.getframerate()) == (1, 2, 24_000)
+
+
+def test_preview_refuses_what_it_should(client, monkeypatch):
+    monkeypatch.setattr(voice_realtime, "load_config", lambda: {})
+    monkeypatch.setattr(voice_realtime, "_resolve_key", lambda provider: "")
+
+    assert client.post("/api/voice/realtime/preview", json={"provider": "x", "voice": "Puck"}).status_code == 400
+    assert client.post("/api/voice/realtime/preview", json={"provider": "openai", "voice": "../etc"}).status_code == 400
+    no_key = client.post("/api/voice/realtime/preview", json={"provider": "openai", "voice": "cedar"})
+    assert no_key.status_code == 400 and "OPENAI_API_KEY" in no_key.json()["detail"]

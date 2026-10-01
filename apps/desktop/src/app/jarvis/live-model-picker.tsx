@@ -1,76 +1,23 @@
-import { useStore } from '@nanostores/react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
 
-import { getHermesConfigRecord, saveHermesConfigRecord } from '@/api/config'
 import { ModelBrandIcon } from '@/components/model-brand-icon'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { useI18n } from '@/i18n'
 import { Check, ChevronDown } from '@/lib/icons'
 import { cn } from '@/lib/utils'
-import { $activeConnectionId } from '@/store/connections'
-import { notifyError } from '@/store/notifications'
-import { $activeGatewayProfile } from '@/store/profile'
-import { $liveVoiceChoice, applyVoiceEngineFromConfig } from '@/store/voice-prefs'
 
 import { SETTINGS_ROUTE } from '../routes'
-import { setNested } from '../settings/helpers'
 
-const MODELS = [
-  { provider: 'gemini', model: 'gemini-3.8-live', label: 'Gemini 3.8 Live' },
-  { provider: 'gemini', model: 'gemini-3.1-flash-live-preview', label: 'Gemini 3.1 Flash Live' },
-  { provider: 'openai', model: 'gpt-realtime', label: 'OpenAI Realtime' }
-] as const
+import { LIVE_VOICE_MODELS, liveModelValue, useLiveVoiceModel } from './live-model-choice'
 
 export function LiveModelPicker({ connected }: { connected: boolean }) {
   const { locale } = useI18n()
-  const live = useStore($liveVoiceChoice)
-  const connectionId = useStore($activeConnectionId)
-  const profile = useStore($activeGatewayProfile)
-  const [saving, setSaving] = useState(false)
+  const { choose, label: currentLabel, live, saving } = useLiveVoiceModel()
   const [open, setOpen] = useState(false)
   const navigate = useNavigate()
-  const value = `${live.provider}:${live.model}`
+  const value = liveModelValue(live)
   const pl = locale === 'pl'
-
-  const choose = async (selection: string) => {
-    const model = MODELS.find(item => `${item.provider}:${item.model}` === selection)
-
-    if (!model) {
-      return
-    }
-
-    setSaving(true)
-
-    const scope = { connectionId, profile }
-
-    try {
-      let config: Record<string, unknown> = { ...(await getHermesConfigRecord(scope)) }
-      config = setNested(config, 'voice.engine', 'realtime')
-      config = setNested(config, 'voice.realtime.provider', model.provider)
-      config = setNested(
-        config,
-        model.provider === 'gemini' ? 'voice.realtime.gemini.model' : 'voice.realtime.model',
-        model.model
-      )
-      const result = await saveHermesConfigRecord(config, scope)
-
-      if (!result.ok) {
-        throw new Error('Configuration was not saved')
-      }
-
-      if ($activeGatewayProfile.get() === profile && $activeConnectionId.get() === connectionId) {
-        applyVoiceEngineFromConfig(config)
-      }
-    } catch (error) {
-      notifyError(error, pl ? 'Nie zapisano modelu rozmowy' : 'Could not save voice model')
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  const current = MODELS.find(item => `${item.provider}:${item.model}` === value)
-  const currentLabel = current?.label ?? live.model
 
   return (
     <div className="mb-4 space-y-2">
@@ -87,12 +34,14 @@ export function LiveModelPicker({ connected }: { connected: boolean }) {
           >
             <ModelBrandIcon hints={[live.provider]} model={live.model} />
             <span className="min-w-0 flex-1 truncate text-sm font-medium text-(--ui-text-primary)">{currentLabel}</span>
-            <ChevronDown className={cn('size-4 shrink-0 text-(--ui-text-tertiary) transition-transform', open && 'rotate-180')} />
+            <ChevronDown
+              className={cn('size-4 shrink-0 text-(--ui-text-tertiary) transition-transform', open && 'rotate-180')}
+            />
           </button>
         </PopoverTrigger>
         <PopoverContent align="start" className="jarvis-menu grid w-(--radix-popover-trigger-width) gap-1 p-1.5">
-          {MODELS.map(item => {
-            const selected = `${item.provider}:${item.model}` === value
+          {LIVE_VOICE_MODELS.map(item => {
+            const selected = liveModelValue(item) === value
 
             return (
               <button
@@ -104,7 +53,7 @@ export function LiveModelPicker({ connected }: { connected: boolean }) {
                 key={item.model}
                 onClick={() => {
                   setOpen(false)
-                  void choose(`${item.provider}:${item.model}`)
+                  void choose(liveModelValue(item))
                 }}
                 type="button"
               >

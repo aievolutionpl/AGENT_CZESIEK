@@ -43,6 +43,7 @@ import {
   setNested,
   voiceFieldVisible
 } from './helpers'
+import { LiveVoicePicker } from './live-voice-picker'
 import { MemoryConnect } from './memory/connect'
 import { ProviderConfigPanel } from './memory/provider-config-panel'
 import { ModelSettings, ModelSettingsSkeleton } from './model-settings'
@@ -166,6 +167,7 @@ function ConfigSettingsInner({
       if (refresh !== profileRefreshRef.current || !result.data) {
         return
       }
+
       configSeeded.current = true
       configBaselineRef.current = result.data
       savedDiscoverySignatureRef.current = repoDiscoveryPolicySignature(repoDiscoveryPolicyFromConfig(result.data))
@@ -430,6 +432,9 @@ function ConfigSettingsInner({
           where image-attachment behavior already lives, so this sits above the
           schema fields for that section. */}
       {activeSectionId === 'chat' ? <AttachmentSizeSetting /> : null}
+      {activeSectionId === 'voice' && getNested(config, 'voice.engine') === 'realtime' ? (
+        <LiveVoicePicker config={config} onChange={(key, value) => updateConfig(setNested(config, key, value))} />
+      ) : null}
       {visibleFields.length === 0 && activeSectionId !== 'chat' ? (
         <EmptyState description={c.emptyDesc} title={c.emptyTitle} />
       ) : visibleFields.length === 0 ? null : (

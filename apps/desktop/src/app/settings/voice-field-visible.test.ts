@@ -47,16 +47,18 @@ describe('voiceFieldVisible', () => {
   })
 
   it('shows Live voice fields only with the Live engine on, and only for the chosen provider', () => {
-    const live = (provider?: string) =>
-      cfg({ voice: { engine: 'realtime', realtime: { provider, gemini: {} } } })
+    const live = (provider?: string) => cfg({ voice: { engine: 'realtime', realtime: { provider, gemini: {} } } })
 
     expect(voiceFieldVisible('voice.realtime.provider', cfg({ voice: { engine: 'classic' } }))).toBe(false)
     expect(voiceFieldVisible('voice.realtime.provider', live('gemini'))).toBe(true)
-    expect(voiceFieldVisible('voice.realtime.gemini.voice', live('gemini'))).toBe(true)
-    expect(voiceFieldVisible('voice.realtime.voice', live('gemini'))).toBe(false)
+    expect(voiceFieldVisible('voice.realtime.gemini.model', live('gemini'))).toBe(true)
+    expect(voiceFieldVisible('voice.realtime.model', live('gemini'))).toBe(false)
     // OpenAI stays the provider when none is set.
-    expect(voiceFieldVisible('voice.realtime.voice', live())).toBe(true)
-    expect(voiceFieldVisible('voice.realtime.gemini.voice', live())).toBe(false)
+    expect(voiceFieldVisible('voice.realtime.model', live())).toBe(true)
+    expect(voiceFieldVisible('voice.realtime.gemini.model', live())).toBe(false)
+    // Voices have their own picker with previews, so neither plain dropdown is listed.
+    expect(voiceFieldVisible('voice.realtime.voice', live())).toBe(false)
+    expect(voiceFieldVisible('voice.realtime.gemini.voice', live('gemini'))).toBe(false)
     expect(voiceFieldVisible('voice.engine', cfg())).toBe(true)
   })
 })

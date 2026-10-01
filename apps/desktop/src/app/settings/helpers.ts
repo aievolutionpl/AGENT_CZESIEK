@@ -164,11 +164,20 @@ export function clearsEnabledToolsets(prev: HermesConfigRecord, next: HermesConf
 // Live voice fields: only with the Live engine on, and only the chosen
 // provider's own (OpenAI's model/voice, or Gemini's under `gemini.`).
 function liveVoiceFieldVisible(key: string, config: HermesConfigRecord): boolean | null {
+  if (key.startsWith('voice.vision.')) {
+    return getNested(config, 'voice.engine') === 'realtime'
+  }
+
   if (!key.startsWith('voice.realtime.')) {
     return null
   }
 
   if (getNested(config, 'voice.engine') !== 'realtime') {
+    return false
+  }
+
+  // The voices have their own picker (with previews), so their plain dropdowns stay out of the list.
+  if (key === 'voice.realtime.voice' || key === 'voice.realtime.gemini.voice') {
     return false
   }
 
@@ -178,7 +187,7 @@ function liveVoiceFieldVisible(key: string, config: HermesConfigRecord): boolean
     return gemini
   }
 
-  return key === 'voice.realtime.model' || key === 'voice.realtime.voice' ? !gemini : true
+  return key === 'voice.realtime.model' ? !gemini : true
 }
 
 export function voiceFieldVisible(key: string, config: HermesConfigRecord): boolean {

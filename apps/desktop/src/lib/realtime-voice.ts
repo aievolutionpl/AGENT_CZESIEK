@@ -14,6 +14,8 @@
 
 import type { OpenAiRealtimeVoiceSessionResponse } from '@/api/voice-realtime'
 
+import { isVoiceTool, parseToolArguments, runVoiceTool, type VoiceToolHandlers } from './live-voice/tools'
+
 export type RealtimeVoiceStatus = 'connecting' | 'listening' | 'thinking' | 'speaking'
 
 /**
@@ -31,12 +33,8 @@ export function canInjectReport(status: RealtimeVoiceStatus, blockedSince: numbe
   return status === 'listening' || (blockedSince !== 0 && now - blockedSince >= NOTIFY_GRACE_MS)
 }
 
-export interface RealtimeVoiceHandlers {
+export interface RealtimeVoiceHandlers extends VoiceToolHandlers {
   onStatus: (status: RealtimeVoiceStatus) => void
-  /** Run a short request through the agent and wait for its text answer. */
-  onAsk: (request: string) => Promise<string>
-  /** Queue substantial work and return an acknowledgement without waiting for completion. */
-  onDelegate: (request: string) => Promise<string>
   onError: (message: string) => void
   onTranscript?: (role: 'assistant' | 'user', text: string) => void
   /** Measured level, 0…1: the mic while listening, the voice while speaking. */
@@ -51,16 +49,6 @@ type RealtimeServerEvent = Record<string, unknown> & { type?: unknown }
 
 function text(value: unknown): string {
   return typeof value === 'string' ? value : ''
-}
-
-function askRequest(rawArguments: unknown): string {
-  try {
-    const parsed = JSON.parse(text(rawArguments) || '{}') as { request?: unknown }
-
-    return text(parsed.request).trim()
-  } catch {
-    return ''
-  }
 }
 
 /**
@@ -80,24 +68,13 @@ export function createRealtimeEventHandler(sink: RealtimeEventSink, handlers: Re
 
     answered.add(callId)
 
-    let output: string
+    const name = text(event.name)
 
-    if (text(event.name) !== 'ask_jarvis' && text(event.name) !== 'delegate_to_hermes') {
-      output = `Unknown tool: ${text(event.name) || '(none)'}`
-    } else {
-      const request = askRequest(event.arguments)
-      const delegate = text(event.name) === 'delegate_to_hermes'
-
+    if (isVoiceTool(name)) {
       handlers.onStatus('thinking')
-
-      try {
-        output = request
-          ? (await (delegate ? handlers.onDelegate(request) : handlers.onAsk(request))).trim() || 'Done.'
-          : 'The request was empty.'
-      } catch (error) {
-        output = `Jarvis could not finish that: ${error instanceof Error ? error.message : String(error)}`
-      }
     }
+
+    const output = await runVoiceTool(name, parseToolArguments(event.arguments), handlers)
 
     sink.send({ item: { call_id: callId, output, type: 'function_call_output' }, type: 'conversation.item.create' })
     sink.send({ type: 'response.create' })
@@ -126,6 +103,8 @@ export function createRealtimeEventHandler(sink: RealtimeEventSink, handlers: Re
 export interface RealtimeVoiceSession {
   notify?: (text: string) => boolean
   setMuted: (muted: boolean) => void
+  /** Silence or restore what the assistant says aloud; the conversation itself carries on. */
+  setSpeakerMuted?: (muted: boolean) => void
   stop: () => void
 }
 
@@ -320,6 +299,9 @@ export async function startRealtimeVoice(
       return true
     },
     setMuted: muted => mic.getAudioTracks().forEach(track => (track.enabled = !muted)),
+    setSpeakerMuted: muted => {
+      audio.muted = muted
+    },
     stop
   }
 }

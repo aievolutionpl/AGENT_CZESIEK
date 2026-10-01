@@ -1,5 +1,5 @@
 import type { useSensors } from '@dnd-kit/core'
-import { closestCenter, DndContext, type DragEndEvent } from '@dnd-kit/core'
+import { closestCenter, DndContext, type DndContextProps, type DragEndEvent } from '@dnd-kit/core'
 import { arrayMove, SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import type * as React from 'react'
 
@@ -16,11 +16,14 @@ const reorderAutoScroll = { threshold: { x: 0, y: 0.2 } }
 // the new id order and the caller persists it. This is the single generic primitive
 // behind every reorderable surface in the sidebar.
 export function ReorderableList({
+  accessibility,
   children,
   ids,
   onReorder,
   sensors
 }: {
+  /** Screen-reader instructions and announcements; dnd-kit's own are English. */
+  accessibility?: DndContextProps['accessibility']
   children: React.ReactNode
   ids: string[]
   onReorder: (ids: string[]) => void
@@ -49,6 +52,7 @@ export function ReorderableList({
 
   return (
     <DndContext
+      accessibility={accessibility}
       autoScroll={reorderAutoScroll}
       collisionDetection={closestCenter}
       onDragEnd={handleDragEnd}
@@ -61,12 +65,19 @@ export function ReorderableList({
   )
 }
 
-export function useSortableBindings(id: string) {
-  const { attributes, isDragging, listeners, setNodeRef, transform, transition } = useSortable({ id })
+export function useSortableBindings(id: string, transitionOptions?: { duration: number; easing: string }) {
+  const { attributes, isDragging, listeners, setActivatorNodeRef, setNodeRef, transform, transition } = useSortable({
+    id,
+    transition: transitionOptions
+  })
 
   return {
+    /** Pin the keyboard activator to one node when the pointer handle is wider than it (a card header). */
+    activatorRef: setActivatorNodeRef,
+    attributes,
     dragging: isDragging,
     dragHandleProps: { ...attributes, ...listeners },
+    listeners,
     ref: setNodeRef,
     reorderable: true as const,
     style: {

@@ -13,7 +13,7 @@ import { $activeGatewayProfile } from '@/store/profile'
 
 import { STARMAP_ROUTE } from '../routes'
 
-import { RailCard } from './rail-cards'
+import { RailCard } from './rail-card'
 
 const RECENT_SHOWN = 4
 const REFRESH_MS = 2 * 60_000
@@ -132,7 +132,13 @@ export function JarvisMemoryCard({ connected }: { connected: boolean }) {
           placeholder={copy.capture}
           value={text}
         />
-        <Button aria-label={copy.captureLabel} disabled={!text.trim() || saving} size="icon-sm" type="submit" variant="ghost">
+        <Button
+          aria-label={copy.captureLabel}
+          disabled={!text.trim() || saving}
+          size="icon-sm"
+          type="submit"
+          variant="ghost"
+        >
           {saving ? <Loader2 className="animate-spin" /> : <Plus />}
         </Button>
       </form>
@@ -144,7 +150,8 @@ export function JarvisMemoryCard({ connected }: { connected: boolean }) {
       ) : graph ? (
         <>
           <p className="mb-1 text-xs font-medium text-(--ui-text-secondary)">
-            {copy.recent} · <span className="text-(--ui-text-tertiary)">{copy.stats(graph.nodes.length, graph.edges.length)}</span>
+            {copy.recent} ·{' '}
+            <span className="text-(--ui-text-tertiary)">{copy.stats(graph.nodes.length, graph.edges.length)}</span>
           </p>
           <ul className="grid grid-cols-1 gap-0.5">
             {recent.map(note => (

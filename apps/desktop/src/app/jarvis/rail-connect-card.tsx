@@ -15,7 +15,7 @@ import { navigateToWorkspacePage, NEW_CHAT_ROUTE } from '../routes'
 import { CONNECTION_ICONS } from './connection-icons'
 import { JARVIS_CONNECTIONS, type JarvisConnection, suggestConnections } from './connections-catalog'
 import { readJarvisOnboardingState } from './onboarding-state'
-import { RailCard } from './rail-cards'
+import { RailCard } from './rail-card'
 
 const COPY = {
   en: { connect: 'Connect', hint: 'Czesiek can do more once it can reach:', title: 'Connect more' },

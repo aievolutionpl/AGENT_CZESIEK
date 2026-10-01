@@ -198,6 +198,7 @@ import {
 } from './find-in-page'
 import { createFirstRunSetupGate } from './first-run-setup-gate'
 import { registerFsIpc } from './fs-ipc'
+import { registerScreenCaptureIpc } from './screen-capture'
 import {
   filenameFromContentDisposition,
   fsPumpDeps,
@@ -18101,6 +18102,9 @@ registerFsIpc({
   directoryExists,
   resolveGitBinary
 })
+
+// One screenshot on request of the voice agent (hermes:captureScreen) — see screen-capture.ts.
+registerScreenCaptureIpc({ rendererUrl: trustedRendererUrl })
 
 // Git-driven features (worktrees, review pane, repo scan) — see git-ipc.ts.
 registerGitIpc({ resolveGitBinary, resolveGhBinary })

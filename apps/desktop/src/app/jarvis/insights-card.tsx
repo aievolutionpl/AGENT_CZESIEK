@@ -1,88 +1,204 @@
 import { useStore } from '@nanostores/react'
 import { useQuery } from '@tanstack/react-query'
-import { useId } from 'react'
+import { type KeyboardEvent, type PointerEvent, useId, useMemo, useState } from 'react'
 
 import { getCronJobs } from '@/api/cron'
 import { getUsageAnalytics } from '@/api/models'
+import { SegmentedControl } from '@/components/ui/segmented-control'
 import { useI18n } from '@/i18n'
-import { BarChart3 } from '@/lib/icons'
+import { BarChart3, RefreshCw, TrendingDown, TrendingUp } from '@/lib/icons'
+import { cn } from '@/lib/utils'
 import { $activeGatewayProfile } from '@/store/profile'
-import type { AnalyticsDailyEntry } from '@/types/hermes'
 
+import {
+  $insightPrefs,
+  areaPath,
+  comparePeriods,
+  formatMetric,
+  INSIGHT_METRICS,
+  INSIGHT_RANGES,
+  type InsightDays,
+  type InsightMetric,
+  linePath,
+  nearestIndex,
+  setInsightPrefs,
+  sparkPoints,
+  topModel
+} from './insights-stats'
 import { deriveJarvisMetrics } from './metrics'
-import { RailCard } from './rail-cards'
+import { RailCard } from './rail-card'
 import type { JarvisUiState } from './types'
 
-const INSIGHTS_DAYS = 14
 const INSIGHTS_REFRESH_MS = 5 * 60_000
+const CHART_W = 240
+const CHART_H = 64
 
-export interface SessionTrend {
-  /** Sessions per day, oldest first, one entry per day of the window (gaps are 0). */
-  series: number[]
-  total: number
-  /** This week against the week before, in percent; null when there is no earlier week to compare. */
-  changePct: null | number
+const COPY = {
+  en: {
+    apiCalls: 'Model calls',
+    chart: 'Chart',
+    days: (n: number) => `${n} d`,
+    metrics: { cost: 'Cost', sessions: 'Sessions', tokens: 'Tokens' },
+    noData: 'Nothing in this period yet.',
+    period: 'Period',
+    refresh: 'Refresh statistics',
+    session: 'This conversation',
+    tokens: 'Tokens',
+    topModel: 'Top model',
+    topSkill: 'Top skill',
+    topTool: 'Top tool',
+    updated: (time: string) => `Updated ${time}`,
+    versus: (n: number) => `vs previous ${n} days`
+  },
+  pl: {
+    apiCalls: 'Wywołania modelu',
+    chart: 'Wykres',
+    days: (n: number) => `${n} dni`,
+    metrics: { cost: 'Koszt', sessions: 'Sesje', tokens: 'Tokeny' },
+    noData: 'W tym okresie jeszcze nic.',
+    period: 'Okres',
+    refresh: 'Odśwież statystyki',
+    session: 'Ta rozmowa',
+    tokens: 'Tokeny',
+    topModel: 'Najczęstszy model',
+    topSkill: 'Najczęstsza umiejętność',
+    topTool: 'Najczęstsze narzędzie',
+    updated: (time: string) => `Zaktualizowano ${time}`,
+    versus: (n: number) => `vs poprzednie ${n} dni`
+  }
+} as const
+
+function Tile({ label, value, wide = false }: { label: string; value: string; wide?: boolean }) {
+  return (
+    <div className={cn('flex min-h-12 min-w-0 flex-col justify-center gap-0.5', wide && 'col-span-2')}>
+      <dt className="truncate text-xs text-(--ui-text-secondary)">{label}</dt>
+      <dd className="truncate text-lg font-semibold tabular-nums text-(--ui-text-primary)" title={value}>
+        {value}
+      </dd>
+    </div>
+  )
 }
 
-/**
- * Real sessions per day for the last `days` days, ending `today` (local
- * `YYYY-MM-DD` days, as the analytics endpoint reports them).
- */
-export function sessionTrend(daily: readonly AnalyticsDailyEntry[], today: Date, days = INSIGHTS_DAYS): SessionTrend {
-  const byDay = new Map(daily.map(entry => [entry.day, entry.sessions]))
-  const series: number[] = []
+/** The curve with a scrubber: hover, touch or arrow keys pick a day and read its value. */
+function TrendChart({
+  days,
+  label,
+  locale,
+  metric,
+  series
+}: {
+  days: number
+  label: string
+  locale: string
+  metric: InsightMetric
+  series: readonly number[]
+}) {
+  const gradientId = useId()
+  const [picked, setPicked] = useState<null | number>(null)
+  const points = useMemo(() => sparkPoints(series, CHART_W, CHART_H), [series])
+  const active = picked ?? series.length - 1
+  const [x, y] = points[active] ?? [0, 0]
 
-  for (let offset = days - 1; offset >= 0; offset -= 1) {
-    const day = new Date(today.getFullYear(), today.getMonth(), today.getDate() - offset)
-    const key = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')}`
+  const dayOf = (index: number) => {
+    const date = new Date()
 
-    series.push(byDay.get(key) ?? 0)
+    date.setDate(date.getDate() - (series.length - 1 - index))
+
+    return new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short' }).format(date)
   }
 
-  const half = Math.floor(days / 2)
-  const previous = series.slice(0, days - half).reduce((sum, n) => sum + n, 0)
-  const current = series.slice(days - half).reduce((sum, n) => sum + n, 0)
+  const reading = `${dayOf(active)} · ${formatMetric(series[active] ?? 0, metric, locale)}`
 
-  return {
-    changePct: previous > 0 ? Math.round(((current - previous) / previous) * 100) : null,
-    series,
-    total: series.reduce((sum, n) => sum + n, 0)
-  }
-}
+  const onPointer = (event: PointerEvent<HTMLDivElement>) => {
+    const box = event.currentTarget.getBoundingClientRect()
 
-/** A smooth line through the series, scaled into a `width` × `height` box. */
-export function sparklinePath(series: readonly number[], width: number, height: number): string {
-  if (series.length < 2) {
-    return ''
+    setPicked(nearestIndex(event.clientX - box.left, box.width, series.length))
   }
 
-  const max = Math.max(1, ...series)
-  const step = width / (series.length - 1)
-  const points = series.map((value, index) => [index * step, height - (value / max) * (height - 4) - 2] as const)
+  const onKey = (event: KeyboardEvent<HTMLDivElement>) => {
+    const step = event.key === 'ArrowLeft' ? -1 : event.key === 'ArrowRight' ? 1 : 0
 
-  return points.reduce((path, [x, y], index) => {
-    if (index === 0) {
-      return `M${x.toFixed(1)} ${y.toFixed(1)}`
+    if (step) {
+      event.preventDefault()
+      setPicked(Math.min(series.length - 1, Math.max(0, active + step)))
+    } else if (event.key === 'Escape') {
+      setPicked(null)
     }
+  }
 
-    const [px, py] = points[index - 1]
-    const mid = (px + x) / 2
-
-    return `${path} C${mid.toFixed(1)} ${py.toFixed(1)} ${mid.toFixed(1)} ${y.toFixed(1)} ${x.toFixed(1)} ${y.toFixed(1)}`
-  }, '')
+  return (
+    <div className="mb-3">
+      <div
+        aria-label={label}
+        aria-valuemax={series.length - 1}
+        aria-valuemin={0}
+        aria-valuenow={active}
+        aria-valuetext={reading}
+        className="relative h-16 w-full touch-none rounded-lg outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-(--ui-accent)"
+        data-testid="insights-chart"
+        onBlur={() => setPicked(null)}
+        onKeyDown={onKey}
+        onPointerLeave={() => setPicked(null)}
+        onPointerMove={onPointer}
+        role="slider"
+        tabIndex={0}
+      >
+        <svg
+          aria-hidden="true"
+          className="absolute inset-0 size-full overflow-visible"
+          preserveAspectRatio="none"
+          viewBox={`0 0 ${CHART_W} ${CHART_H}`}
+        >
+          <defs>
+            <linearGradient id={gradientId} x1="0" x2="1" y1="0" y2="0">
+              <stop offset="0%" stopColor="#22d3ee" />
+              <stop offset="100%" stopColor="#a855f7" />
+            </linearGradient>
+            <linearGradient id={`${gradientId}-fill`} x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0%" stopColor="#a855f7" stopOpacity="0.28" />
+              <stop offset="100%" stopColor="#22d3ee" stopOpacity="0" />
+            </linearGradient>
+          </defs>
+          <path d={areaPath(points, CHART_H)} fill={`url(#${gradientId}-fill)`} />
+          <path
+            d={linePath(points)}
+            fill="none"
+            stroke={`url(#${gradientId})`}
+            strokeLinecap="round"
+            strokeWidth="2.5"
+            vectorEffect="non-scaling-stroke"
+          />
+        </svg>
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-(--ui-accent) shadow-[0_0_10px_var(--ui-accent)] transition-[left,top] duration-150"
+          style={{ left: `${(x / CHART_W) * 100}%`, top: `${(y / CHART_H) * 100}%` }}
+        />
+      </div>
+      <div aria-live="polite" className="mt-1 flex items-center justify-between text-xs text-(--ui-text-tertiary)">
+        <span>{dayOf(0)}</span>
+        <span className="font-medium text-(--ui-text-secondary)" data-testid="insights-reading">
+          {reading}
+        </span>
+        <span>{days > 1 ? dayOf(series.length - 1) : ''}</span>
+      </div>
+    </div>
+  )
 }
 
-/** Live workspace signals plus measured activity from the current conversation. */
+/** Usage over a window you choose, what changed against the window before, and this conversation's own signals. */
 export function JarvisInsightsCard({ connected, state }: { connected: boolean; state: JarvisUiState }) {
   const { locale, t } = useI18n()
-  const copy = t.jarvisShell.home.insights
+  const base = t.jarvisShell.home.insights
+  const copy = locale === 'pl' ? COPY.pl : COPY.en
   const profile = useStore($activeGatewayProfile)
-  const gradientId = useId()
+  const { days, metric } = useStore($insightPrefs)
 
+  // Twice the window: the second half is what "change" is measured against.
   const analytics = useQuery({
     enabled: connected,
-    queryFn: () => getUsageAnalytics(INSIGHTS_DAYS),
-    queryKey: ['jarvis-insights-analytics', profile, INSIGHTS_DAYS],
+    queryFn: () => getUsageAnalytics(days * 2),
+    queryKey: ['jarvis-insights-analytics', profile, days],
     refetchInterval: INSIGHTS_REFRESH_MS,
     staleTime: INSIGHTS_REFRESH_MS
   })
@@ -95,10 +211,35 @@ export function JarvisInsightsCard({ connected, state }: { connected: boolean; s
     staleTime: INSIGHTS_REFRESH_MS
   })
 
-  const trend = analytics.data ? sessionTrend(analytics.data.daily, new Date()) : null
+  const period = useMemo(
+    () => (analytics.data ? comparePeriods(analytics.data.daily, new Date(), days, metric) : null),
+    [analytics.data, days, metric]
+  )
+
+  const windowTotals = useMemo(() => {
+    const today = new Date()
+
+    if (!analytics.data) {
+      return null
+    }
+
+    const sessions = comparePeriods(analytics.data.daily, today, days, 'sessions').total
+    const tokens = comparePeriods(analytics.data.daily, today, days, 'tokens').total
+    const cost = comparePeriods(analytics.data.daily, today, days, 'cost').total
+
+    return { cost, sessions, tokens }
+  }, [analytics.data, days])
+
+  const calls = analytics.data
+    ? analytics.data.daily.slice(-days).reduce((n, entry) => n + (entry.api_calls || 0), 0)
+    : null
+
+  const best = analytics.data ? topModel(analytics.data.by_model) : null
+  const bestTool = analytics.data?.tools?.[0]
+  const bestSkill = analytics.data?.skills.top_skills[0]
   const activeJobs = jobs.data ? jobs.data.filter(job => job.enabled).length : null
-  const path = trend ? sparklinePath(trend.series, 240, 56) : ''
   const metrics = deriveJarvisMetrics(state.activity)
+  const number = new Intl.NumberFormat(locale)
   const activityTime = metrics.events > 0 ? `${Math.ceil(metrics.spanMs / 60_000)} min` : '—'
 
   const lastActivity =
@@ -106,51 +247,91 @@ export function JarvisInsightsCard({ connected, state }: { connected: boolean; s
       ? '—'
       : new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit' }).format(metrics.lastAt)
 
-  const summary = [
-    { label: copy.completedTasks, value: metrics.verified },
-    { label: copy.activeJobs, value: activeJobs ?? '—' },
-    { label: copy.activityTime, value: activityTime },
-    { label: copy.lastActivity, value: lastActivity },
-    { label: copy.pendingApproval, value: state.task.phase === 'approval' ? 1 : 0 }
-  ]
+  const updated = analytics.dataUpdatedAt
+    ? new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit' }).format(analytics.dataUpdatedAt)
+    : null
+
+  const change = period?.changePct ?? null
 
   return (
     <RailCard
       action={
-        <span className="flex items-center gap-1.5 text-xs text-(--ui-text-tertiary)">
-          {copy.live}
-          <span aria-hidden="true" className="size-2 rounded-full bg-emerald-400" />
-        </span>
+        <button
+          aria-label={copy.refresh}
+          className="grid size-8 place-items-center rounded-md text-(--ui-text-tertiary) outline-none hover:text-(--ui-text-primary) focus-visible:outline focus-visible:outline-2 focus-visible:outline-(--ui-accent)"
+          disabled={!connected || analytics.isFetching}
+          onClick={() => void analytics.refetch()}
+          title={updated ? copy.updated(updated) : copy.refresh}
+          type="button"
+        >
+          <RefreshCw className={cn('size-3.5', analytics.isFetching && 'animate-spin')} />
+        </button>
       }
       icon={BarChart3}
       testId="insights"
-      title={copy.title}
+      title={base.title}
     >
-      {trend && trend.total > 0 ? (
-        <svg
-          aria-hidden="true"
-          className="mb-3 h-14 w-full overflow-visible"
-          preserveAspectRatio="none"
-          viewBox="0 0 240 56"
-        >
-          <defs>
-            <linearGradient id={gradientId} x1="0" x2="1" y1="0" y2="0">
-              <stop offset="0%" stopColor="#22d3ee" />
-              <stop offset="100%" stopColor="#a855f7" />
-            </linearGradient>
-          </defs>
-          <path d={path} fill="none" stroke={`url(#${gradientId})`} strokeLinecap="round" strokeWidth="2.5" />
-        </svg>
-      ) : (
-        <p className="mb-3 text-xs text-(--ui-text-tertiary)">{copy.empty}</p>
-      )}
-      <dl className="grid grid-cols-2 gap-x-4 gap-y-3">
-        {summary.map(({ label, value }) => (
-          <div className="flex min-h-12 flex-col justify-center gap-0.5" key={label}>
-            <dt className="text-xs text-(--ui-text-secondary)">{label}</dt>
-            <dd className="text-lg font-semibold tabular-nums text-(--ui-text-primary)">{value}</dd>
+      <div className="mb-3 grid gap-2">
+        <SegmentedControl<InsightMetric>
+          className="w-full"
+          onChange={next => setInsightPrefs({ metric: next })}
+          options={INSIGHT_METRICS.map(id => ({ id, label: copy.metrics[id] }))}
+          value={metric}
+        />
+        <SegmentedControl<`${InsightDays}`>
+          className="w-full"
+          onChange={next => setInsightPrefs({ days: Number(next) as InsightDays })}
+          options={INSIGHT_RANGES.map(id => ({ id: `${id}` as const, label: copy.days(id) }))}
+          value={`${days}`}
+        />
+      </div>
+
+      {period && period.total > 0 ? (
+        <>
+          <div className="mb-2 flex items-end justify-between gap-2">
+            <p className="text-2xl font-semibold tabular-nums text-(--ui-text-primary)" data-testid="insights-total">
+              {formatMetric(period.total, metric, locale)}
+            </p>
+            {change === null ? null : (
+              <p
+                className={cn(
+                  'flex items-center gap-1 pb-1 text-xs font-medium',
+                  change >= 0 ? 'text-emerald-500' : 'text-amber-500'
+                )}
+                data-testid="insights-change"
+                title={copy.versus(days)}
+              >
+                {change >= 0 ? <TrendingUp className="size-3.5" /> : <TrendingDown className="size-3.5" />}
+                {change > 0 ? '+' : ''}
+                {change}%
+              </p>
+            )}
           </div>
-        ))}
+          <TrendChart days={days} label={copy.chart} locale={locale} metric={metric} series={period.series} />
+        </>
+      ) : (
+        <p className="mb-3 text-xs text-(--ui-text-tertiary)">{analytics.isPending ? '…' : copy.noData}</p>
+      )}
+
+      {windowTotals ? (
+        <dl className="mb-3 grid grid-cols-2 gap-x-4 gap-y-2" data-testid="insights-window">
+          <Tile label={copy.metrics.sessions} value={number.format(windowTotals.sessions)} />
+          <Tile label={copy.tokens} value={formatMetric(windowTotals.tokens, 'tokens', locale)} />
+          <Tile label={copy.metrics.cost} value={formatMetric(windowTotals.cost, 'cost', locale)} />
+          <Tile label={copy.apiCalls} value={calls === null ? '—' : number.format(calls)} />
+          {best ? <Tile label={copy.topModel} value={`${best.model.split('/').pop()} · ${best.share}%`} wide /> : null}
+          {bestTool ? <Tile label={copy.topTool} value={bestTool.tool} wide /> : null}
+          {bestSkill ? <Tile label={copy.topSkill} value={bestSkill.skill} wide /> : null}
+        </dl>
+      ) : null}
+
+      <p className="mb-1 text-xs font-medium uppercase tracking-[0.16em] text-(--ui-text-tertiary)">{copy.session}</p>
+      <dl className="grid grid-cols-2 gap-x-4 gap-y-2">
+        <Tile label={base.completedTasks} value={String(metrics.verified)} />
+        <Tile label={base.activeJobs} value={String(activeJobs ?? '—')} />
+        <Tile label={base.activityTime} value={activityTime} />
+        <Tile label={base.lastActivity} value={lastActivity} />
+        <Tile label={base.pendingApproval} value={String(state.task.phase === 'approval' ? 1 : 0)} />
       </dl>
     </RailCard>
   )

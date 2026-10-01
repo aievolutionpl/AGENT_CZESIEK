@@ -51,12 +51,15 @@ export function getRealtimeVoiceStatus(provider?: LiveVoiceProviderId): Promise<
   })
 }
 
-export async function createRealtimeVoiceSession(): Promise<RealtimeVoiceSessionResponse> {
+/** `screen: true` tells the backend this client can capture its screen on request, so the voice may look. */
+export async function createRealtimeVoiceSession({
+  screen = false
+}: { screen?: boolean } = {}): Promise<RealtimeVoiceSessionResponse> {
   try {
     return await hermesApi<RealtimeVoiceSessionResponse>({
       ...profileScoped(),
       method: 'POST',
-      path: '/api/voice/realtime/session'
+      path: screen ? '/api/voice/realtime/session?screen=true' : '/api/voice/realtime/session'
     })
   } catch (error) {
     if (error instanceof Error && /\b(404|405)\b/.test(error.message)) {
@@ -67,4 +70,18 @@ export async function createRealtimeVoiceSession(): Promise<RealtimeVoiceSession
 
     throw error
   }
+}
+
+/** A short spoken sample of one voice: a base64 WAV the renderer can play. */
+export function previewRealtimeVoice(
+  provider: LiveVoiceProviderId,
+  voice: string,
+  language: string
+): Promise<{ audio: string; mime: string }> {
+  return hermesApi<{ audio: string; mime: string }>({
+    ...profileScoped(),
+    body: { language, provider, voice },
+    method: 'POST',
+    path: '/api/voice/realtime/preview'
+  })
 }

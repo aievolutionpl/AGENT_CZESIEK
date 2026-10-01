@@ -79,14 +79,14 @@ def test_gemini_setup_declares_both_bridge_tools():
     setup = voice_realtime.gemini_setup(voice_realtime.realtime_settings({}))
 
     declarations = setup["tools"][0]["functionDeclarations"]
-    assert [f["name"] for f in declarations] == ["ask_jarvis", "delegate_to_hermes"]
+    assert [f["name"] for f in declarations][:2] == ["ask_jarvis", "delegate_to_hermes"]
     assert "front agent" in setup["systemInstruction"]["parts"][0]["text"]
 
 
 def test_openai_session_config_declares_both_bridge_tools():
     session = voice_realtime.session_config(voice_realtime.realtime_settings({}))
 
-    assert [tool["name"] for tool in session["tools"]] == ["ask_jarvis", "delegate_to_hermes"]
+    assert [tool["name"] for tool in session["tools"]][:2] == ["ask_jarvis", "delegate_to_hermes"]
     assert "front agent" in session["instructions"]
 
 
@@ -175,3 +175,20 @@ def test_persona_did_not_drop_the_original_voice_contract():
     missing = [fragment for fragment in required if fragment not in instructions]
     assert missing == []
 
+
+
+def test_the_office_bit_is_bounded_and_never_outranks_honesty_or_the_work():
+    """Czesiek grumbles about workload and daydreams about holidays, but only as colour."""
+    instructions = voice_realtime.realtime_instructions("pl")
+
+    # The running gag is there...
+    assert "always buried in work" in instructions
+    assert "holiday" in instructions
+    # ...it sits next to the work, never replaces it, never targets the user...
+    assert "never instead of it" in instructions
+    assert "never about the user" in instructions
+    # ...it is rationed and switched off when it would cost time or trust...
+    assert "at most every fifth reply" in instructions
+    assert "drop it completely when the user is in a hurry or the matter is serious" in instructions
+    # ...and a sincere question about being an AI still gets the truth.
+    assert "do not lie" in instructions

@@ -6,22 +6,38 @@ import { NEW_CHAT_ROUTE } from '@/app/routes'
 import { MarkdownTextContent } from '@/components/assistant-ui/markdown-text'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { useI18n } from '@/i18n'
-import { Activity, ChevronLeft, ChevronRight, Maximize, Moon, Newspaper, Sun } from '@/lib/icons'
+import {
+  Activity,
+  ChevronLeft,
+  ChevronRight,
+  LayoutDashboard,
+  Lightbulb,
+  Maximize,
+  MoreHorizontal,
+  Newspaper,
+  PanelLeftIcon,
+  PanelRightIcon
+} from '@/lib/icons'
 import { cn } from '@/lib/utils'
 import { requestBriefing } from '@/store/composer'
+import { $sidebarOpen, toggleSidebarOpen } from '@/store/layout'
+import { $petOverlayActive, popOutDesktopOrb } from '@/store/pet-overlay'
 
 import { JarvisCore } from './core'
-import { DesktopOrbToggle } from './desktop-orb-toggle'
+import { desktopOrbCopy } from './desktop-orb-copy'
+import { $desktopOrbMode } from './desktop-orb-state'
 import { $jarvisFocusMode, $jarvisRailVisible, setJarvisFocusMode } from './focus-mode'
 import { JarvisInsightsPanel } from './insights-panel'
 import { deriveJarvisMetrics } from './metrics'
 import type { JarvisNewsItem } from './news'
 import type { JarvisInsightsView } from './panel-copy'
-import { jarvisDaypart } from './pulse'
+import { $railHidden, setRailHidden } from './rail-layout'
 import { JarvisStatusStrip } from './status-strip'
 import { JarvisTipsLauncher } from './tips'
 import type { JarvisUiState } from './types'
+import { VoiceWave } from './voice-wave'
 
 type DashboardLayout = 'desktop' | 'mobile' | 'tablet'
 
@@ -44,6 +60,10 @@ export interface JarvisDashboardProps {
   profileDisplayName?: string
   /** Cards stacked above the insights panel in the desktop rail. */
   rail?: ReactNode
+  /** Controls that sit beside the rail's hide button (e.g. the layout menu). */
+  railActions?: ReactNode
+  /** The two model pickers, top right of the conversation. */
+  switcher?: ReactNode
   state: JarvisUiState
   voiceControls?: ReactNode
 }
@@ -108,55 +128,121 @@ function useDashboardLayout(override: DashboardLayout | undefined): DashboardLay
  * Home's top bar: today's date with a sun or moon for the part of the day on
  * the left, the tips deck and focus mode on the right.
  */
-function HomeTopBar({ connected, tips }: { connected: boolean; tips: ReactNode }) {
+function HomeTopBar({
+  connected,
+  openTips,
+  switcher
+}: {
+  connected: boolean
+  openTips: () => void
+  switcher?: ReactNode
+}) {
   const { locale, t } = useI18n()
   const copy = t.jarvisShell.home
   const briefingCopy = t.jarvisShell.briefing
   const focus = useStore($jarvisFocusMode)
-  const now = new Date()
-  const daypart = jarvisDaypart(now)
-  const DayIcon = daypart === 'evening' || daypart === 'night' ? Moon : Sun
+  const [menuOpen, setMenuOpen] = useState(false)
+  const pl = locale === 'pl'
+  const sidebarOpen = useStore($sidebarOpen)
+  const railHidden = useStore($railHidden)
+  const orbActive = useStore($petOverlayActive)
+  const orbMode = useStore($desktopOrbMode)
+  const orbShown = orbActive && orbMode
+  const petOverlay = window.hermesDesktop?.petOverlay
 
-  const date = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', weekday: 'short' }).format(now)
+  // Everything that used to crowd the top of the screen lives behind one quiet button.
+  const items: { icon: ReactNode; label: string; onSelect: () => void; pressed?: boolean; disabled?: boolean }[] = [
+    {
+      disabled: !connected,
+      icon: <Newspaper />,
+      label: briefingCopy.button,
+      onSelect: () => requestBriefing({ speak: true })
+    },
+    { icon: <Lightbulb />, label: pl ? 'Podpowiedzi' : 'Tips', onSelect: openTips },
+    ...(petOverlay
+      ? [
+          {
+            icon: <span aria-hidden="true" className="jarvis-mini-orb" />,
+            label: orbShown ? (pl ? 'Wróć do kuli' : 'Return to orb') : desktopOrbCopy[pl ? 'pl' : 'en'].show,
+            onSelect: () =>
+              orbShown
+                ? petOverlay.control({ type: 'toggle-app' })
+                : popOutDesktopOrb(() => petOverlay.control({ type: 'toggle-app' })),
+            pressed: orbShown
+          }
+        ]
+      : []),
+    {
+      icon: <Maximize />,
+      label: focus ? copy.focusModeExit : copy.focusMode,
+      onSelect: () => setJarvisFocusMode(!focus),
+      pressed: focus
+    }
+  ]
 
   return (
     <div className="flex w-full items-center gap-3">
-      <div className="flex min-w-0 items-center gap-2 text-sm text-(--ui-text-secondary)">
-        <DayIcon className="size-4 shrink-0 text-amber-400" />
-        <span className="truncate first-letter:uppercase">{date}</span>
-      </div>
-      <div className="ml-auto flex items-center gap-2">
-        {/* The day report and the floating orb left the hero when it was cut down
-            to one primary action; they live here, out of the way, so neither
-            became unreachable. */}
+      <div className="flex min-w-0 items-center gap-2 text-sm font-medium text-(--ui-text-secondary)">
         <Button
-          aria-label={briefingCopy.button}
+          aria-label={pl ? 'Pokaż lub ukryj lewy panel' : 'Show or hide the left panel'}
+          aria-pressed={sidebarOpen}
           className="jarvis-glass jarvis-glass-hover size-10 min-h-10 min-w-10 rounded-full"
-          disabled={!connected}
-          onClick={() => requestBriefing({ speak: true })}
+          onClick={toggleSidebarOpen}
           size="icon"
-          title={briefingCopy.buttonHint}
+          title={pl ? 'Lewy panel' : 'Left panel'}
           type="button"
           variant="secondary"
         >
-          <Newspaper />
+          <PanelLeftIcon />
         </Button>
-        <DesktopOrbToggle compact />
-        {tips}
+        <LayoutDashboard className="size-4 shrink-0 text-(--ui-accent)" />
+        <span className="truncate">Workspace</span>
+      </div>
+      <div className="ml-auto flex min-w-0 items-center gap-2">
+        {switcher}
+        <Popover onOpenChange={setMenuOpen} open={menuOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              aria-label={pl ? 'Więcej' : 'More'}
+              className="jarvis-glass jarvis-glass-hover size-10 min-h-10 min-w-10 rounded-full"
+              size="icon"
+              title={pl ? 'Więcej' : 'More'}
+              type="button"
+              variant="secondary"
+            >
+              <MoreHorizontal />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent align="end" className="jarvis-menu grid w-56 gap-0.5 p-1.5">
+            {items.map(item => (
+              <button
+                aria-pressed={item.pressed}
+                className="jarvis-menu-item flex min-h-10 w-full items-center gap-2.5 rounded-xl px-2.5 text-left text-sm outline-none disabled:opacity-50"
+                disabled={item.disabled}
+                key={item.label}
+                onClick={() => {
+                  setMenuOpen(false)
+                  item.onSelect()
+                }}
+                type="button"
+              >
+                <span className="text-(--ui-accent) [&_svg]:size-4">{item.icon}</span>
+                {item.label}
+              </button>
+            ))}
+          </PopoverContent>
+        </Popover>
         <Button
-          aria-pressed={focus}
-          className={cn(
-            'min-h-11 jarvis-glass jarvis-glass-hover rounded-full px-4 text-(--ui-text-primary)',
-            focus && 'jarvis-nav-active'
-          )}
-          onClick={() => setJarvisFocusMode(!focus)}
-          size="sm"
-          title={copy.focusModeHint}
+          aria-label={pl ? 'Pokaż lub ukryj prawy panel' : 'Show or hide the right panel'}
+          aria-pressed={!railHidden}
+          className="jarvis-glass jarvis-glass-hover size-10 min-h-10 min-w-10 rounded-full"
+          onClick={() => setRailHidden(!railHidden)}
+          size="icon"
+          title={pl ? 'Prawy panel' : 'Right panel'}
           type="button"
           variant="secondary"
         >
-          <Maximize />
-          {focus ? copy.focusModeExit : copy.focusMode}
+          <PanelRightIcon />
         </Button>
       </div>
     </div>
@@ -210,7 +296,9 @@ export function JarvisDashboard({
   onOpenUpdate,
   profileDisplayName,
   rail,
+  railActions,
   state,
+  switcher,
   voiceControls
 }: JarvisDashboardProps) {
   const { locale, t } = useI18n()
@@ -218,7 +306,7 @@ export function JarvisDashboard({
   const copy = t.jarvisShell.dashboard
   const layout = useDashboardLayout(layoutOverride)
   const focus = useStore($jarvisFocusMode)
-  const [railCollapsed, setRailCollapsed] = useState(false)
+  const railCollapsed = useStore($railHidden)
   const showRail = layout === 'desktop' && !focus && !railCollapsed
   const [activityOpen, setActivityOpen] = useState(layout === 'desktop')
   const [view, setView] = useState<JarvisInsightsView>('activity')
@@ -250,11 +338,22 @@ export function JarvisDashboard({
     return () => $jarvisRailVisible.set(false)
   }, [railCards])
 
+  // On home the deck opens from the "more" menu, so its own trigger renders nothing and hands us the opener.
+  const openTipsRef = useRef<() => void>(() => undefined)
+
   const tipsLauncher = (
     <JarvisTipsLauncher
       busy={busy}
-      className={home ? 'jarvis-glass jarvis-glass-hover rounded-full px-4 text-(--ui-text-primary)' : undefined}
       hasHistory={state.activity.length > 0}
+      trigger={
+        home
+          ? ({ onClick }) => {
+              openTipsRef.current = onClick
+
+              return null
+            }
+          : undefined
+      }
     />
   )
 
@@ -268,7 +367,7 @@ export function JarvisDashboard({
         <Button
           aria-label={t.jarvisShell.home.showRail}
           className="absolute right-4 top-16 z-10 jarvis-glass jarvis-glass-hover"
-          onClick={() => setRailCollapsed(false)}
+          onClick={() => setRailHidden(false)}
           size="icon"
           title={t.jarvisShell.home.showRail}
           type="button"
@@ -296,6 +395,7 @@ export function JarvisDashboard({
           {tipsLauncher}
         </div>
       )}
+      {home || !switcher ? null : <div className="absolute right-3 top-3 z-10">{switcher}</div>}
       {/* Balanced, centred header: the orb in the middle of the conversation
           and its status beneath it. The orb stays compact while you read and
           grows — smoothly, see core.css — while you talk with Jarvis. */}
@@ -303,11 +403,17 @@ export function JarvisDashboard({
         {home ? null : (
           <JarvisCore compact={compactCore && !voiceActive} live taskPhase={state.task.phase} voice={state.voice} />
         )}
-        {home ? <HomeTopBar connected={connected} tips={tipsLauncher} /> : null}
-        <div className="flex flex-wrap items-center justify-center gap-2">
-          {/* At rest on home the hero's own status line says it; the pills would
-              only crowd the greeting. */}
-          {home && connected && !busy && state.voice === 'idle' && state.activeTool === null ? null : (
+        {home ? null : <VoiceWave active={voiceActive} />}
+        {home ? (
+          <>
+            <HomeTopBar connected={connected} openTips={() => openTipsRef.current()} switcher={switcher} />
+            {tipsLauncher}
+          </>
+        ) : null}
+        {/* Home carries no status pills: the orb and its ring already say what is happening, and the
+            icon-only pills above the voice dock read as stray buttons. */}
+        {home ? null : (
+          <div className="flex flex-wrap items-center justify-center gap-2">
             <JarvisStatusStrip
               className="justify-center"
               compact
@@ -315,16 +421,20 @@ export function JarvisDashboard({
               copy={copy.status}
               state={state}
             />
-          )}
-        </div>
+          </div>
+        )}
       </div>
-      {/* On home at rest the hero's talk button is the voice entry point; in a
-          conversation the controls sit centred under the orb. */}
-      {voiceControls && (!home || busy || state.voice !== 'idle') ? (
+      {/* In a conversation the controls sit under the orb; on home they sit at the bottom, out of the orb's way. */}
+      {voiceControls && !home ? (
         <div className="mx-auto w-full max-w-2xl shrink-0 px-4 pt-3 md:px-5">{voiceControls}</div>
       ) : null}
       {home ? null : <ResultHeader copy={copy} profileDisplayName={profileDisplayName} state={state} />}
       <div className="min-h-0 flex-1 overflow-hidden">{children}</div>
+      {voiceControls && home && (busy || state.voice !== 'idle') ? (
+        <div className="mx-auto w-full max-w-2xl shrink-0 px-4 pb-5 pt-2 md:px-5" data-testid="jarvis-voice-bottom">
+          {voiceControls}
+        </div>
+      ) : null}
     </main>
   )
 
@@ -360,8 +470,7 @@ export function JarvisDashboard({
   const insightsPanel = (
     <JarvisInsightsPanel
       className={cn(
-        layout === 'desktop' &&
-          (rail ? 'min-h-[22rem] shrink-0 rounded-2xl border-0!' : 'w-80'),
+        layout === 'desktop' && (rail ? 'min-h-[22rem] shrink-0 rounded-2xl border-0!' : 'w-80'),
         layout === 'tablet' && 'absolute inset-y-4 right-4 z-20 w-80 rounded-md',
         layout === 'mobile' && 'absolute inset-x-3 bottom-16 z-20 max-h-[60vh] rounded-md'
       )}
@@ -406,17 +515,20 @@ export function JarvisDashboard({
             className="jarvis-dashboard__rail flex w-80 shrink-0 flex-col gap-3 overflow-y-auto border-l border-(--ui-stroke-tertiary) p-3 backdrop-blur-2xl"
             data-testid="jarvis-rail"
           >
-            <Button
-              aria-label={t.jarvisShell.home.hideRail}
-              className="self-end jarvis-glass jarvis-glass-hover"
-              onClick={() => setRailCollapsed(true)}
-              size="icon"
-              title={t.jarvisShell.home.hideRail}
-              type="button"
-              variant="secondary"
-            >
-              <ChevronRight />
-            </Button>
+            <div className="flex items-center justify-end gap-2">
+              {railActions}
+              <Button
+                aria-label={t.jarvisShell.home.hideRail}
+                className="jarvis-glass jarvis-glass-hover"
+                onClick={() => setRailHidden(true)}
+                size="icon"
+                title={t.jarvisShell.home.hideRail}
+                type="button"
+                variant="secondary"
+              >
+                <ChevronRight />
+              </Button>
+            </div>
             {rail}
             {insightsPanel}
             <p className="mt-auto flex items-center justify-end gap-2 px-1 pt-2 text-xs text-(--ui-text-tertiary)">
@@ -432,7 +544,7 @@ export function JarvisDashboard({
             <Button
               aria-label={t.jarvisShell.home.hideRail}
               className="absolute right-3 top-2 z-10"
-              onClick={() => setRailCollapsed(true)}
+              onClick={() => setRailHidden(true)}
               size="icon"
               type="button"
               variant="ghost"

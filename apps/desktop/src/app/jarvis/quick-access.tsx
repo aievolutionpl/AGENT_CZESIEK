@@ -13,7 +13,7 @@ import { requestComposerInsert } from '../chat/composer/focus'
 import { $jarvisOnboardingCompletedAt, readJarvisOnboardingState } from './onboarding-state'
 import { type JarvisPlaybookCategory, selectJarvisPlaybook } from './playbook'
 import { pulseSuggestions } from './pulse'
-import { RailCard } from './rail-cards'
+import { RailCard } from './rail-card'
 
 type IconComponent = React.ComponentType<{ className?: string }>
 
@@ -147,11 +147,7 @@ export function JarvisQuickAccess({ className, connected, label, limit }: Jarvis
 
         return (
           <button
-            className={cn(
-              ROW,
-              'jarvis-glass jarvis-glass-hover',
-              FOCUS_RING
-            )}
+            className={cn(ROW, 'jarvis-glass jarvis-glass-hover', FOCUS_RING)}
             key={entry.id}
             onClick={() => requestComposerInsert(entryCopy.prompt, { mode: 'block', target: 'main' })}
             title={`${entryCopy.title} — ${entryCopy.detail}`}

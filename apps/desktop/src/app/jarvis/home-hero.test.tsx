@@ -212,13 +212,12 @@ describe('Agent CzesiekHomeHero', () => {
 
     cleanup()
 
-    // With the conversation live the button ends it instead: the voice dock the
-    // dashboard shows at the same time owns the microphone, so this screen must
-    // not show a microphone of its own.
+    // With the conversation live the voice dock owns both the microphone and the end of the
+    // conversation, so this screen shows neither.
     renderHero({ listening: true })
 
     expect(screen.queryByRole('button', { name: pl.jarvisShell.home.talk })).toBeNull()
-    expect(screen.getByRole('button', { name: pl.jarvisShell.home.stopTalking })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: pl.jarvisShell.home.stopTalking })).toBeNull()
     expect(screen.getByTestId('jarvis-home-hero').querySelectorAll('.jarvis-action--talk')).toHaveLength(0)
   })
 
