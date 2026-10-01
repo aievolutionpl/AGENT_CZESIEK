@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import { type LiveVoiceProviderId, previewRealtimeVoice } from '@/api/voice-realtime'
 import { useI18n } from '@/i18n'
@@ -53,6 +53,18 @@ export function LiveVoicePicker({
   const audio = useRef<HTMLAudioElement | null>(null)
   // A sample is fetched once per voice and kept for the session of this page.
   const cache = useRef(new Map<string, string>())
+
+  // Samples are object URLs: playback stops and they are released when the page goes away.
+   
+  useEffect(() => {
+    const samples = cache.current
+
+    return () => {
+      audio.current?.pause()
+      samples.forEach(url => URL.revokeObjectURL(url))
+      samples.clear()
+    }
+  }, [])
 
   const stop = () => {
     audio.current?.pause()
