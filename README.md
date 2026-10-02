@@ -117,7 +117,7 @@ Dwa osobne wybory modeli: **model zadaniowy** (Hermes — myślenie i narzędzia
 
 ## Tak wygląda aplikacja
 
-Zrzuty pochodzą z uruchomionej aplikacji Electron z testowym backendem, zapisanej przy PR #61. Nie są makietami, ale **nie odzwierciedlają zmian z PR #62–#93**: od tego czasu doszły m.in. prawy panel z kartami, mapa wiedzy z vaultem, nowe menu i ekran głosu. Na pulpicie nie ma wybranego modelu, ponieważ test nie używa prywatnego klucza API.
+Pulpit i pamięć pokazują uruchomioną aplikację Electron po aktualizacji z października 2026. To rzeczywiste zrzuty z testowym backendem i tymczasowymi notatkami. Na pulpicie nie ma wybranego modelu, ponieważ test nie używa prywatnego klucza API. Zrzut powitania pochodzi z PR #61.
 
 ### Powitanie i konfiguracja
 
@@ -127,9 +127,19 @@ Zrzuty pochodzą z uruchomionej aplikacji Electron z testowym backendem, zapisan
 
 ### Pulpit z orbem
 
-![Pulpit aplikacji z PR 61: menu, orb, przycisk rozmowy oraz panel modelu i aktywności](docs/assets/czesiek/pulpit.png)
+![Jasny pulpit Agent Czesiek: większy orb, opis stanu, menu oraz karty startu i pamięci](docs/assets/czesiek/pulpit.png)
 
 [Otwórz screenshot pulpitu w pełnym rozmiarze](docs/assets/czesiek/pulpit.png). Obrazy leżą w repozytorium, więc są dostępne także po sklonowaniu. Jeśli GitHub chwilowo nie ładuje podglądu, użyj linku do pliku.
+
+### Tryb ciemny
+
+![Ciemny pulpit Agent Czesiek ze szklaną kulą i czytelnymi przyciskami rozmowy](docs/assets/czesiek/pulpit-dark.png)
+
+### Notatki i mapa pamięci
+
+![Mapa wiedzy i edytor zapisanej notatki Plan tygodnia z powiązaniem do pamięci trwałej](docs/assets/czesiek/pamiec.png)
+
+Notatki można tworzyć, edytować i łączyć odnośnikami. Zapis pozostaje dostępny po ponownym otwarciu. Błąd zapisu zachowuje szkic, a statusy i dane integracji są przypisane do wybranego połączenia i profilu. Szczegóły aktualizacji, wyniki testów i granice weryfikacji: [raport stabilizacji produktu](docs/product/PRODUCT_POLISH_2026_10.md).
 
 ## Pierwsze uruchomienie
 
@@ -440,7 +450,7 @@ Repozytorium jest dystrybucją silnika Hermes Agent. `scripts/upstream_watch.py`
 Lista celowo uczciwa — to, czego nie należy zakładać:
 
 - **Podpisany instalator.** Zielony test lokalny ani scalony PR nie potwierdzają podpisanego instalatora. Konfiguracja bez certyfikatu to nie podpis ani zakończony test na czystym systemie ([instrukcja wydania](docs/RELEASE_SIGNING.md)). macOS bez `--sign` ma podpis ad-hoc, tylko do testów.
-- **Zrzuty ekranu** w tym README pochodzą z PR #61.
+- **Zrzuty ekranu:** pulpit i pamięć pochodzą z aktualizacji z października 2026; powitanie z PR #61. Testowy backend nie potwierdza działania płatnych API.
 - **Google.** Logowanie jednym kliknięciem przez własną aplikację OAuth marki wymaga weryfikacji Google i nie jest zrobione — korzystasz z własnego pliku klienta OAuth.
 - **Poziomy zaufania** obejmują na razie zapisy przez Google.
 - **Klucze** nie mają jeszcze magazynu w kluczu systemu operacyjnego.
@@ -451,7 +461,7 @@ Lista celowo uczciwa — to, czego nie należy zakładać:
 
 ## Co nowego
 
-Zmiany od ekranu powitalnego do PR #93. Pełna historia: [git log](https://github.com/aievolutionpl/AGENT_CZESIEK/commits/main) i [Releases](https://github.com/aievolutionpl/AGENT_CZESIEK/releases).
+Najnowszy [przegląd stabilizacji produktu](docs/product/PRODUCT_POLISH_2026_10.md) opisuje poprawiony zapis pamięci, izolację połączeń, konfigurację vaultu i większy orb. Poniżej wcześniejsze zmiany do PR #93. Pełna historia: [git log](https://github.com/aievolutionpl/AGENT_CZESIEK/commits/main) i [Releases](https://github.com/aievolutionpl/AGENT_CZESIEK/releases).
 
 | PR | Co obejmuje |
 | --- | --- |

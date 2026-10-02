@@ -15,6 +15,7 @@ import { useNavigate } from 'react-router'
 import { CONNECTION_STATUS_KEY, type ConnectionState, getConnectionStatus } from '@/api/connections'
 import { Button } from '@/components/ui/button'
 import { CopyButton } from '@/components/ui/copy-button'
+import { useActiveCapabilityScope } from '@/hooks/use-active-capability-scope'
 import { useI18n } from '@/i18n'
 import { ExternalLink, KeyRound, ShieldLock, Sparkles } from '@/lib/icons'
 import { cn } from '@/lib/utils'
@@ -156,10 +157,17 @@ function ConnectionCard({ connection, state }: { connection: JarvisConnection; s
 }
 
 function ConnectionsGrid({ query }: { query: string }) {
+  const { scope, scopeKey } = useActiveCapabilityScope()
   const { t } = useI18n()
   const copy = t.jarvisConnections
   const chosen = readJarvisOnboardingState()?.selections?.connections ?? []
-  const status = useQuery({ queryFn: () => getConnectionStatus(), queryKey: CONNECTION_STATUS_KEY, staleTime: 15_000 })
+
+  const status = useQuery({
+    queryFn: () => getConnectionStatus(scope),
+    queryKey: [...CONNECTION_STATUS_KEY, scopeKey],
+    staleTime: 15_000
+  })
+
   const needle = query.trim().toLocaleLowerCase()
 
   const visible = JARVIS_CONNECTIONS.filter(connection => {

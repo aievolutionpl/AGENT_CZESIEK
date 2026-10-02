@@ -47,6 +47,11 @@ Domyślna pamięć ogólna to vault Obsidiana w:
 - Windows: `%USERPROFILE%\Documents\Czesiek Vault`
 - macOS/Linux: `~/Documents/Czesiek Vault`
 
+Jeżeli ustawisz własną bezwzględną ścieżkę w `OBSIDIAN_VAULT_PATH` (w środowisku
+procesu albo `.env` profilu), aplikacja przygotuje pamięć właśnie tam. Ta sama
+lokalizacja trafia do instrukcji współpracownika i mapy wiedzy. Istniejące notatki
+nie są nadpisywane; błędna ścieżka nie powoduje utworzenia drugiego vaultu w tle.
+
 Dlaczego tam: Obsidian domyślnie otwiera vaulty z Documents, katalog jest
 per-użytkownik (bez uprawnień administratora, pisanie po prostu działa) i przeżywa
 aktualizację aplikacji. Zawartość to zwykły markdown, który użytkownik może czytać

@@ -155,13 +155,14 @@ export function JarvisCore({
       data-plasma={plasmaReady ? 'on' : 'off'}
       data-task={taskPhase}
       data-testid="jarvis-core"
+      data-tone={plasmaTone(voice, taskPhase)}
       data-variant={variant}
       data-voice={voice}
       ref={rootRef}
       role="status"
       style={style}
     >
-      <span className="jarvis-core__sr">{label}</span>
+      <span className={hero ? 'jarvis-core__caption' : 'jarvis-core__sr'}>{label}</span>
       <span aria-hidden="true" className="jarvis-core__stage">
         {/* Ripples: emitted only while the mic or the speaker is open, and
             scaled by the measured level, so silence really does look silent. */}

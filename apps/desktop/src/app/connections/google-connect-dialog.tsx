@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
 
+import type { ProfileScope } from '@/api/client'
 import {
   getGoogleAuthUrl,
   getGoogleStatus,
@@ -13,6 +14,7 @@ import {
 } from '@/api/google'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { useActiveCapabilityScope } from '@/hooks/use-active-capability-scope'
 import { useI18n } from '@/i18n'
 import { CheckCircle2, ExternalLink, Loader2 } from '@/lib/icons'
 import { cn } from '@/lib/utils'
@@ -108,7 +110,24 @@ const open = (url: string) => void window.hermesDesktop?.openExternal?.(url)
  * and see it work. Each step shows only when it is the next thing to do, and
  * the wizard resumes where a half-finished attempt stopped.
  */
-export function GoogleConnectDialog({ onChanged, onClose, open: isOpen }: { onChanged?: () => void; onClose: () => void; open: boolean }) {
+interface GoogleConnectDialogProps {
+  onChanged?: () => void
+  onClose: () => void
+  open: boolean
+}
+
+export function GoogleConnectDialog(props: GoogleConnectDialogProps) {
+  const { scope, scopeKey } = useActiveCapabilityScope()
+
+  return props.open ? <ScopedGoogleConnectDialog {...props} key={scopeKey} scope={scope} /> : null
+}
+
+function ScopedGoogleConnectDialog({
+  onChanged,
+  onClose,
+  open: isOpen,
+  scope
+}: GoogleConnectDialogProps & { scope: ProfileScope }) {
   const { locale } = useI18n()
   const navigate = useNavigate()
   const copy = locale === 'pl' ? COPY.pl : COPY.en
@@ -117,15 +136,34 @@ export function GoogleConnectDialog({ onChanged, onClose, open: isOpen }: { onCh
   const [code, setCode] = useState('')
   const [result, setResult] = useState<GoogleVerifyResult | null>(null)
   const [linkOpened, setLinkOpened] = useState(false)
+  const [loadError, setLoadError] = useState(false)
+  const mounted = useRef(true)
+  // Lifecycle guard for a closed/replaced dialog, not a mirrored atom.
+  // eslint-disable-next-line no-restricted-syntax
+  useEffect(() => {
+    mounted.current = true
+
+    return () => {
+      mounted.current = false
+    }
+  }, [])
   const fileRef = useRef<HTMLInputElement>(null)
 
   const refresh = useCallback(async () => {
     try {
-      setStatus(await getGoogleStatus())
+      const next = await getGoogleStatus(scope)
+
+      if (mounted.current) {
+        setStatus(next)
+        setLoadError(false)
+      }
     } catch (error) {
-      notifyError(error, copy.title)
+      if (mounted.current) {
+        setLoadError(true)
+        notifyError(error, copy.title)
+      }
     }
-  }, [copy.title])
+  }, [copy.title, scope])
 
   useEffect(() => {
     if (isOpen) {
@@ -153,20 +191,26 @@ export function GoogleConnectDialog({ onChanged, onClose, open: isOpen }: { onCh
   const upload = (file: File | undefined) =>
     file &&
     act(async () => {
-      await uploadGoogleClientSecret(await file.text())
+      await uploadGoogleClientSecret(await file.text(), scope)
       await refresh()
       onChanged?.()
     })
 
   const startSignIn = () =>
     act(async () => {
-      open((await getGoogleAuthUrl()).url)
+      const auth = await getGoogleAuthUrl(scope)
+
+      if (!mounted.current) {
+        return
+      }
+
+      open(auth.url)
       setLinkOpened(true)
     })
 
   const finishSignIn = () =>
     act(async () => {
-      await submitGoogleAuthCode(code)
+      await submitGoogleAuthCode(code, scope)
       setCode('')
       await refresh()
       onChanged?.()
@@ -174,12 +218,12 @@ export function GoogleConnectDialog({ onChanged, onClose, open: isOpen }: { onCh
 
   const check = () =>
     act(async () => {
-      setResult(await verifyGoogle())
+      setResult(await verifyGoogle(scope))
     })
 
   const disconnect = () =>
     act(async () => {
-      await revokeGoogle()
+      await revokeGoogle(scope)
       setResult(null)
       await refresh()
       onChanged?.()
@@ -193,7 +237,31 @@ export function GoogleConnectDialog({ onChanged, onClose, open: isOpen }: { onCh
           <DialogDescription>{copy.intro}</DialogDescription>
         </DialogHeader>
 
-        {step === 'client' ? (
+        {!status ? (
+          <div className="grid gap-3 py-4" role={loadError ? 'alert' : 'status'}>
+            <p className="text-sm text-(--ui-text-secondary)">
+              {loadError
+                ? locale === 'pl'
+                  ? 'Nie udało się sprawdzić połączenia Google.'
+                  : 'Could not check the Google connection.'
+                : copy.working}
+            </p>
+            {loadError ? (
+              <Button
+                onClick={() => {
+                  setLoadError(false)
+                  void refresh()
+                }}
+                variant="secondary"
+              >
+                {locale === 'pl' ? 'Spróbuj ponownie' : 'Try again'}
+              </Button>
+            ) : (
+              <Loader2 className="animate-spin" />
+            )}
+          </div>
+        ) : null}
+        {status && step === 'client' ? (
           <section aria-label={copy.clientTitle} className="grid gap-3">
             <h3 className="text-sm font-semibold">{copy.clientTitle}</h3>
             <p className="text-sm text-(--ui-text-secondary)">{copy.clientBody}</p>
@@ -236,7 +304,12 @@ export function GoogleConnectDialog({ onChanged, onClose, open: isOpen }: { onCh
           <section aria-label={copy.consentTitle} className="grid gap-3">
             <h3 className="text-sm font-semibold">{copy.consentTitle}</h3>
             <p className="text-sm text-(--ui-text-secondary)">{copy.consentBody}</p>
-            <Button disabled={busy} onClick={() => void startSignIn()} type="button" variant={linkOpened ? 'secondary' : 'default'}>
+            <Button
+              disabled={busy}
+              onClick={() => void startSignIn()}
+              type="button"
+              variant={linkOpened ? 'secondary' : 'default'}
+            >
               <ExternalLink />
               {copy.getLink}
             </Button>
@@ -274,11 +347,13 @@ export function GoogleConnectDialog({ onChanged, onClose, open: isOpen }: { onCh
                     <p className="text-xs text-destructive">{copy.noCalendar}</p>
                   ) : (
                     <ul className="mt-1 grid gap-0.5">
-                      {(result.events?.length ? result.events : [{ start: '', summary: copy.empty }]).map((event, i) => (
-                        <li className="truncate" key={`${event.start}${i}`}>
-                          {event.summary}
-                        </li>
-                      ))}
+                      {(result.events?.length ? result.events : [{ start: '', summary: copy.empty }]).map(
+                        (event, i) => (
+                          <li className="truncate" key={`${event.start}${i}`}>
+                            {event.summary}
+                          </li>
+                        )
+                      )}
                     </ul>
                   )}
                 </div>

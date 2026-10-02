@@ -15,6 +15,7 @@ import {
   ensureEnvEntry,
   envLineDefinesKey,
   listSeedEntries,
+  quoteEnvValue,
   resolveVaultSeedDir,
   seedVault,
   VAULT_ENV_KEY
@@ -41,6 +42,51 @@ function mkSeedDir(root: string) {
 }
 
 const read = (target: string) => fs.readFileSync(target, 'utf8')
+
+test('configured vault is seeded and described consistently without touching the default location', () => {
+  const root = mkTmp()
+
+  try {
+    const hermesHome = path.join(root, 'profile')
+    const documentsDir = path.join(root, 'Documents')
+    const configured = path.join(root, 'Moja pamięć')
+    fs.mkdirSync(hermesHome)
+    const original = `${VAULT_ENV_KEY}=${quoteEnvValue(configured)}\nUNRELATED=value\n`
+    fs.writeFileSync(path.join(hermesHome, '.env'), original)
+    const result = applyVaultMemoryDefaults({ hermesHome, documentsDir, seedDir: mkSeedDir(root), environment: {} })
+    assert.equal(result.ok, true)
+    assert.equal(result.vaultPath, configured)
+    assert.ok(fs.existsSync(path.join(configured, 'README.md')))
+    assert.equal(fs.existsSync(defaultVaultPath(documentsDir)), false)
+    assert.ok(read(path.join(hermesHome, 'AGENTS.md')).includes(configured))
+    assert.equal(read(path.join(hermesHome, '.env')), original)
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true })
+  }
+})
+
+test('process vault override wins and a relative configured path fails without seeding elsewhere', () => {
+  const root = mkTmp()
+
+  try {
+    const hermesHome = path.join(root, 'profile')
+    const documentsDir = path.join(root, 'Documents')
+    const override = path.join(root, 'isolated')
+    fs.mkdirSync(hermesHome)
+    fs.writeFileSync(path.join(hermesHome, '.env'), `${VAULT_ENV_KEY}=relative-invalid\n`)
+    const options = { hermesHome, documentsDir, seedDir: mkSeedDir(root) }
+    const rejected = applyVaultMemoryDefaults({ ...options, environment: {} })
+    assert.equal(rejected.ok, false)
+    assert.equal(rejected.seed, null)
+    assert.equal(fs.existsSync(defaultVaultPath(documentsDir)), false)
+    const accepted = applyVaultMemoryDefaults({ ...options, environment: { [VAULT_ENV_KEY]: override } })
+    assert.equal(accepted.ok, true)
+    assert.ok(fs.existsSync(path.join(override, 'README.md')))
+    assert.ok(read(path.join(hermesHome, 'AGENTS.md')).includes(override))
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true })
+  }
+})
 
 test('resolveVaultSeedDir preferuje zasoby aplikacji, potem build/ w dev', () => {
   const root = mkTmp()
@@ -158,7 +204,10 @@ test('ensureEnvEntry dopisuje OBSIDIAN_VAULT_PATH raz i zachowuje resztę pliku'
     const after = read(envPath)
 
     assert.ok(after.startsWith('OPENROUTER_API_KEY=abc\n# komentarz\nHERMES_MODEL=gpt\n'))
-    assert.equal(after, `OPENROUTER_API_KEY=abc\n# komentarz\nHERMES_MODEL=gpt\n${VAULT_ENV_KEY}="C:\\\\Users\\\\ostry\\\\Documents\\\\Czesiek Vault"\n`)
+    assert.equal(
+      after,
+      `OPENROUTER_API_KEY=abc\n# komentarz\nHERMES_MODEL=gpt\n${VAULT_ENV_KEY}="C:\\\\Users\\\\ostry\\\\Documents\\\\Czesiek Vault"\n`
+    )
     assert.equal(after.split(VAULT_ENV_KEY).length - 1, 1, 'dokładnie jedno wystąpienie klucza')
 
     // Druga iteracja: brak zapisu, plik identyczny bajt w bajt.

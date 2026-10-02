@@ -27,7 +27,9 @@
  */
 
 import fs from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
+import { parseEnv } from 'node:util'
 
 export const VAULT_DIR_NAME = 'Czesiek Vault'
 export const VAULT_ENV_KEY = 'OBSIDIAN_VAULT_PATH'
@@ -215,7 +217,15 @@ export interface EnvEnsureResult {
  * Reszta pliku (i jego styl końca linii) zostaje zachowana. Drugie wywołanie nic
  * nie zmienia — plik jest bajt w bajt identyczny.
  */
-export function ensureEnvEntry({ envPath, key, value }: { envPath: string; key: string; value: string }): EnvEnsureResult {
+export function ensureEnvEntry({
+  envPath,
+  key,
+  value
+}: {
+  envPath: string
+  key: string
+  value: string
+}): EnvEnsureResult {
   let raw = ''
 
   try {
@@ -359,14 +369,16 @@ export function applyVaultMemoryDefaults({
   hermesHome,
   documentsDir,
   seedDir,
-  log
+  log,
+  environment = process.env
 }: {
   hermesHome: string
   documentsDir: string
   seedDir: string | null
   log?: (line: string) => void
+  environment?: NodeJS.ProcessEnv
 }): VaultMemoryOutcome {
-  const vaultPath = defaultVaultPath(documentsDir)
+  let vaultPath = defaultVaultPath(documentsDir)
 
   const say = (line: string) => {
     try {
@@ -397,6 +409,37 @@ export function applyVaultMemoryDefaults({
       outcome.errors.push(message)
       say(`pominięto (${message})`)
     }
+  }
+
+  // Honor the same configured location as the backend. Seeding Documents while
+  // leaving a custom .env untouched gave the agent instructions for the wrong vault.
+  step('path', () => {
+    const envPath = path.join(hermesHome, '.env')
+
+    const configured =
+      environment[VAULT_ENV_KEY]?.trim() ||
+      (fs.existsSync(envPath) ? parseEnv(fs.readFileSync(envPath, 'utf8'))[VAULT_ENV_KEY]?.trim() : undefined)
+
+    if (configured) {
+      const expanded =
+        configured === '~'
+          ? os.homedir()
+          : configured.startsWith('~/') || configured.startsWith('~\\')
+            ? path.join(os.homedir(), configured.slice(2))
+            : configured
+
+      vaultPath = path.normalize(expanded)
+
+      if (!path.isAbsolute(vaultPath)) {
+        throw new Error('Ścieżka pamięci musi być bezwzględna')
+      }
+
+      outcome.vaultPath = vaultPath
+    }
+  })
+
+  if (outcome.errors.length) {
+    return outcome
   }
 
   // 1. Vault + szablon pamięci.

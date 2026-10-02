@@ -27,6 +27,22 @@ testy tego obszaru. Testy Pythona uruchamiaj **wyłącznie** przez
 Nie zmieniaj identyfikatorów instalacji, protokołu i profili tylko po to, by
 usunąć starszą nazwę — mogą być potrzebne do zgodności z aktualizacjami.
 
+### Stabilizacja pulpitu i pamięci — październik 2026
+
+- `apps/desktop/src/hooks/use-active-capability-scope.ts` przypina zapytania i cache
+  pamięci, statusów integracji i uprawnień do pary połączenie/profil. Nie zastępuj
+  kluczy zawierających `scopeKey` wspólnym kluczem dla wszystkich maszyn.
+- `app/starmap/vault-view.tsx`: zapis bez wyścigów, odzyskiwanie po błędzie,
+  potwierdzenie niezapisanych zmian i edytor dostosowany do szerokości okna.
+- `hermes_cli/web_routers/vault.py`: model tworzenia notatki musi przekazywać
+  `external_source`; brak tego pola powodował HTTP 500 dla każdego tworzenia.
+  Test pełnej ścieżki HTTP → plik → odczyt: `tests/hermes_cli/test_web_vault.py`.
+- `electron/vault-seed.ts` respektuje lokalizację pamięci z procesu lub `.env`
+  profilu; szablon, protokół i odczyt backendu muszą wskazywać to samo miejsce.
+- Test Electron `e2e/jarvis-shell-vertical.spec.ts` sprawdza nawigację, kulę na
+  pulpicie i zapis pamięci; fixture ustawia własny `OBSIDIAN_VAULT_PATH` w temp.
+- Raport weryfikacji i ograniczenia: [PRODUCT_POLISH_2026_10.md](product/PRODUCT_POLISH_2026_10.md).
+
 Wydanie jest osobnym etapem: [pipeline](product/RELEASE_PIPELINE.md),
 [podpisywanie](RELEASE_SIGNING.md) i bramka
 `apps/desktop/scripts/verify-release-gate.mjs`. Zielony test lokalny ani scalony

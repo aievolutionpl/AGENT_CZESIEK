@@ -5,7 +5,14 @@ import { useLocation, useNavigate } from 'react-router'
 import { PageLoader } from '@/components/page-loader'
 import { SegmentedControl } from '@/components/ui/segmented-control'
 import { useI18n } from '@/i18n'
-import { $starmapError, $starmapGeneration, $starmapGraph, $starmapLoading, $starmapOwner, loadStarmapGraph } from '@/store/starmap'
+import {
+  $starmapError,
+  $starmapGeneration,
+  $starmapGraph,
+  $starmapLoading,
+  $starmapOwner,
+  loadStarmapGraph
+} from '@/store/starmap'
 import type { StarmapGraph } from '@/types/hermes'
 
 import { Panel, PanelEmpty } from '../overlays/panel'
@@ -51,9 +58,13 @@ export function StarmapView({ onClose }: { onClose: () => void }) {
   const shown = imported ?? graph
 
   const source = useMemo<MemoryGraphSource | null>(() => {
-    if (imported) {return { kind: 'imported', import_id: 'shared-map', graph: imported }}
+    if (imported) {
+      return { kind: 'imported', import_id: 'shared-map', graph: imported }
+    }
 
-    if (graph) {return { kind: 'owned', owner: owner ?? { connectionId: 'local', profile: 'default' }, generation, graph }}
+    if (graph) {
+      return { kind: 'owned', owner: owner ?? { connectionId: 'local', profile: 'default' }, generation, graph }
+    }
 
     return null
   }, [generation, graph, imported, owner])
@@ -67,28 +78,33 @@ export function StarmapView({ onClose }: { onClose: () => void }) {
   const pl = locale === 'pl'
 
   const tabs = [
-    { id: 'vault', label: pl ? 'Vault' : 'Vault' },
+    { id: 'vault', label: pl ? 'Notatki i powiązania' : 'Notes and connections' },
     { id: 'graph', label: pl ? 'Umiejętności' : 'Skills' },
     { id: 'list', label: t.starmap.memory }
   ] as const
 
-  const learned =
-    error ? (
-      <PanelEmpty description={error} icon="warning" title={t.starmap.loadFailed} />
-    ) : !shown && loading ? (
-      <PageLoader aria-label={t.starmap.loading} className="min-h-0 flex-1" />
-    ) : shown && shown.nodes.length === 0 && !imported ? (
-      <PanelEmpty description={t.starmap.emptyDesc} icon="lightbulb" title={t.starmap.emptyTitle} />
-    ) : shown ? (
-      view === 'list' && source ? (
-        <MemoryList source={source} />
-      ) : (
-        <StarMap graph={shown} imported={imported !== null} onImport={setImported} onResetMap={() => setImported(null)} source={source ?? undefined} />
-      )
-    ) : null
+  const learned = error ? (
+    <PanelEmpty description={error} icon="warning" title={t.starmap.loadFailed} />
+  ) : !shown && loading ? (
+    <PageLoader aria-label={t.starmap.loading} className="min-h-0 flex-1" />
+  ) : shown && shown.nodes.length === 0 && !imported ? (
+    <PanelEmpty description={t.starmap.emptyDesc} icon="lightbulb" title={t.starmap.emptyTitle} />
+  ) : shown ? (
+    view === 'list' && source ? (
+      <MemoryList source={source} />
+    ) : (
+      <StarMap
+        graph={shown}
+        imported={imported !== null}
+        onImport={setImported}
+        onResetMap={() => setImported(null)}
+        source={source ?? undefined}
+      />
+    )
+  ) : null
 
   return (
-    <Panel closeLabel={t.starmap.close} onClose={onClose}>
+    <Panel closeLabel={t.starmap.close} contentClassName="@container" onClose={onClose}>
       <div className="pointer-events-auto absolute right-14 top-2 z-30 [-webkit-app-region:no-drag]">
         <SegmentedControl onChange={chooseView} options={tabs} value={view} />
       </div>

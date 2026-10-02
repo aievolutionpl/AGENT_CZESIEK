@@ -60,7 +60,6 @@ export function JarvisHomeHero({
   useLiveAutostart(connected)
   const { t } = useI18n()
   const copy = t.jarvisShell.home
-  const briefingCopy = t.jarvisShell.briefing
   const state = useStore($jarvisUi)
   const railVisible = useStore($jarvisRailVisible)
   // "default" is the machine's unnamed profile, not a person: greet without it.
@@ -86,7 +85,7 @@ export function JarvisHomeHero({
       <section
         aria-labelledby="jarvis-home-title"
         className={cn(
-          'jarvis-home relative flex h-full w-full max-w-4xl flex-col items-center justify-center gap-2 px-3 pt-3 pb-24 text-center [--jarvis-hero-size:min(468px,42vh,88cqw)] @2xl:[--jarvis-hero-size:min(550px,46vh,70cqw)]',
+          'jarvis-home relative flex h-full w-full max-w-4xl flex-col items-center justify-center gap-2 px-3 pt-3 pb-24 text-center [--jarvis-hero-size:min(490px,44vh,88cqw)] @2xl:[--jarvis-hero-size:min(570px,47vh,74cqw)]',
           className
         )}
         data-testid="jarvis-home-hero"
