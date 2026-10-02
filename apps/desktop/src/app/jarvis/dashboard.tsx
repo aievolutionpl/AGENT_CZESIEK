@@ -12,7 +12,6 @@ import {
   Activity,
   ChevronLeft,
   ChevronRight,
-  LayoutDashboard,
   Lightbulb,
   Maximize,
   MoreHorizontal,
@@ -159,19 +158,6 @@ function HomeTopBar({
       onSelect: () => requestBriefing({ speak: true })
     },
     { icon: <Lightbulb />, label: pl ? 'Podpowiedzi' : 'Tips', onSelect: openTips },
-    ...(petOverlay
-      ? [
-          {
-            icon: <span aria-hidden="true" className="jarvis-mini-orb" />,
-            label: orbShown ? (pl ? 'Wróć do kuli' : 'Return to orb') : desktopOrbCopy[pl ? 'pl' : 'en'].show,
-            onSelect: () =>
-              orbShown
-                ? petOverlay.control({ type: 'toggle-app' })
-                : popOutDesktopOrb(() => petOverlay.control({ type: 'toggle-app' })),
-            pressed: orbShown
-          }
-        ]
-      : []),
     {
       icon: <Maximize />,
       label: focus ? copy.focusModeExit : copy.focusMode,
@@ -181,32 +167,44 @@ function HomeTopBar({
   ]
 
   return (
-    <div className="flex w-full items-center gap-3">
+    <div className="flex w-full items-center gap-1.5">
       <div className="flex min-w-0 items-center gap-2 text-sm font-medium text-(--ui-text-secondary)">
         <Button
           aria-label={pl ? 'Pokaż lub ukryj lewy panel' : 'Show or hide the left panel'}
           aria-pressed={sidebarOpen}
-          className="jarvis-glass jarvis-glass-hover size-10 min-h-10 min-w-10 rounded-full"
+          className="jarvis-glass jarvis-glass-hover rounded-full"
           onClick={toggleSidebarOpen}
           size="icon"
-          title={pl ? 'Lewy panel' : 'Left panel'}
           type="button"
           variant="secondary"
         >
           <PanelLeftIcon />
         </Button>
-        <LayoutDashboard className="size-4 shrink-0 text-(--ui-accent)" />
-        <span className="truncate">Workspace</span>
       </div>
-      <div className="ml-auto flex min-w-0 items-center gap-2">
+      <div className="ml-auto flex min-w-0 items-center gap-1.5">
         {switcher}
+        {petOverlay ? (
+          <Button
+            aria-label={orbShown ? (pl ? 'Wróć do kuli' : 'Return to orb') : desktopOrbCopy[pl ? 'pl' : 'en'].show}
+            aria-pressed={orbShown}
+            className="jarvis-glass jarvis-glass-hover rounded-full"
+            onClick={() =>
+              void (orbShown
+                ? petOverlay.control({ type: 'toggle-app' })
+                : popOutDesktopOrb(() => petOverlay.control({ type: 'toggle-app' })))
+            }
+            size="icon"
+            variant="secondary"
+          >
+            <span aria-hidden="true" className="jarvis-mini-orb" />
+          </Button>
+        ) : null}
         <Popover onOpenChange={setMenuOpen} open={menuOpen}>
           <PopoverTrigger asChild>
             <Button
               aria-label={pl ? 'Więcej' : 'More'}
-              className="jarvis-glass jarvis-glass-hover size-10 min-h-10 min-w-10 rounded-full"
+              className="jarvis-glass jarvis-glass-hover rounded-full"
               size="icon"
-              title={pl ? 'Więcej' : 'More'}
               type="button"
               variant="secondary"
             >
@@ -235,10 +233,9 @@ function HomeTopBar({
         <Button
           aria-label={pl ? 'Pokaż lub ukryj prawy panel' : 'Show or hide the right panel'}
           aria-pressed={!railHidden}
-          className="jarvis-glass jarvis-glass-hover size-10 min-h-10 min-w-10 rounded-full"
+          className="jarvis-glass jarvis-glass-hover rounded-full"
           onClick={() => setRailHidden(!railHidden)}
           size="icon"
-          title={pl ? 'Prawy panel' : 'Right panel'}
           type="button"
           variant="secondary"
         >

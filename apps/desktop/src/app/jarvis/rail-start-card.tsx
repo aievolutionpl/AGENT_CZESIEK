@@ -1,4 +1,3 @@
-import { useStore } from '@nanostores/react'
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
@@ -6,11 +5,11 @@ import { useNavigate } from 'react-router'
 import { getBrowserStatus } from '@/api/browser'
 import { CONNECTION_STATUS_KEY, getConnectionStatus } from '@/api/connections'
 import { getVaultGraph, VAULT_RAIL_KEY } from '@/api/vault'
+import { useActiveCapabilityScope } from '@/hooks/use-active-capability-scope'
 import { useI18n } from '@/i18n'
 import { Check, ChevronRight, Sparkles, X } from '@/lib/icons'
 import { persistString, storedString } from '@/lib/storage'
 import { cn } from '@/lib/utils'
-import { $activeGatewayProfile } from '@/store/profile'
 
 import { requestComposerInsert } from '../chat/composer/focus'
 import { GoogleConnectDialog } from '../connections/google-connect-dialog'
@@ -90,29 +89,29 @@ export function JarvisStartCard({
   const { locale } = useI18n()
   const copy = locale === 'pl' ? COPY.pl : COPY.en
   const navigate = useNavigate()
-  const profile = useStore($activeGatewayProfile)
+  const { scope, scopeKey } = useActiveCapabilityScope()
   const [dismissed, setDismissed] = useState(dismissedNow)
   const [briefingTried, setBriefingTried] = useState(() => storedString(BRIEFING_KEY) === '1')
   const [googleOpen, setGoogleOpen] = useState(false)
 
   const status = useQuery({
     enabled: connected && !dismissed,
-    queryFn: () => getConnectionStatus(),
-    queryKey: CONNECTION_STATUS_KEY,
+    queryFn: () => getConnectionStatus(scope),
+    queryKey: [...CONNECTION_STATUS_KEY, scopeKey],
     staleTime: 30_000
   })
 
   const vault = useQuery({
     enabled: connected && !dismissed,
-    queryFn: () => getVaultGraph(),
-    queryKey: [VAULT_RAIL_KEY, profile],
+    queryFn: () => getVaultGraph(scope),
+    queryKey: [VAULT_RAIL_KEY, scopeKey],
     staleTime: 30_000
   })
 
   const browser = useQuery({
     enabled: connected && !dismissed,
-    queryFn: () => getBrowserStatus(),
-    queryKey: ['browser-modes', null],
+    queryFn: () => getBrowserStatus(scope),
+    queryKey: ['browser-modes', scopeKey],
     staleTime: 30_000
   })
 

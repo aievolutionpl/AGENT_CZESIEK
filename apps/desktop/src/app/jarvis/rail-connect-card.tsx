@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router'
 
 import { CONNECTION_STATUS_KEY, getConnectionStatus } from '@/api/connections'
 import { Button } from '@/components/ui/button'
+import { useActiveCapabilityScope } from '@/hooks/use-active-capability-scope'
 import { useI18n } from '@/i18n'
 import { Plus, Sparkles } from '@/lib/icons'
 import { cn } from '@/lib/utils'
@@ -28,6 +29,7 @@ const COPY = {
  * useful. Reads presence only, and disappears once there is nothing to suggest.
  */
 export function JarvisConnectCard({ connected }: { connected: boolean }) {
+  const { scope, scopeKey } = useActiveCapabilityScope()
   const { locale, t } = useI18n()
   const copy = locale === 'pl' ? COPY.pl : COPY.en
   const navigate = useNavigate()
@@ -36,8 +38,8 @@ export function JarvisConnectCard({ connected }: { connected: boolean }) {
 
   const status = useQuery({
     enabled: connected,
-    queryFn: () => getConnectionStatus(),
-    queryKey: CONNECTION_STATUS_KEY,
+    queryFn: () => getConnectionStatus(scope),
+    queryKey: [...CONNECTION_STATUS_KEY, scopeKey],
     staleTime: 30_000
   })
 

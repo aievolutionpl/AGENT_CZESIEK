@@ -33,6 +33,7 @@ class VaultNoteCreate(BaseModel):
     content: Optional[str] = None
     conflict: str = "error"
     dedupe_key: Optional[str] = None
+    external_source: Optional[str] = None
     profile: Optional[str] = None
 
 

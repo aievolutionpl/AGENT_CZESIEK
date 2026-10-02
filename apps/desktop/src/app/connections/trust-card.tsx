@@ -1,7 +1,10 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 
+import type { ProfileScope } from '@/api/client'
 import { getTrust, setTrustLevel, TRUST_LEVELS, type TrustLevel, type TrustLogEntry } from '@/api/trust'
+import { Button } from '@/components/ui/button'
+import { useActiveCapabilityScope } from '@/hooks/use-active-capability-scope'
 import { useI18n } from '@/i18n'
 import { ShieldLock } from '@/lib/icons'
 import { cn } from '@/lib/utils'
@@ -14,17 +17,26 @@ const COPY = {
     google: 'Google (mail, calendar, Drive, Docs, Sheets)',
     levels: {
       ask: { hint: 'It shows what it wants to do and waits for your yes. Recommended.', name: 'Act after I agree' },
-      auto: { hint: 'It sends, creates and deletes without asking. Only for things you fully trust.', name: 'Act on its own' },
+      auto: {
+        hint: 'It sends, creates and deletes without asking. Only for things you fully trust.',
+        name: 'Act on its own'
+      },
       propose: { hint: 'It reads and tells you exactly what it would do, but cannot do it.', name: 'Read and propose' },
       read: { hint: 'It only reads. Any send, delete or change is blocked.', name: 'Read only' }
     },
     recent: 'What Czesiek did lately',
     scope: 'Applies to writes through Google. Other services are read-only for now.',
     title: 'How far Czesiek may go',
-    when: (ts: number) => new Date(ts * 1000).toLocaleString('en', { day: 'numeric', hour: '2-digit', minute: '2-digit', month: 'short' })
+    when: (ts: number) =>
+      new Date(ts * 1000).toLocaleString('en', { day: 'numeric', hour: '2-digit', minute: '2-digit', month: 'short' })
   },
   pl: {
-    decisions: { approved: 'Zatwierdzone przez Ciebie', auto: 'Zrobione samodzielnie', blocked: 'Zablokowane', denied: 'Odrzucone przez Ciebie' },
+    decisions: {
+      approved: 'Zatwierdzone przez Ciebie',
+      auto: 'Zrobione samodzielnie',
+      blocked: 'Zablokowane',
+      denied: 'Odrzucone przez Ciebie'
+    },
     empty: 'Jeszcze nic. Każde wysłanie, usunięcie lub zmianę w Google, którą zrobi Czesiek, zobaczysz tutaj.',
     google: 'Google (mail, kalendarz, Dysk, Dokumenty, Arkusze)',
     levels: {
@@ -36,7 +48,8 @@ const COPY = {
     recent: 'Co Czesiek zrobił ostatnio',
     scope: 'Dotyczy zapisów przez Google. Pozostałe usługi są na razie tylko do odczytu.',
     title: 'Jak daleko może pójść Czesiek',
-    when: (ts: number) => new Date(ts * 1000).toLocaleString('pl', { day: 'numeric', hour: '2-digit', minute: '2-digit', month: 'short' })
+    when: (ts: number) =>
+      new Date(ts * 1000).toLocaleString('pl', { day: 'numeric', hour: '2-digit', minute: '2-digit', month: 'short' })
   }
 } as const
 
@@ -49,30 +62,65 @@ const TONE: Record<TrustLogEntry['decision'], string> = {
 
 /** Per-integration trust level (enforced by the approval gate, not advisory) and the log of what happened. */
 export function TrustCard() {
+  const { scope, scopeKey } = useActiveCapabilityScope()
+
+  return <ScopedTrustCard key={scopeKey} scope={scope} scopeKey={scopeKey} />
+}
+
+function ScopedTrustCard({ scope, scopeKey }: { scope: ProfileScope; scopeKey: string }) {
   const { locale } = useI18n()
   const copy = locale === 'pl' ? COPY.pl : COPY.en
   const client = useQueryClient()
-  const { data } = useQuery({ queryFn: () => getTrust(), queryKey: ['trust'], refetchInterval: 15_000 })
-  const [busy, setBusy] = useState(false)
+  const queryKey = ['trust', scopeKey]
 
-  if (!data) {
-    return null
+  const { data, error, isFetching, refetch } = useQuery({
+    queryFn: () => getTrust(scope),
+    queryKey,
+    refetchInterval: 15_000
+  })
+
+  const [busy, setBusy] = useState(false)
+  const writing = useRef(false)
+
+  if (!data || error) {
+    return (
+      <section aria-busy={isFetching} className="jarvis-panel grid gap-3 p-4">
+        <h3 className="text-base font-semibold">{copy.title}</h3>
+        <p className="text-sm text-(--ui-text-secondary)" role={error ? 'alert' : 'status'}>
+          {locale === 'pl'
+            ? error
+              ? 'Nie można odczytać uprawnień. Sprawdź połączenie i spróbuj ponownie.'
+              : 'Sprawdzam uprawnienia…'
+            : error
+              ? 'Cannot read permissions. Check the connection and try again.'
+              : 'Checking permissions…'}
+        </p>
+        {error ? (
+          <Button disabled={isFetching} onClick={() => void refetch()} size="sm" variant="secondary">
+            {locale === 'pl' ? 'Spróbuj ponownie' : 'Try again'}
+          </Button>
+        ) : null}
+      </section>
+    )
   }
 
   const level: TrustLevel = data.levels.google ?? 'ask'
 
   const choose = async (next: TrustLevel) => {
-    if (next === level || busy) {
+    if (next === level || writing.current) {
       return
     }
 
+    writing.current = true
     setBusy(true)
 
     try {
-      client.setQueryData(['trust'], await setTrustLevel('google', next))
+      await client.cancelQueries({ queryKey })
+      client.setQueryData(queryKey, await setTrustLevel('google', next, scope))
     } catch (error) {
       notifyError(error, copy.title)
     } finally {
+      writing.current = false
       setBusy(false)
     }
   }
@@ -109,7 +157,9 @@ export function TrustCard() {
       <p className="text-xs text-(--ui-text-secondary)">{copy.levels[level].hint}</p>
       <p className="text-xs text-(--ui-text-tertiary)">{copy.scope}</p>
       <div>
-        <h4 className="mb-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-(--ui-text-tertiary)">{copy.recent}</h4>
+        <h4 className="mb-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-(--ui-text-tertiary)">
+          {copy.recent}
+        </h4>
         {data.log.length === 0 ? (
           <p className="text-xs text-(--ui-text-tertiary)">{copy.empty}</p>
         ) : (
@@ -117,13 +167,17 @@ export function TrustCard() {
             {data.log.map((entry, index) => (
               <li className="jarvis-well flex items-center gap-2 px-3 py-2" key={`${entry.ts}-${index}`}>
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm text-(--ui-text-primary)">{locale === 'pl' ? entry.label_pl : entry.label}</span>
+                  <span className="block truncate text-sm text-(--ui-text-primary)">
+                    {locale === 'pl' ? entry.label_pl : entry.label}
+                  </span>
                   <span className="block truncate text-xs text-(--ui-text-tertiary)">
                     {entry.preview ? `${entry.preview} · ` : ''}
                     {copy.when(entry.ts)}
                   </span>
                 </span>
-                <span className={cn('shrink-0 rounded-full px-2 py-0.5 text-xs font-medium', TONE[entry.decision])}>{copy.decisions[entry.decision]}</span>
+                <span className={cn('shrink-0 rounded-full px-2 py-0.5 text-xs font-medium', TONE[entry.decision])}>
+                  {copy.decisions[entry.decision]}
+                </span>
               </li>
             ))}
           </ul>

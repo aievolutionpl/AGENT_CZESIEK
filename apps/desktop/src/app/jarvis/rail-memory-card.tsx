@@ -1,15 +1,15 @@
-import { useStore } from '@nanostores/react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
 
+import type { ProfileScope } from '@/api/client'
 import { createVaultNote, getVaultGraph, VAULT_RAIL_KEY, type VaultNoteNode } from '@/api/vault'
 import { Button } from '@/components/ui/button'
+import { useActiveCapabilityScope } from '@/hooks/use-active-capability-scope'
 import { useI18n } from '@/i18n'
 import { triggerHaptic } from '@/lib/haptics'
 import { ArrowUpRight, Brain, FileText, Loader2, Plus } from '@/lib/icons'
 import { notify, notifyError } from '@/store/notifications'
-import { $activeGatewayProfile } from '@/store/profile'
 
 import { STARMAP_ROUTE } from '../routes'
 
@@ -62,18 +62,42 @@ export function recentNotes(nodes: readonly VaultNoteNode[], limit = RECENT_SHOW
 
 /** The vault at a glance, plus one-line capture: the rail's door into Mapa wiedzy. */
 export function JarvisMemoryCard({ connected }: { connected: boolean }) {
+  const { scope, scopeKey } = useActiveCapabilityScope()
+
+  return <ScopedMemoryCard connected={connected} key={scopeKey} scope={scope} scopeKey={scopeKey} />
+}
+
+function ScopedMemoryCard({
+  connected,
+  scope,
+  scopeKey
+}: {
+  connected: boolean
+  scope: ProfileScope
+  scopeKey: string
+}) {
   const { locale } = useI18n()
   const copy = locale === 'pl' ? COPY.pl : COPY.en
   const navigate = useNavigate()
-  const profile = useStore($activeGatewayProfile)
   const queryClient = useQueryClient()
   const [text, setText] = useState('')
   const [saving, setSaving] = useState(false)
-  const key = [VAULT_RAIL_KEY, profile]
+  const key = [VAULT_RAIL_KEY, scopeKey]
+  const mounted = useRef(true)
+  const writing = useRef(false)
+  // Lifecycle guard for the keyed owner, not a mirror of an atom.
+  // eslint-disable-next-line no-restricted-syntax
+  useEffect(() => {
+    mounted.current = true
+
+    return () => {
+      mounted.current = false
+    }
+  }, [])
 
   const vault = useQuery({
     enabled: connected,
-    queryFn: () => getVaultGraph(),
+    queryFn: () => getVaultGraph(scope),
     queryKey: key,
     refetchInterval: REFRESH_MS,
     staleTime: REFRESH_MS
@@ -86,22 +110,38 @@ export function JarvisMemoryCard({ connected }: { connected: boolean }) {
   const capture = async () => {
     const value = text.trim()
 
-    if (!value || saving) {
+    if (!value || writing.current) {
       return
     }
 
+    writing.current = true
     setSaving(true)
 
     try {
-      await createVaultNote(captureTitle(value), { conflict: 'suffix', content: `${value}\n`, folder: INBOX_FOLDER })
+      await createVaultNote(
+        captureTitle(value),
+        { conflict: 'suffix', content: `${value}\n`, folder: INBOX_FOLDER },
+        scope
+      )
+      await queryClient.invalidateQueries({ queryKey: key })
+
+      if (!mounted.current) {
+        return
+      }
+
       setText('')
       notify({ kind: 'success', message: copy.saved, durationMs: 1800 })
       triggerHaptic('success')
-      await queryClient.invalidateQueries({ queryKey: key })
     } catch (error) {
-      notifyError(error, copy.captureLabel)
+      if (mounted.current) {
+        notifyError(error, copy.captureLabel)
+      }
     } finally {
-      setSaving(false)
+      writing.current = false
+
+      if (mounted.current) {
+        setSaving(false)
+      }
     }
   }
 

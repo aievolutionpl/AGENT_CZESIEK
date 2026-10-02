@@ -39,11 +39,11 @@ export interface OrbMotionTargets {
 // lets the voice push it out of round, speaking sends quick waves across it,
 // working folds it into slow rotating lobes, an error withdraws it.
 const TARGETS: Record<PlasmaTone, OrbMotionTargets> = {
-  thinking: { brightness: 0.76, electrons: 0.3, links: 0.7, morph: 0.08, radius: 0.96, speed: 0.3, wave: 0.55 },
-  idle: { brightness: 0.6, electrons: 0, links: 0.42, morph: 0.09, radius: 1, speed: 0.25, wave: 0.45 },
-  listening: { brightness: 0.78, electrons: 0, links: 0.62, morph: 0.12, radius: 0.84, speed: 0.4, wave: 0.76 },
-  working: { brightness: 0.84, electrons: 1, links: 1, morph: 0.12, radius: 0.96, speed: 0.68, wave: 0.88 },
-  speaking: { brightness: 0.88, electrons: 0, links: 0.88, morph: 0.1, radius: 0.94, speed: 0.3, wave: 1.16 },
+  thinking: { brightness: 0.78, electrons: 0.3, links: 0.7, morph: 0.045, radius: 0.98, speed: 0.3, wave: 0.55 },
+  idle: { brightness: 0.7, electrons: 0, links: 0.45, morph: 0.035, radius: 1, speed: 0.18, wave: 0.35 },
+  listening: { brightness: 0.84, electrons: 0, links: 0.65, morph: 0.045, radius: 0.94, speed: 0.32, wave: 0.7 },
+  working: { brightness: 0.86, electrons: 1, links: 1, morph: 0.055, radius: 0.98, speed: 0.58, wave: 0.8 },
+  speaking: { brightness: 0.92, electrons: 0, links: 0.88, morph: 0.045, radius: 0.98, speed: 0.3, wave: 1.05 },
   approval: { brightness: 0.78, electrons: 0.4, links: 0.72, morph: 0.08, radius: 0.8, speed: 0.2, wave: 0.5 },
   success: { brightness: 0.66, electrons: 0, links: 0.45, morph: 0.07, radius: 0.92, speed: 0.22, wave: 0.4 },
   // Withdrawn and slow: unmistakably not "about to answer".
@@ -51,7 +51,7 @@ const TARGETS: Record<PlasmaTone, OrbMotionTargets> = {
 }
 
 /** How much a measured voice level adds to the shape's departure from round. */
-const VOICE_MORPH: Partial<Record<PlasmaTone, number>> = { listening: 0.3, speaking: 0.35 }
+const VOICE_MORPH: Partial<Record<PlasmaTone, number>> = { listening: 0.1, speaking: 0.14 }
 
 export function orbMotionTargets(tone: PlasmaTone): OrbMotionTargets {
   return TARGETS[tone]
@@ -435,6 +435,15 @@ export class ParticleOrb {
       }
 
       radii.set(scratch)
+    }
+
+    // Sparse particle bins should not dent the glass into a polygon. Keep a
+    // round envelope at rest and let measured voice energy soften its outline.
+    const envelope = Math.max(...radii)
+    const shapeWeight = Math.min(0.85, 0.2 + this.current.morph * 2)
+
+    for (let bin = 0; bin < OUTLINE_BINS; bin += 1) {
+      radii[bin] = envelope + (radii[bin] - envelope) * shapeWeight
     }
   }
 

@@ -65,6 +65,22 @@
   white-space: nowrap;
 }
 
+.jarvis-core__caption {
+  position: absolute;
+  inset-block-end: 0;
+  z-index: 2;
+  max-inline-size: 90%;
+  padding: 0.4rem 0.85rem;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-xl);
+  background: var(--glass-bg);
+  color: var(--ui-text-primary);
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  text-align: center;
+  backdrop-filter: blur(12px);
+}
+
 .jarvis-core__stage {
   position: relative;
   display: grid;
@@ -445,6 +461,9 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .jarvis-core {
+    transition: none;
+  }
   .jarvis-core * {
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;
@@ -502,4 +521,3 @@
     inset 0 1px 0 var(--glass-highlight),
     0 8px 22px -18px rgb(8 24 56 / 0.65);
 }
-

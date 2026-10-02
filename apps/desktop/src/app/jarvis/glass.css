@@ -105,9 +105,10 @@
   position: relative;
   background: linear-gradient(
     90deg,
-    color-mix(in srgb, var(--ui-accent) 16%, transparent),
-    color-mix(in srgb, #8b5cf6 5%, transparent)
+    color-mix(in srgb, var(--ui-accent) 10%, transparent),
+    color-mix(in srgb, var(--ui-accent) 3%, transparent)
   );
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ui-accent) 12%, transparent);
 }
 
 .jarvis-nav-active::before {
@@ -119,7 +120,7 @@
   width: 3px;
   border-radius: 0 3px 3px 0;
   background: var(--czesiek-grad);
-  box-shadow: var(--czesiek-glow);
+  box-shadow: none;
 }
 
 /* Flat panels for the side rail: one frosted surface per card and a soft
@@ -160,14 +161,20 @@
 }
 
 .jarvis-home__caption {
-  background: color-mix(in srgb, var(--glass-bg-strong) 60%, transparent);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
   backdrop-filter: blur(18px);
 }
 
 .jarvis-mini-orb {
-  display: block; width: 26px; height: 26px; border-radius: 50%;
+  display: block;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
   background: radial-gradient(circle at 30% 25%, white, #7dd3fc 24%, #6366f1 65%, #312e81);
-  box-shadow: inset -3px -3px 6px rgb(30 27 75 / .35), 0 2px 7px rgb(79 125 255 / .3);
+  box-shadow:
+    inset -3px -3px 6px rgb(30 27 75 / 0.35),
+    0 2px 7px rgb(79 125 255 / 0.3);
   border: 1px solid var(--glass-highlight);
 }
 
@@ -225,12 +232,12 @@
   justify-content: center;
   gap: clamp(0.25rem, 0.45cqw, 0.45rem);
   min-width: 0;
-  min-block-size: 2.25rem;
+  min-block-size: 2.75rem;
   padding: 0.35rem clamp(0.7rem, 1.2cqw, 1rem);
-  border: 0;
+  border: 1px solid var(--glass-border);
   border-radius: 999px;
-  background: color-mix(in srgb, var(--glass-bg) 60%, transparent);
-  color: var(--ui-text-secondary);
+  background: var(--glass-bg);
+  color: var(--ui-text-primary);
   font-size: clamp(0.75rem, 1.05cqw, 0.8125rem);
   font-weight: 500;
   line-height: 1.2;
@@ -391,8 +398,7 @@ main[data-home='true'] .jarvis-tips-corner {
   border-radius: 20px;
   background:
     radial-gradient(120% 90% at 8% -12%, var(--aurora-a), transparent 60%),
-    radial-gradient(90% 80% at 100% 112%, var(--aurora-b), transparent 58%),
-    var(--glass-bg-strong);
+    radial-gradient(90% 80% at 100% 112%, var(--aurora-b), transparent 58%), var(--glass-bg-strong);
   box-shadow:
     inset 0 1px 0 var(--glass-highlight),
     0 32px 72px -34px rgb(7 18 50 / 0.6);
@@ -523,7 +529,9 @@ main[data-home='true'] .jarvis-tips-corner {
 }
 
 .jarvis-well {
-  box-shadow: inset 0 1px 2px rgb(15 23 42 / 0.06), inset 0 0 0 1px color-mix(in srgb, var(--ui-text-primary) 5%, transparent);
+  box-shadow:
+    inset 0 1px 2px rgb(15 23 42 / 0.06),
+    inset 0 0 0 1px color-mix(in srgb, var(--ui-text-primary) 5%, transparent);
 }
 
 .jarvis-field {
@@ -628,9 +636,15 @@ main[data-home='true'] .jarvis-tips-corner {
 
 /* Profile avatars: initial on a gradient disc, a live dot on the active one. */
 .jarvis-avatar {
-  background: linear-gradient(145deg, color-mix(in srgb, var(--ui-accent) 30%, rgb(255 255 255 / 0.5)), color-mix(in srgb, #8b5cf6 26%, transparent));
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--ui-accent) 30%, rgb(255 255 255 / 0.5)),
+    color-mix(in srgb, #8b5cf6 26%, transparent)
+  );
   color: var(--ui-accent);
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.6), inset 0 0 0 1px color-mix(in srgb, var(--ui-accent) 28%, transparent);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.6),
+    inset 0 0 0 1px color-mix(in srgb, var(--ui-accent) 28%, transparent);
 }
 
 .jarvis-avatar-live::after {
@@ -684,11 +698,21 @@ main[data-home='true'] .jarvis-tips-corner {
   animation: jarvis-rise 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-.jarvis-dashboard__rail > .jarvis-rail-slot:nth-child(3) > .jarvis-rise { animation-delay: 40ms; }
-.jarvis-dashboard__rail > .jarvis-rail-slot:nth-child(4) > .jarvis-rise { animation-delay: 90ms; }
-.jarvis-dashboard__rail > .jarvis-rail-slot:nth-child(5) > .jarvis-rise { animation-delay: 140ms; }
-.jarvis-dashboard__rail > .jarvis-rail-slot:nth-child(6) > .jarvis-rise { animation-delay: 190ms; }
-.jarvis-dashboard__rail > .jarvis-rail-slot:nth-child(7) > .jarvis-rise { animation-delay: 240ms; }
+.jarvis-dashboard__rail > .jarvis-rail-slot:nth-child(3) > .jarvis-rise {
+  animation-delay: 40ms;
+}
+.jarvis-dashboard__rail > .jarvis-rail-slot:nth-child(4) > .jarvis-rise {
+  animation-delay: 90ms;
+}
+.jarvis-dashboard__rail > .jarvis-rail-slot:nth-child(5) > .jarvis-rise {
+  animation-delay: 140ms;
+}
+.jarvis-dashboard__rail > .jarvis-rail-slot:nth-child(6) > .jarvis-rise {
+  animation-delay: 190ms;
+}
+.jarvis-dashboard__rail > .jarvis-rail-slot:nth-child(7) > .jarvis-rise {
+  animation-delay: 240ms;
+}
 
 /* Rail cards: a slot wraps each card so it can be dragged; a card that shows nothing leaves no gap. */
 .jarvis-rail-slot {
@@ -704,13 +728,17 @@ main[data-home='true'] .jarvis-tips-corner {
 }
 
 .jarvis-rail-slot[data-dragging] > .jarvis-panel {
-  box-shadow: 0 18px 40px -14px rgb(0 0 0 / 0.45), 0 0 0 1px color-mix(in srgb, var(--ui-accent) 55%, transparent);
+  box-shadow:
+    0 18px 40px -14px rgb(0 0 0 / 0.45),
+    0 0 0 1px color-mix(in srgb, var(--ui-accent) 55%, transparent);
   cursor: grabbing;
   transform: scale(1.015);
 }
 
 .jarvis-rail-slot > .jarvis-panel {
-  transition: box-shadow 200ms ease, transform 200ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition:
+    box-shadow 200ms ease,
+    transform 200ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 /* The grip sits in the card's left padding and shows on hover or keyboard focus. */
@@ -729,7 +757,9 @@ main[data-home='true'] .jarvis-tips-corner {
   opacity: 0;
   outline: none;
   touch-action: none;
-  transition: opacity 160ms ease, color 160ms ease;
+  transition:
+    opacity 160ms ease,
+    color 160ms ease;
 }
 
 .group\/card:hover .jarvis-rail-grip,
@@ -753,7 +783,9 @@ main[data-home='true'] .jarvis-tips-corner {
   display: grid;
   grid-template-rows: 0fr;
   opacity: 0;
-  transition: grid-template-rows 280ms cubic-bezier(0.22, 1, 0.36, 1), opacity 200ms ease;
+  transition:
+    grid-template-rows 280ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 200ms ease;
 }
 
 .jarvis-fold[data-open='true'] {
@@ -1001,10 +1033,18 @@ main[data-home='true'] .jarvis-tips-corner {
   animation: jarvis-float 4.5s ease-in-out infinite;
 }
 
-[data-testid='jarvis-onboarding-welcome'] .jarvis-rise:nth-child(2) { animation-delay: 60ms; }
-[data-testid='jarvis-onboarding-welcome'] .jarvis-rise:nth-child(3) { animation-delay: 120ms; }
-[data-testid='jarvis-onboarding-welcome'] .jarvis-rise:nth-child(4) { animation-delay: 180ms; }
-[data-testid='jarvis-onboarding-welcome'] .jarvis-rise:nth-child(5) { animation-delay: 240ms; }
+[data-testid='jarvis-onboarding-welcome'] .jarvis-rise:nth-child(2) {
+  animation-delay: 60ms;
+}
+[data-testid='jarvis-onboarding-welcome'] .jarvis-rise:nth-child(3) {
+  animation-delay: 120ms;
+}
+[data-testid='jarvis-onboarding-welcome'] .jarvis-rise:nth-child(4) {
+  animation-delay: 180ms;
+}
+[data-testid='jarvis-onboarding-welcome'] .jarvis-rise:nth-child(5) {
+  animation-delay: 240ms;
+}
 
 @media (prefers-reduced-motion: reduce) {
   .jarvis-float {

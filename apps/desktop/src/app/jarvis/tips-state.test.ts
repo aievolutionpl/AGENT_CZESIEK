@@ -33,11 +33,11 @@ describe('jarvis tips state', () => {
   })
 
   it('stays usable when storage refuses the write', () => {
-    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
-      throw new Error('quota')
-    })
+    // The Node 26 test shim is an in-memory Storage object, not a jsdom
+    // Storage instance. Inject the failing boundary instead of its prototype.
+    const blocked = { setItem: () => { throw new Error('quota') } } as unknown as Storage
 
-    expect(writeJarvisTipsState(initialJarvisTipsState(), window.localStorage, SCOPE)).toBe(false)
+    expect(writeJarvisTipsState(initialJarvisTipsState(), blocked, SCOPE)).toBe(false)
   })
 
   it('restores hidden tips without re-arming the one automatic appearance', () => {

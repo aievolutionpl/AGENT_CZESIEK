@@ -19,6 +19,8 @@
  *   npm exec playwright test e2e/jarvis-shell-vertical.spec.ts --reporter=list
  */
 import type { CDPSession } from '@playwright/test'
+import fs from 'node:fs'
+import path from 'node:path'
 
 import { type MockBackendFixture, setupMockBackend, waitForAppReady } from './fixtures'
 import { expect, test } from './test'
@@ -191,13 +193,17 @@ test.describe('Jarvis product shell', () => {
     })
 
     expect(before.top).toBe(true)
-    await expect.poll(() => app.evaluate(({ BrowserWindow }) => {
-      const main = BrowserWindow.getAllWindows().find(
-        (window: import('electron').BrowserWindow) => !window.webContents.getURL().includes('win=overlay')
-      )!
+    await expect
+      .poll(() =>
+        app.evaluate(({ BrowserWindow }) => {
+          const main = BrowserWindow.getAllWindows().find(
+            (window: import('electron').BrowserWindow) => !window.webContents.getURL().includes('win=overlay')
+          )!
 
-      return main.isMinimized() || !main.isVisible()
-    })).toBe(true)
+          return main.isMinimized() || !main.isVisible()
+        })
+      )
+      .toBe(true)
     expect(await overlay.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe('rgba(0, 0, 0, 0)')
     await expect(overlay.locator('.desktop-orb')).toBeVisible()
     await overlay.locator('.desktop-orb__sphere').hover()
@@ -229,13 +235,17 @@ test.describe('Jarvis product shell', () => {
       )
       .toBe(false)
     await page.getByRole('button', { name: 'Wróć do kuli', exact: true }).first().click()
-    await expect.poll(() => app.evaluate(({ BrowserWindow }) => {
-      const main = BrowserWindow.getAllWindows().find(
-        (window: import('electron').BrowserWindow) => !window.webContents.getURL().includes('win=overlay')
-      )!
+    await expect
+      .poll(() =>
+        app.evaluate(({ BrowserWindow }) => {
+          const main = BrowserWindow.getAllWindows().find(
+            (window: import('electron').BrowserWindow) => !window.webContents.getURL().includes('win=overlay')
+          )!
 
-      return main.isMinimized() || !main.isVisible()
-    })).toBe(true)
+          return main.isMinimized() || !main.isVisible()
+        })
+      )
+      .toBe(true)
     await overlay.getByRole('button', { name: 'Otwórz Cześka' }).click()
     await overlay.getByRole('button', { name: 'Schowaj kulę' }).click()
     await expect.poll(() => app.windows().some(window => window.url().includes('win=overlay'))).toBe(false)
@@ -449,6 +459,11 @@ test.describe('Jarvis product shell', () => {
 
   test('the home screen raises real pulse suggestions and remembers a dismissal', async () => {
     const page = fixture!.page
+    await page.getByRole('radio', { name: 'PL', exact: true }).click()
+    await page.locator('[data-jarvis-nav-view="jarvis"]').click()
+    // The rail owns suggestions while it is visible; hiding it brings the
+    // same suggestions onto the home hero without a duplicate list.
+    await page.getByRole('button', { name: 'Pokaż lub ukryj prawy panel' }).click()
     // A fresh sandbox home has an empty USER.md and no cron jobs: the real
     // /api/pulse must turn both into suggestions.
     const knowOwner = page.locator('[data-pulse-kind="know_owner"]')
@@ -488,6 +503,40 @@ test.describe('Jarvis product shell', () => {
   })
 
   test('shell screenshot', async () => {
-    await expectVisualSnapshot(fixture!.page, { name: 'jarvis-shell', app: fixture!.app })
+    const page = fixture!.page
+    await page.locator('[data-jarvis-nav-view="jarvis"]').click()
+    await page.getByRole('radio', { name: 'PL', exact: true }).click()
+    const history = page.getByRole('button', { name: 'Pokaż lub ukryj lewy panel' })
+    if (await history.getAttribute('aria-pressed') === 'true') { await history.click() }
+    const rail = page.getByRole('button', { name: 'Pokaż lub ukryj prawy panel' })
+    if (await rail.getAttribute('aria-pressed') !== 'true') { await rail.click() }
+    await page.locator('textarea, [contenteditable="true"]').first().fill('')
+    await expectVisualSnapshot(page, { name: 'jarvis-shell', app: fixture!.app })
+    await page.getByRole('radio', { name: 'Ciemny', exact: true }).click()
+    await expect(page.locator('html')).toHaveClass(/dark/)
+    await expectVisualSnapshot(page, { name: 'jarvis-shell-dark', app: fixture!.app })
+    await page.getByRole('radio', { name: 'Jasny', exact: true }).click()
+  })
+
+  test('memory saves through the real backend and survives reopening', async () => {
+    const page = fixture!.page
+    await page.locator('[data-jarvis-nav-view="starmap"]').click()
+    const vault = page.getByTestId('vault-view')
+    await vault.getByRole('button', { name: 'Nowa notatka', exact: true }).first().click()
+    await vault.getByRole('textbox', { name: 'Tytuł notatki' }).fill('Plan tygodnia')
+    await vault.getByRole('textbox', { name: 'Tytuł notatki' }).press('Enter')
+    const editor = vault.locator('textarea')
+    await expect(editor).toBeVisible()
+    const content = '# Plan tygodnia\n\nW poniedziałek zapytaj o trzy najważniejsze zadania.\n\nPowiązanie: [[02_PAMIEC_TRWALA]]\n'
+    await editor.fill(content)
+    const id = await vault.locator('aside > p').first().textContent()
+    await vault.getByRole('button', { name: 'Zapisz', exact: true }).click()
+    await expect.poll(() => fs.readFileSync(path.join(fixture!.sandbox.hermesHome, 'vault', id!), 'utf8')).toBe(content)
+    await page.goto(`${page.url().split('#')[0]}#/starmap?note=${encodeURIComponent(id!)}`)
+    await page.reload()
+    await waitForAppReady(fixture!, 120_000)
+    await expect(page.getByTestId('vault-view').locator('textarea')).toBeVisible()
+    await expect(page.getByTestId('vault-view').locator('textarea')).toHaveValue(content)
+    await expectVisualSnapshot(page, { name: 'memory-saved', app: fixture!.app })
   })
 })

@@ -195,7 +195,9 @@ def write_note(rel: str, content: str) -> dict[str, Any]:
     if len(content.encode("utf-8")) > _MAX_NOTE_BYTES:
         raise ValueError("note is too large")
     tmp = path.with_name(f".{path.name}.tmp")
-    tmp.write_text(content, encoding="utf-8")
+    # Preserve the editor's newlines across Windows and Unix; text-mode CRLF
+    # expansion made a saved note differ immediately from the submitted draft.
+    tmp.write_text(content, encoding="utf-8", newline="")
     os.replace(tmp, path)
     return {"ok": True, "id": rel}
 
@@ -251,7 +253,7 @@ def create_note(
         if n > 200:
             raise FileExistsError(rel)
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(body, encoding="utf-8")
+    path.write_text(body, encoding="utf-8", newline="")
     return {"ok": True, "id": rel, "existed": False}
 
 

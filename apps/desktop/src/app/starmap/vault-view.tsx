@@ -1,20 +1,21 @@
-import { useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation } from 'react-router'
 
+import type { ProfileScope } from '@/api/client'
 import {
   createVaultNote,
   deleteVaultNote,
   getVaultGraph,
   getVaultNote,
   saveVaultNote,
-  VAULT_RAIL_KEY,
-  type VaultGraph
+  VAULT_RAIL_KEY
 } from '@/api/vault'
 import { PageLoader } from '@/components/page-loader'
 import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { SearchField } from '@/components/ui/search-field'
+import { useActiveCapabilityScope } from '@/hooks/use-active-capability-scope'
 import { useI18n } from '@/i18n'
 import { ExternalLink, Plus, RefreshCw, Save, Trash2, X } from '@/lib/icons'
 import { notify, notifyError } from '@/store/notifications'
@@ -33,7 +34,8 @@ const COPY = {
     saveAndGo: 'Save and continue',
     unsavedBody: 'This note has changes that are not saved yet.',
     unsavedTitle: 'Leave without saving?',
-    emptyBody: 'Your memory lives as plain markdown notes. Create the first one and link notes with [[double brackets]].',
+    emptyBody:
+      'Your memory lives as plain markdown notes. Create the first one and link notes with [[double brackets]].',
     emptyTitle: 'The vault is empty',
     links: 'Linked notes',
     newNote: 'New note',
@@ -57,7 +59,8 @@ const COPY = {
     saveAndGo: 'Zapisz i przejdź',
     unsavedBody: 'Ta notatka ma zmiany, które nie zostały jeszcze zapisane.',
     unsavedTitle: 'Wyjść bez zapisywania?',
-    emptyBody: 'Twoja pamięć to zwykłe notatki markdown. Utwórz pierwszą i łącz notatki za pomocą [[podwójnych nawiasów]].',
+    emptyBody:
+      'Twoja pamięć to zwykłe notatki markdown. Utwórz pierwszą i łącz notatki za pomocą [[podwójnych nawiasów]].',
     emptyTitle: 'Vault jest pusty',
     links: 'Powiązane notatki',
     newNote: 'Nowa notatka',
@@ -74,10 +77,30 @@ const COPY = {
 } as const
 
 export function VaultView() {
+  const { scope, scopeKey } = useActiveCapabilityScope()
+
+  return <ScopedVaultView key={scopeKey} scope={scope} scopeKey={scopeKey} />
+}
+
+function ScopedVaultView({ scope, scopeKey }: { scope: ProfileScope; scopeKey: string }) {
   const { locale } = useI18n()
   const copy = locale === 'pl' ? COPY.pl : COPY.en
-  const [graph, setGraph] = useState<null | VaultGraph>(null)
-  const [error, setError] = useState<null | string>(null)
+
+  const {
+    data: graph,
+    error,
+    isFetching,
+    refetch: load
+  } = useQuery({
+    queryKey: [VAULT_RAIL_KEY, scopeKey],
+    queryFn: () => getVaultGraph(scope)
+  })
+
+  const [busy, setBusy] = useState(false)
+  const writing = useRef(false)
+  const mounted = useRef(true)
+  const [noteError, setNoteError] = useState<null | string>(null)
+  const [readAttempt, setReadAttempt] = useState(0)
   const [query, setQuery] = useState('')
   const [selected, setSelected] = useState<null | string>(null)
   // A switch waiting on the user's answer about unsaved text (`{ id: null }` = close the note).
@@ -91,29 +114,28 @@ export function VaultView() {
   const linkedNote = params.get('note')
   const wantsNew = params.get('new') === '1'
 
-
   useEffect(() => {
     if (wantsNew) {
       setNaming(true)
     }
   }, [wantsNew])
 
-  const load = useCallback(async () => {
-    try {
-      setGraph(await getVaultGraph())
-      setError(null)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
+  // Lifecycle guard, not a mirror of reactive state; late writes cannot update a new owner.
+  // eslint-disable-next-line no-restricted-syntax
+  useEffect(() => {
+    mounted.current = true
+
+    return () => {
+      mounted.current = false
     }
   }, [])
-
-  useEffect(() => {
-    void load()
-  }, [load])
 
   // Opening a note reads it fresh from disk; a slow read for a note the user
   // already left must not replace the one on screen.
   useEffect(() => {
+    setNoteError(null)
+    setDraft(null)
+
     if (!selected) {
       setDraft(null)
 
@@ -122,14 +144,14 @@ export function VaultView() {
 
     let stale = false
 
-    getVaultNote(selected)
+    getVaultNote(selected, scope)
       .then(note => !stale && setDraft({ base: note.content, id: selected, text: note.content }))
-      .catch(err => !stale && notifyError(err, copy.save))
+      .catch(err => !stale && setNoteError(err instanceof Error ? err.message : String(err)))
 
     return () => {
       stale = true
     }
-  }, [copy.save, selected])
+  }, [readAttempt, scope, selected])
 
   const matches = useMemo(() => {
     const q = query.trim().toLocaleLowerCase()
@@ -166,6 +188,10 @@ export function VaultView() {
   latest.current = { dirty, selected }
 
   const requestSelect = useCallback((id: null | string) => {
+    if (writing.current) {
+      return
+    }
+
     const decision = selectDecision(latest.current.dirty, latest.current.selected, id)
 
     if (decision === 'switch') {
@@ -184,58 +210,104 @@ export function VaultView() {
 
   // The rail's memory card reads the same vault: tell it something changed.
   const refreshRail = useCallback(
-    () => void queryClient.invalidateQueries({ queryKey: [VAULT_RAIL_KEY] }),
-    [queryClient]
+    () => void queryClient.invalidateQueries({ queryKey: [VAULT_RAIL_KEY, scopeKey] }),
+    [queryClient, scopeKey]
   )
 
   const save = useCallback(async () => {
+    if (writing.current) {
+      return false
+    }
+
     if (!draft || draft.text === draft.base) {
       return true
     }
 
     try {
-      await saveVaultNote(draft.id, draft.text)
+      writing.current = true
+      setBusy(true)
+      await saveVaultNote(draft.id, draft.text, scope)
+      refreshRail()
+
+      if (!mounted.current) {
+        return false
+      }
+
       setDraft(d => (d && d.id === draft.id ? { ...d, base: draft.text } : d))
       notify({ kind: 'success', message: copy.saved, durationMs: 1800 })
-      void load()
-      refreshRail()
 
       return true
     } catch (err) {
-      notifyError(err, copy.save)
+      if (mounted.current) {
+        notifyError(err, copy.save)
+      }
 
       return false
+    } finally {
+      writing.current = false
+
+      if (mounted.current) {
+        setBusy(false)
+      }
     }
-  }, [copy.save, copy.saved, draft, load, refreshRail])
+  }, [copy.save, copy.saved, draft, refreshRail, scope])
 
   const create = async () => {
     const value = title.trim()
 
-    if (!value) {
+    if (!value || writing.current) {
       return
     }
 
     try {
-      const made = await createVaultNote(value)
+      writing.current = true
+      setBusy(true)
+      const made = await createVaultNote(value, {}, scope)
+      refreshRail()
+
+      if (!mounted.current) {
+        return
+      }
+
       setNaming(false)
       setTitle('')
-      await load()
-      refreshRail()
+      writing.current = false
       requestSelect(made.id)
     } catch (err) {
-      notifyError(err, copy.newNote)
+      if (mounted.current) {
+        notifyError(err, copy.newNote)
+      }
+    } finally {
+      writing.current = false
+
+      if (mounted.current) {
+        setBusy(false)
+      }
     }
   }
 
   const remove = async () => {
-    if (!selected) {
+    if (!selected || writing.current) {
       return
     }
 
-    await deleteVaultNote(selected)
-    setSelected(null)
-    void load()
-    refreshRail()
+    writing.current = true
+    setBusy(true)
+
+    try {
+      await deleteVaultNote(selected, scope)
+      refreshRail()
+
+      if (mounted.current) {
+        setSelected(null)
+      }
+    } finally {
+      writing.current = false
+
+      if (mounted.current) {
+        setBusy(false)
+      }
+    }
   }
 
   const openInObsidian = () => {
@@ -245,8 +317,20 @@ export function VaultView() {
     }
   }
 
-  if (error) {
-    return <p className="m-auto max-w-sm text-center text-sm text-(--ui-text-secondary)">{error}</p>
+  if (error && !graph) {
+    return (
+      <div className="m-auto flex max-w-sm flex-col items-center gap-3 text-center">
+        <h2 className="text-lg font-semibold">
+          {locale === 'pl' ? 'Pamięć jest chwilowo niedostępna' : 'Memory is temporarily unavailable'}
+        </h2>
+        <p className="text-sm text-(--ui-text-secondary)" role="alert">
+          {error.message}
+        </p>
+        <Button disabled={isFetching} onClick={() => void load()} variant="secondary">
+          {copy.refresh}
+        </Button>
+      </div>
+    )
   }
 
   if (!graph) {
@@ -256,7 +340,7 @@ export function VaultView() {
   const empty = graph.nodes.length === 0
 
   return (
-    <div className="relative flex min-h-0 flex-1 gap-3 overflow-hidden" data-testid="vault-view">
+    <div className="relative flex min-h-0 flex-1 flex-col gap-3 overflow-hidden @2xl:flex-row" data-testid="vault-view">
       <div className="relative min-w-0 flex-1">
         {empty ? (
           <div className="absolute inset-0 grid place-items-center px-6 text-center">
@@ -282,10 +366,23 @@ export function VaultView() {
               placeholder={copy.search}
               value={query}
             />
-            <Button aria-label={copy.newNote} onClick={() => setNaming(true)} size="icon-sm" type="button" variant="ghost">
+            <Button
+              aria-label={copy.newNote}
+              onClick={() => setNaming(true)}
+              size="icon-sm"
+              type="button"
+              variant="ghost"
+            >
               <Plus />
             </Button>
-            <Button aria-label={copy.refresh} onClick={() => void load()} size="icon-sm" type="button" variant="ghost">
+            <Button
+              aria-label={copy.refresh}
+              disabled={isFetching}
+              onClick={() => void load()}
+              size="icon-sm"
+              type="button"
+              variant="ghost"
+            >
               <RefreshCw />
             </Button>
             <Button aria-label={copy.obsidian} onClick={openInObsidian} size="icon-sm" type="button" variant="ghost">
@@ -314,7 +411,7 @@ export function VaultView() {
               placeholder={copy.newPrompt}
               value={title}
             />
-            <Button disabled={!title.trim()} size="sm" type="submit">
+            <Button disabled={busy || !title.trim()} size="sm" type="submit">
               {copy.newNote}
             </Button>
           </form>
@@ -332,22 +429,53 @@ export function VaultView() {
         ) : null}
       </div>
 
+      {selected && draft?.id !== selected ? (
+        <aside className="flex min-h-40 flex-col items-center justify-center gap-3 rounded-xl bg-(--ui-widget-surface-background) p-4 @2xl:w-80">
+          {noteError ? (
+            <>
+              <p className="text-sm text-(--ui-text-secondary)" role="alert">
+                {noteError}
+              </p>
+              <Button onClick={() => setReadAttempt(n => n + 1)} variant="secondary">
+                {copy.refresh}
+              </Button>
+            </>
+          ) : (
+            <PageLoader className="min-h-0" />
+          )}
+          <Button onClick={() => requestSelect(null)} variant="text">
+            {copy.close}
+          </Button>
+        </aside>
+      ) : null}
       {selected && draft?.id === selected ? (
-        <aside className="flex w-[min(26rem,45%)] shrink-0 flex-col gap-3 rounded-xl bg-(--ui-widget-surface-background) p-4">
+        <aside
+          aria-busy={busy}
+          className="flex min-h-64 max-h-[60%] shrink-0 flex-col gap-3 rounded-xl bg-(--ui-widget-surface-background) p-4 @2xl:max-h-none @2xl:w-[min(26rem,45%)]"
+        >
           <header className="flex items-center gap-2">
             <h2 className="min-w-0 flex-1 truncate text-sm font-semibold text-(--ui-text-primary)">
               {byId.get(selected)?.label ?? selected}
             </h2>
             {dirty ? <span className="text-xs text-(--ui-text-tertiary)">{copy.unsaved}</span> : null}
-            <Button aria-label={copy.close} onClick={() => requestSelect(null)} size="icon-sm" type="button" variant="ghost">
+            <Button
+              aria-label={copy.close}
+              onClick={() => requestSelect(null)}
+              size="icon-sm"
+              type="button"
+              variant="ghost"
+            >
               <X />
             </Button>
           </header>
           <p className="truncate text-xs text-(--ui-text-tertiary)">{selected}</p>
-          {/<external-data\b/i.test(draft.text) ? <p className="text-xs text-amber-600 dark:text-amber-400">{copy.external}</p> : null}
+          {/<external-data\b/i.test(draft.text) ? (
+            <p className="text-xs text-amber-600 dark:text-amber-400">{copy.external}</p>
+          ) : null}
           <textarea
             aria-label={byId.get(selected)?.label ?? selected}
-            className="min-h-0 flex-1 resize-none rounded-lg bg-(--ui-bg-quaternary) p-3 font-mono text-xs leading-relaxed text-(--ui-text-primary) outline-none"
+            className="min-h-28 flex-1 resize-none rounded-lg bg-(--ui-bg-quaternary) p-3 text-sm leading-relaxed text-(--ui-text-primary) outline-none focus-visible:ring-2 focus-visible:ring-(--ui-accent)"
+            disabled={busy}
             onChange={event => setDraft({ ...draft, text: event.target.value })}
             onKeyDown={event => {
               if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 's') {
@@ -363,7 +491,13 @@ export function VaultView() {
               <p className="text-xs font-medium text-(--ui-text-secondary)">{copy.links}</p>
               <div className="flex max-h-20 flex-wrap gap-1 overflow-auto">
                 {related.map(note => (
-                  <Button key={note.id} onClick={() => requestSelect(note.id)} size="xs" type="button" variant="secondary">
+                  <Button
+                    key={note.id}
+                    onClick={() => requestSelect(note.id)}
+                    size="xs"
+                    type="button"
+                    variant="secondary"
+                  >
                     {note.label}
                   </Button>
                 ))}
@@ -371,11 +505,11 @@ export function VaultView() {
             </div>
           ) : null}
           <footer className="flex items-center justify-between gap-2">
-            <Button onClick={() => setConfirmDelete(true)} size="sm" type="button" variant="text">
+            <Button disabled={busy} onClick={() => setConfirmDelete(true)} size="sm" type="button" variant="text">
               <Trash2 />
               {copy.delete}
             </Button>
-            <Button disabled={!dirty} onClick={() => void save()} size="sm" type="button">
+            <Button disabled={busy || !dirty} onClick={() => void save()} size="sm" type="button">
               <Save />
               {copy.save}
             </Button>
@@ -384,21 +518,27 @@ export function VaultView() {
       ) : null}
 
       <ConfirmDialog
-        confirmLabel={copy.discard}
+        confirmLabel={copy.saveAndGo}
         description={copy.unsavedBody}
-        destructive
         onClose={() => setPendingSelect(null)}
-        onConfirm={() => {
-          setSelected(pendingSelect?.id ?? null)
-          setPendingSelect(null)
+        onConfirm={async () => {
+          if (!(await save())) {
+            throw new Error(
+              locale === 'pl' ? 'Zmiany nie zostały zapisane. Spróbuj ponownie.' : 'Changes were not saved. Try again.'
+            )
+          }
+
+          if (mounted.current) {
+            setSelected(pendingSelect?.id ?? null)
+          }
         }}
         open={pendingSelect !== null}
         secondaryAction={{
-          label: copy.saveAndGo,
+          label: copy.discard,
           onClick: () => {
             const next = pendingSelect?.id ?? null
 
-            void save().then(ok => ok && setSelected(next))
+            setSelected(next)
           }
         }}
         title={copy.unsavedTitle}
