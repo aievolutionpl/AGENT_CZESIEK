@@ -216,7 +216,7 @@ Szczegóły i granice działania bez internetu: [instalacja na nowym komputerze]
 
 ### Pierwsze minuty
 
-Onboarding to dziewięć krótkich kroków: jak działa Czesiek, dostępy, zgody, komputer, integracje i API, silnik, model, profil i głos. W praktyce:
+Onboarding to dziewięć kroków: powitanie, „Poznajmy się”, własne API i współpracownik, model pracy, głos, dostępy, komputer, integracje oraz zgody. W praktyce:
 
 1. **Kliknij logo Cześka.** Krótka animacja i cichy dźwięk otworzą onboarding (dźwięk startuje dopiero po kliknięciu).
 2. **Wybierz współpracownika** (silnik): nowy z pakietu albo wykrytą instalację Hermesa (możesz też wskazać folder). Czesiek zapamiętuje wybór i zawsze używa własnego profilu — nie kopiuje kluczy ani historii innego Hermesa.

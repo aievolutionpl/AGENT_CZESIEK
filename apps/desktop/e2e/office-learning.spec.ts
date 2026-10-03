@@ -8,6 +8,7 @@ test('office teammates, learning and profile settings work through the product s
   test.setTimeout(180_000)
 
   const fixture = await setupMockBackend({
+    language: 'pl',
     extraConfig:
       'voice:\n  engine: realtime\n  realtime:\n    provider: gemini\n    gemini:\n      model: gemini-3.8-live\n      voice: Puck\n'
   })
@@ -76,7 +77,7 @@ test('office teammates, learning and profile settings work through the product s
     const later = page.getByRole('button', { name: /Wybiorę dostawcę później|I'll choose provider later/ })
 
     if (
-      await later.waitFor({ state: 'visible', timeout: 45_000 }).then(
+      await later.waitFor({ state: 'visible', timeout: 3_000 }).then(
         () => true,
         () => false
       )
@@ -109,6 +110,18 @@ test('office teammates, learning and profile settings work through the product s
     await page.locator('[data-tour="nav-config:appearance"]').click()
     await expect(page.getByRole('heading', { name: 'Twój profil i styl współpracy' })).toBeVisible()
     await capture('settings-profile.png')
+    await page.getByLabel('Jak mam się do Ciebie zwracać?').fill('Ada testowa')
+    await page.getByRole('button', { name: 'Zapisz profil', exact: true }).click()
+    await expect(page.getByRole('status').filter({ hasText: 'Zapisano. Nowy styl pracy' })).toBeVisible()
+
+    const savedConfig = await page.evaluate(async () => {
+      const desktop = (window as unknown as { hermesDesktop: { api: (request: { path: string }) => Promise<unknown> } })
+        .hermesDesktop
+
+      return await desktop.api({ path: '/api/config' })
+    })
+
+    expect(savedConfig).toMatchObject({ display: { czesiek_profile: { name: 'Ada testowa' } } })
     await page.locator('[data-tour="nav-config:voice"]').click()
     await capture('settings-voice.png')
     await page.getByText('Więcej ustawień głosu', { exact: true }).click()

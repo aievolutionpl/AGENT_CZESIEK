@@ -1,3 +1,5 @@
+import { atom } from 'nanostores'
+
 import type { PresetOwner } from './preset-store'
 import type { PresetSkillAvailability, SubagentPreset } from './presets'
 
@@ -9,6 +11,7 @@ export interface PreparedPresetTask {
 }
 
 const pending = new Map<string, PreparedPresetTask>()
+export const $preparedPresetTaskRevision = atom(0)
 let sequence = 0
 
 const ownerKey = (owner: PresetOwner) => `${owner.connectionId || 'local'}\u0000${owner.profile.trim() || 'default'}`
@@ -38,6 +41,7 @@ export function preparePresetTask(
   }
 
   pending.set(ownerKey(capturedOwner), prepared)
+  $preparedPresetTaskRevision.set($preparedPresetTaskRevision.get() + 1)
 
   return prepared
 }
