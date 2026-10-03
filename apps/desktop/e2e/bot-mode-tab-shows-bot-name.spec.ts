@@ -7,6 +7,7 @@ import {
   buildAppEnv,
   createSandbox,
   launchDesktop,
+  reportWelcomeScope,
   type MockBackendFixture,
   waitForAppReady,
   writeEnvFile,
@@ -102,6 +103,12 @@ test.beforeAll(async () => {
 test.afterAll(async () => {
   await fixture?.cleanup()
   fixture = null
+})
+
+test.afterEach(async ({ browserName: _browserName }, info) => {
+  if (info.status !== info.expectedStatus && fixture) {
+    await reportWelcomeScope(fixture.page)
+  }
 })
 
 test("an open Bot Chat's tab reads the bot's name, not the canonical 'Bot Chat' title", async () => {

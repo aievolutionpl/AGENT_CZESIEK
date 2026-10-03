@@ -7,6 +7,7 @@ import {
   buildAppEnv,
   createSandbox,
   launchDesktop,
+  reportWelcomeScope,
   type MockBackendFixture,
   waitForAppReady,
   writeEnvFile,
@@ -105,6 +106,12 @@ test.beforeAll(async () => {
 test.afterAll(async () => {
   await fixture?.cleanup()
   fixture = null
+})
+
+test.afterEach(async ({ browserName: _browserName }, info) => {
+  if (info.status !== info.expectedStatus && fixture) {
+    await reportWelcomeScope(fixture.page)
+  }
 })
 
 test('a bot row click lands on the Bot Chat the row previews, not a side thread', async () => {

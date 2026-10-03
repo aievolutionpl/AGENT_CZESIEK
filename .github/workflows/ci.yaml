@@ -141,15 +141,18 @@ jobs:
   # The full visual suite above stays off. This lane is the part of it that
   # must never regress silently: the Jarvis product shell — its chrome, its
   # navigation, and the §14.11 layout contract — in a real Electron window.
-  # It is one spec against one baseline, so it does not inherit the flakiness
-  # that got the full suite disabled, and it is required by all-checks-pass.
+  # Keep the product shell and canonical bot-chat paths blocking, without
+  # making unrelated desktop surfaces part of this focused PR check.
   e2e-jarvis:
     name: Jarvis shell E2E
     needs: detect
     if: needs.detect.outputs.python_prod == 'true' || needs.detect.outputs.frontend == 'true'
     uses: ./.github/workflows/e2e-desktop.yml
     with:
-      spec: e2e/jarvis-shell-vertical.spec.ts
+      spec: >-
+        e2e/jarvis-shell-vertical.spec.ts
+        e2e/bot-mode-row-click-mirrors-registry.spec.ts
+        e2e/bot-mode-tab-shows-bot-name.spec.ts
 
   docs-site:
     name: Docs Site

@@ -664,6 +664,16 @@ export async function deferConfiguredProfileWelcome(page: Page, profiles: string
   }, profiles)
 }
 
+/** Names and completion flags only; never print config or credential values. */
+export async function reportWelcomeScope(page: Page): Promise<void> {
+  const states = await page.evaluate(() =>
+    Object.keys(localStorage)
+      .filter(key => key.startsWith('ai-evolution-jarvis-onboarding-v1:'))
+      .map(key => ({ key, skipped: JSON.parse(localStorage.getItem(key) || '{}').skipped }))
+  )
+  console.info('[welcome scopes]', JSON.stringify(states))
+}
+
 export async function waitForAppReady(
   fixture: MockBackendFixture | NoProviderFixture | DeadBackendFixture,
   timeoutMs = 60_000,
