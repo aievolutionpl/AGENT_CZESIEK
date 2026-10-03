@@ -105,7 +105,7 @@ export function OverlayView({
       <div className="relative h-full min-h-0">
         <div
           className={cn(
-            'relative flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-(--stroke-nous) bg-(--ui-chat-surface-background) shadow-nous',
+            'czesiek-overlay-card relative flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-(--stroke-nous) bg-(--ui-chat-surface-background) shadow-nous',
             rootClassName
           )}
           // Marks the card as a RAISED surface for window glass: while the field

@@ -52,6 +52,10 @@ Sekrety i dane profilu pozostają poza repozytorium.
 
 ## Własne skille, role i orb
 
+- Wygląd i polskie ustawienia: `apps/desktop/src/app/jarvis/glass.css`, `src/i18n/{pl,en,types}.ts`. Tła: `src/assets/backgrounds/czesiek-glass-*.webp`.
+- Modele pracy: `apps/desktop/src/app/jarvis/work-models.ts` i `model-switcher-options.ts` (propozycje filtrowane katalogiem, wyszukiwanie).
+- Integracje i pamięć Dysku: `apps/desktop/src/app/connections/`; `drive-memory-panel.tsx` przypina żądania i cache do połączenia/profilu. Opis zakresu: [POLISH_BRAND_EXPERIENCE.md](product/POLISH_BRAND_EXPERIENCE.md).
+
 - Import z tekstu i kreator: `apps/desktop/src/app/skills/skill-create.tsx`;
   walidacja/podgląd: `skill-draft.ts`; zapis: `src/api/skills.ts` →
   `hermes_cli/web_routers/skills.py` → istniejący `tools/skill_manager_tool.py`.

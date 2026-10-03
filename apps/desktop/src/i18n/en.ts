@@ -579,7 +579,7 @@ export const en: Translations = {
         gemini: 'Gemini Live'
       },
       nav: {
-        tagline: 'People · Knowledge · Real results',
+        tagline: 'AI Evolution Polska',
         search: 'Search…',
         sections: { work: 'Work', knowledge: 'Knowledge', connections: 'Connections', system: 'System' },
         promoTitle: 'Build more with AI.',
@@ -620,7 +620,7 @@ export const en: Translations = {
   jarvisConnections: {
     title: 'Integrations',
     subtitle:
-      'Connect Google, Calendar, GitHub, Notion and other work services. Messaging and automations have their own simpler menu sections.',
+      'Connect Google, GitHub, Notion and other work services. Set up messaging below to talk to Czesiek from your phone.',
     chosenLabel: 'Chosen during setup',
     allLabel: 'All connections',
     stepsLabel: 'How to connect',
@@ -1174,6 +1174,94 @@ export const en: Translations = {
   },
 
   settings: {
+    desktop: {
+      moa: {
+        title: 'Team of models',
+        intro:
+          'Save model teams as presets. Reference models propose answers; the coordinating model combines them and carries out the task.',
+        preset: 'Preset',
+        newPreset: 'New preset',
+        enabled: 'Enabled',
+        setDefault: 'Set as default',
+        remove: 'Remove',
+        add: 'Add preset',
+        default: 'Default',
+        reference: 'Reference',
+        addReference: 'Add reference model',
+        aggregator: 'Coordinating model',
+        enable: 'Enable reference',
+        disable: 'Disable reference'
+      },
+      uninstall: {
+        title: 'Uninstall Agent Czesiek',
+        zone: 'Removing the application',
+        loading: 'Checking installed components…',
+        confirm: 'Confirm uninstall',
+        removes: 'This will remove:',
+        irreversible: 'This cannot be undone.',
+        app: 'Application',
+        running: 'Uninstalling…',
+        yes: 'Yes, uninstall',
+        intro: 'Choose what to remove. The app closes to finish. You can install Agent Czesiek again later.',
+        failed: 'Uninstall could not start.',
+        guiTitle: 'Remove the desktop app only',
+        guiDescription: 'Keep the agent engine, settings and conversations.',
+        guiConsequence: 'the desktop app and its interface data',
+        liteTitle: 'Remove the app and engine, keep my data',
+        liteDescription: 'Keep settings, conversations and API keys for a future installation.',
+        liteConsequence: 'the app and engine; settings, conversations and API keys are kept',
+        fullTitle: 'Remove everything',
+        fullDescription: 'Remove the app, engine, settings, conversations, schedules, API keys and logs.',
+        fullConsequence: 'the app, engine and all its user data'
+      },
+      computer: {
+        loading: 'Checking computer control…',
+        readFailed: 'Could not check computer control',
+        grantFailed: 'Could not request permissions',
+        approveTitle: 'Approve in System Settings',
+        approveBody: 'macOS shows a permission dialog for CuaDriver. Approve it, then return here.',
+        unsupported: 'Computer control is unavailable on this platform',
+        install: 'Install the cua-driver component below to control this computer.',
+        installGrant: 'Then enable Accessibility and Screen Recording here.',
+        identity: 'Permissions are assigned to CuaDriver, the component that controls your Mac.',
+        linux: 'Uses X11/XWayland to control the desktop.',
+        windows: 'Windows may show a security prompt for CuaDriver when it starts for the first time.',
+        recheck: 'Check again',
+        accessibility: 'Accessibility',
+        accessibilityHint: 'Allows clicks, typing and reading window controls.',
+        screen: 'Screen Recording',
+        screenHint: 'Allows screenshots of application windows.',
+        health: 'Computer control status',
+        ready: 'Ready',
+        notReady: 'Not ready',
+        unknown: 'Unknown',
+        granted: 'Granted',
+        notGranted: 'Not granted',
+        success: 'Computer control is ready. Ask Czesiek to open an app and complete a task.',
+        waiting: 'Waiting for approval…',
+        grant: 'Grant permissions'
+      },
+      pool: {
+        count: 'Agents kept ready',
+        countHint:
+          'Keep these agent processes running for faster switching. Each uses about 60 MB of memory. Changes apply immediately.',
+        timeout: 'Idle timeout',
+        timeoutHint:
+          'After this time an unused agent process stops. A longer timeout makes returning to the agent faster.',
+        timeoutLabel: 'Idle timeout in milliseconds'
+      },
+      appearance: {
+        search: 'Search installed themes or the VS Code catalog…',
+        noMatches: 'No installed themes match this search.',
+        options: 'Show options'
+      },
+      skills: {
+        available: 'Enabled',
+        installed: 'Installed',
+        manage: 'Manage skills',
+        recent: 'Recently used skills'
+      }
+    },
     closeSettings: 'Close settings',
     exportConfig: 'Export config',
     importConfig: 'Import config',
@@ -3955,7 +4043,8 @@ export const en: Translations = {
     connectExistingShort: 'Connect existing',
     connectExistingDesc: 'Use a remote backend with a session token or browser sign-in. No local install will start.',
     installLocalTitle: 'Prepare a new collaborator',
-    installLocalDesc: 'The full Windows package includes a ready engine. Czesiek uses its own profile without changing other installations.',
+    installLocalDesc:
+      'The full Windows package includes a ready engine. Czesiek uses its own profile without changing other installations.',
     localStartUnavailable: 'Local installation could not start. Restart Agent Czesiek Desktop and try again.',
     remoteSetupTitle: 'Connect to existing Agent Czesiek',
     remoteSetupDesc:

@@ -16,9 +16,11 @@ function Where() {
 }
 
 const api = vi.fn(async ({ path }: { path: string }) =>
-  path.startsWith('/api/connections/status')
-    ? { github: 'connected', google: 'missing', notion: 'missing' }
-    : { can_send_mail: false, client_secret: false, connected: false, services: [], token: false }
+  path.startsWith('/api/trust')
+    ? { levels: { google: 'ask' }, log: [] }
+    : path.startsWith('/api/connections/status')
+      ? { github: 'connected', google: 'missing', notion: 'missing' }
+      : { can_send_mail: false, client_secret: false, connected: false, services: [], token: false }
 )
 
 function renderPage() {
@@ -62,7 +64,9 @@ describe('ConnectionsView', () => {
 
     const google = screen.getByText(pl.jarvisConnections.entries.google.name).closest('article')!
 
-    expect(within(google as HTMLElement).queryByRole('button', { name: pl.jarvisConnections.setupWithJarvis })).toBeNull()
+    expect(
+      within(google as HTMLElement).queryByRole('button', { name: pl.jarvisConnections.setupWithJarvis })
+    ).toBeNull()
     fireEvent.click(within(google as HTMLElement).getByRole('button', { name: 'Połącz Google' }))
 
     // With no client file yet the wizard starts at the first step.
@@ -73,7 +77,7 @@ describe('ConnectionsView', () => {
     await waitFor(() => {
       const github = screen.getByText(pl.jarvisConnections.entries.github.name).closest('article') as HTMLElement
 
-      expect(within(github).getByText('Połączono')).toBeTruthy()
+      expect(within(github).getByText('Skonfigurowano')).toBeTruthy()
     })
   })
 

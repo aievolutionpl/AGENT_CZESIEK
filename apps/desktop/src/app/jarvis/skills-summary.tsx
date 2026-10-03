@@ -35,21 +35,21 @@ export function SkillsSummary({ scope, onManageSkills }: SkillsSummaryProps) {
   const available = skills.filter(skill => skill.enabled).length
 
   return (
-    <section aria-label="Skills" className="jarvis-glass grid gap-3 rounded-2xl p-4">
+    <section aria-label={t.skills.tabSkills} className="jarvis-glass grid gap-3 rounded-2xl p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h2 className="text-sm font-semibold text-(--ui-text-primary)">{t.skills.tabSkills}</h2>
           <p className="mt-1 text-xs text-(--ui-text-tertiary)">
-            {available} enabled · {skills.length} installed
+            {t.settings.desktop.skills.available}: {available} · {t.settings.desktop.skills.installed}: {skills.length}
           </p>
         </div>
         <Button onClick={onManageSkills} size="xs" variant="secondary">
-          Manage skills
+          {t.settings.desktop.skills.manage}
         </Button>
       </div>
       {query.isPending ? <p className="text-xs text-(--ui-text-tertiary)">{t.skills.loading}</p> : null}
       {!query.isPending && recent.length > 0 ? (
-        <ul aria-label="Recently used skills" className="grid gap-1">
+        <ul aria-label={t.settings.desktop.skills.recent} className="grid gap-1">
           {recent.map((skill: SkillInfo) => (
             <li className="flex items-center justify-between gap-2 text-xs" key={skill.name}>
               <span className="truncate text-(--ui-text-secondary)">{displayName(skill.name)}</span>

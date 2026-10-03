@@ -1,6 +1,7 @@
 import { defineFieldCopy } from '@/app/settings/field-copy'
 import { shortDuration } from '@/lib/time'
 
+import { en } from './en'
 import type { Translations } from './types'
 
 export const zh: Translations = {
@@ -1148,6 +1149,7 @@ export const zh: Translations = {
   },
 
   settings: {
+    desktop: en.settings.desktop,
     closeSettings: '关闭设置',
     exportConfig: '导出配置',
     importConfig: '导入配置',
@@ -1760,12 +1762,14 @@ export const zh: Translations = {
       versionUnavailable: '版本不可用',
       productTitle: 'Agent Czesiek',
       poweredBy: '由 AI Evolution Polska 开发',
-      attributionDesc: 'Agent Czesiek 由 AI Evolution Polska 开发，底层使用 Nous Research 的 Hermes Agent 引擎（MIT）。',
+      attributionDesc:
+        'Agent Czesiek 由 AI Evolution Polska 开发，底层使用 Nous Research 的 Hermes Agent 引擎（MIT）。',
       websiteLink: 'AI Evolution Polska 网站',
       hermesLink: 'Hermes Agent 源码',
       nousLink: 'Nous Research',
       brandLicenseTitle: 'Agent Czesiek 品牌素材',
-      brandLicenseDescription: '原创标志和素材可用于个人及非商业用途；商业用途需另行取得许可。第三方组件保留各自的许可。',
+      brandLicenseDescription:
+        '原创标志和素材可用于个人及非商业用途；商业用途需另行取得许可。第三方组件保留各自的许可。',
       brandLicenseLink: '品牌素材使用条款',
       licenseNotice: 'Hermes Agent © 2025 Nous Research 基于 MIT 许可证分发。',
       licenseLink: 'MIT 许可证',

@@ -1,8 +1,16 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
-import { addDriveFolder, type DriveMemoryStatus, getDriveMemory, removeDriveFolder, syncDriveMemory } from '@/api/drive-memory'
+import type { ProfileScope } from '@/api/client'
+import {
+  addDriveFolder,
+  type DriveMemoryStatus,
+  getDriveMemory,
+  removeDriveFolder,
+  syncDriveMemory
+} from '@/api/drive-memory'
 import { Button } from '@/components/ui/button'
+import { useActiveCapabilityScope } from '@/hooks/use-active-capability-scope'
 import { useI18n } from '@/i18n'
 import { X } from '@/lib/icons'
 import { notify, notifyError } from '@/store/notifications'
@@ -23,10 +31,10 @@ const COPY = {
   },
   pl: {
     add: 'Dodaj folder',
-    body: 'Wskaż foldery na Dysku. Czesiek skopiuje ich dokumenty do Twojego vaultu Obsidiana (z linkiem do pliku), więc „znajdź umowę z klientem X” przeszukuje Twoje własne pliki.',
+    body: 'Wskaż foldery na Dysku. Czesiek skopiuje ich dokumenty do Twojej pamięci Obsidian (z linkiem do pliku), więc „znajdź umowę z klientem X” przeszukuje Twoje własne pliki.',
     empty: 'Nie ma jeszcze folderów.',
     failed: 'Indeksowanie Dysku nie powiodło się',
-    indexed: (n: number) => `${n} dokumentów w vaulcie`,
+    indexed: (n: number) => `${n} dokumentów w pamięci`,
     placeholder: 'Wklej link do folderu z Dysku',
     remove: 'Usuń',
     sync: 'Indeksuj teraz',
@@ -38,26 +46,55 @@ const COPY = {
 
 /** Folders whose documents Czesiek mirrors into the vault; sync runs in short steps until nothing is left. */
 export function DriveMemoryPanel() {
+  const { scope, scopeKey } = useActiveCapabilityScope()
+
+  return <ScopedDriveMemoryPanel key={scopeKey} scope={scope} scopeKey={scopeKey} />
+}
+
+function ScopedDriveMemoryPanel({ scope, scopeKey }: { scope: ProfileScope; scopeKey: string }) {
+  const mounted = useRef(true)
+  const running = useRef(false)
+  // This tracks component lifetime, not a reactive store value; a remount owns a new sync loop.
+  // eslint-disable-next-line no-restricted-syntax
+  useEffect(() => {
+    mounted.current = true
+
+    return () => {
+      mounted.current = false
+    }
+  }, [])
   const { locale } = useI18n()
   const copy = locale === 'pl' ? COPY.pl : COPY.en
   const client = useQueryClient()
-  const { data } = useQuery({ queryFn: () => getDriveMemory(), queryKey: ['drive-memory'] })
+  const queryKey = ['drive-memory', scopeKey]
+  const { data, isError, isPending, refetch } = useQuery({ queryFn: () => getDriveMemory(scope), queryKey })
   const [link, setLink] = useState('')
   const [status, setStatus] = useState<null | string>(null)
   const [busy, setBusy] = useState(false)
 
-  const apply = (next: DriveMemoryStatus) => client.setQueryData(['drive-memory'], next)
+  const apply = (next: DriveMemoryStatus) => client.setQueryData(queryKey, next)
 
   const guard = async (fn: () => Promise<void>) => {
+    if (running.current) {
+      return
+    }
+
+    running.current = true
     setBusy(true)
 
     try {
       await fn()
     } catch (error) {
-      notifyError(error, copy.failed)
+      if (mounted.current) {
+        notifyError(error, copy.failed)
+      }
     } finally {
-      setBusy(false)
-      setStatus(null)
+      running.current = false
+
+      if (mounted.current) {
+        setBusy(false)
+        setStatus(null)
+      }
     }
   }
 
@@ -65,13 +102,17 @@ export function DriveMemoryPanel() {
     guard(async () => {
       let total = 0
 
-      for (let left = 1; left > 0; ) {
+      for (let left = 1; left > 0 && mounted.current;) {
         setStatus(copy.syncing(left === 1 ? 0 : left))
-        const step = await syncDriveMemory()
+        const step = await syncDriveMemory(scope)
 
         apply(step)
         total += step.processed
         left = step.processed === 0 ? 0 : step.remaining
+      }
+
+      if (!mounted.current) {
+        return
       }
 
       notify({ kind: 'info', message: copy.done(total), title: copy.title })
@@ -86,7 +127,7 @@ export function DriveMemoryPanel() {
         onSubmit={event => {
           event.preventDefault()
           void guard(async () => {
-            apply(await addDriveFolder(link))
+            apply(await addDriveFolder(link, scope))
             setLink('')
           })
         }}
@@ -111,7 +152,7 @@ export function DriveMemoryPanel() {
               <Button
                 aria-label={`${copy.remove} ${folder.name}`}
                 disabled={busy}
-                onClick={() => void guard(async () => void apply(await removeDriveFolder(folder.id)))}
+                onClick={() => void guard(async () => void apply(await removeDriveFolder(folder.id, scope)))}
                 size="icon-xs"
                 type="button"
                 variant="ghost"
@@ -122,8 +163,21 @@ export function DriveMemoryPanel() {
           ))}
         </ul>
       ) : (
-        <p className="text-xs text-(--ui-text-tertiary)">{copy.empty}</p>
+        <p className="text-xs text-(--ui-text-tertiary)">
+          {isPending
+            ? locale === 'pl'
+              ? 'Wczytuję foldery…'
+              : 'Loading folders…'
+            : isError
+              ? copy.failed
+              : copy.empty}
+        </p>
       )}
+      {isError ? (
+        <Button onClick={() => void refetch()} variant="secondary">
+          {locale === 'pl' ? 'Spróbuj ponownie' : 'Try again'}
+        </Button>
+      ) : null}
       <div className="flex items-center gap-3">
         <Button disabled={busy || !data?.folders.length} onClick={() => void sync()} size="sm" type="button">
           {copy.sync}

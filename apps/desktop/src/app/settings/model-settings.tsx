@@ -216,6 +216,7 @@ interface ModelSettingsProps {
 
 export function ModelSettings({ onMainModelChanged, scopeProfile }: ModelSettingsProps) {
   const { t } = useI18n()
+  const teamCopy = t.settings.desktop.moa
   const m = t.settings.model
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -1099,15 +1100,12 @@ export function ModelSettings({ onMainModelChanged, scopeProfile }: ModelSetting
       </section>
       {moa && currentMoaPreset && (
         <section>
-          <SectionHeading icon={Cpu} title="Mixture of Agents" />
-          <p className="mb-2 text-xs text-muted-foreground">
-            Configure named presets that appear as models under the Mixture of Agents provider. The aggregator is the
-            acting model.
-          </p>
+          <SectionHeading icon={Cpu} title={teamCopy.title} />
+          <p className="mb-2 text-xs text-muted-foreground">{teamCopy.intro}</p>
           <div className="mb-2 flex flex-wrap items-center gap-2">
             <Select onValueChange={setSelectedMoaPreset} value={selectedMoaPreset || moa.default_preset}>
               <SelectTrigger className={cn('min-w-40', CONTROL_TEXT)}>
-                <SelectValue placeholder="Preset" />
+                <SelectValue placeholder={teamCopy.preset} />
               </SelectTrigger>
               <SelectContent>
                 {Object.keys(moa.presets).map(name => (
@@ -1118,7 +1116,7 @@ export function ModelSettings({ onMainModelChanged, scopeProfile }: ModelSetting
               </SelectContent>
             </Select>
             <label className="flex items-center gap-2 rounded-sm border border-border px-2 py-1 text-xs">
-              Enabled
+              {teamCopy.enabled}
               <Switch
                 checked={currentMoaPreset.enabled !== false}
                 disabled={applying}
@@ -1139,7 +1137,7 @@ export function ModelSettings({ onMainModelChanged, scopeProfile }: ModelSetting
               size="sm"
               variant="text"
             >
-              Set default
+              {teamCopy.setDefault}
             </Button>
             <Button
               disabled={Object.keys(moa.presets).length <= 1 || applying}
@@ -1165,12 +1163,12 @@ export function ModelSettings({ onMainModelChanged, scopeProfile }: ModelSetting
               size="sm"
               variant="ghost"
             >
-              Delete
+              {teamCopy.remove}
             </Button>
             <Input
               className={cn('w-40', CONTROL_TEXT)}
               onChange={event => setNewMoaPresetName(event.target.value)}
-              placeholder="new preset"
+              placeholder={teamCopy.newPreset}
               value={newMoaPresetName}
             />
             <Button
@@ -1193,18 +1191,18 @@ export function ModelSettings({ onMainModelChanged, scopeProfile }: ModelSetting
               size="sm"
               variant="textStrong"
             >
-              Add preset
+              {teamCopy.add}
             </Button>
           </div>
           <div className="mb-2 text-xs text-muted-foreground">
-            Default: <span className="font-mono">{moa.default_preset}</span>
+            {teamCopy.default}: <span className="font-mono">{moa.default_preset}</span>
           </div>
           <div className="grid gap-1">
             {currentMoaPreset.reference_models.map((slot, index) => (
               <ListRow
                 action={
                   <Switch
-                    aria-label={`${slot.enabled !== false ? 'Disable' : 'Enable'} reference ${index + 1}`}
+                    aria-label={`${slot.enabled !== false ? teamCopy.disable : teamCopy.enable} ${index + 1}`}
                     checked={slot.enabled !== false}
                     disabled={applying}
                     onCheckedChange={checked =>
@@ -1281,7 +1279,7 @@ export function ModelSettings({ onMainModelChanged, scopeProfile }: ModelSetting
                       size="sm"
                       variant="ghost"
                     >
-                      Remove
+                      {teamCopy.remove}
                     </Button>
                   </div>
                 }
@@ -1292,7 +1290,7 @@ export function ModelSettings({ onMainModelChanged, scopeProfile }: ModelSetting
                   </span>
                 }
                 key={`${selectedMoaPreset}-${index}`}
-                title={`Reference ${index + 1}`}
+                title={`${teamCopy.reference} ${index + 1}`}
               />
             ))}
             <Button
@@ -1306,7 +1304,7 @@ export function ModelSettings({ onMainModelChanged, scopeProfile }: ModelSetting
               size="sm"
               variant="textStrong"
             >
-              Add reference model
+              {teamCopy.addReference}
             </Button>
             <ListRow
               below={
@@ -1368,7 +1366,7 @@ export function ModelSettings({ onMainModelChanged, scopeProfile }: ModelSetting
                   {currentMoaPreset.aggregator.provider} · {currentMoaPreset.aggregator.model}
                 </span>
               }
-              title="Aggregator"
+              title={teamCopy.aggregator}
             />
           </div>
         </section>

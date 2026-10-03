@@ -3,6 +3,8 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-libra
 import { MemoryRouter } from 'react-router'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { pl } from '@/i18n/pl'
+
 // Radix Select calls scrollIntoView on its items when the content opens; jsdom
 // doesn't implement it (nor hasPointerCapture / releasePointerCapture), so stub
 // them to let the dropdown open in tests.
@@ -493,7 +495,7 @@ describe('ModelSettings MoA preset editor', () => {
 
   async function openReferenceEditor() {
     await renderModelSettings()
-    expect(await screen.findByText('Reference 1')).toBeTruthy()
+    expect(await screen.findByText(`${pl.settings.desktop.moa.reference} 1`)).toBeTruthy()
   }
 
   function slotSelects() {
@@ -582,7 +584,7 @@ describe('ModelSettings MoA preset editor', () => {
     try {
       await openReferenceEditor()
 
-      fireEvent.click(screen.getByRole('switch', { name: 'Enabled' }))
+      fireEvent.click(screen.getByRole('switch', { name: pl.settings.desktop.moa.enabled }))
       await vi.advanceTimersByTimeAsync(700)
 
       expect(saveMoaModels).toHaveBeenCalledWith(
@@ -603,7 +605,7 @@ describe('ModelSettings MoA preset editor', () => {
     try {
       await openReferenceEditor()
 
-      fireEvent.click(screen.getByRole('switch', { name: 'Disable reference 1' }))
+      fireEvent.click(screen.getByRole('switch', { name: `${pl.settings.desktop.moa.disable} 1` }))
       await vi.advanceTimersByTimeAsync(700)
 
       expect(saveMoaModels).toHaveBeenCalledWith(

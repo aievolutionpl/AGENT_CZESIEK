@@ -832,6 +832,91 @@ export interface Translations {
   }
 
   settings: {
+    desktop: {
+      moa: {
+        title: string
+        intro: string
+        preset: string
+        newPreset: string
+        enabled: string
+        setDefault: string
+        remove: string
+        add: string
+        default: string
+        reference: string
+        addReference: string
+        aggregator: string
+        enable: string
+        disable: string
+      }
+      uninstall: {
+        title: string
+        zone: string
+        loading: string
+        confirm: string
+        removes: string
+        irreversible: string
+        app: string
+        running: string
+        yes: string
+        intro: string
+        failed: string
+        guiTitle: string
+        guiDescription: string
+        guiConsequence: string
+        liteTitle: string
+        liteDescription: string
+        liteConsequence: string
+        fullTitle: string
+        fullDescription: string
+        fullConsequence: string
+      }
+      computer: {
+        loading: string
+        readFailed: string
+        grantFailed: string
+        approveTitle: string
+        approveBody: string
+        unsupported: string
+        install: string
+        installGrant: string
+        identity: string
+        linux: string
+        windows: string
+        recheck: string
+        accessibility: string
+        accessibilityHint: string
+        screen: string
+        screenHint: string
+        health: string
+        ready: string
+        notReady: string
+        unknown: string
+        granted: string
+        notGranted: string
+        success: string
+        waiting: string
+        grant: string
+      }
+      pool: {
+        count: string
+        countHint: string
+        timeout: string
+        timeoutHint: string
+        timeoutLabel: string
+      }
+      appearance: {
+        search: string
+        noMatches: string
+        options: string
+      }
+      skills: {
+        available: string
+        installed: string
+        manage: string
+        recent: string
+      }
+    }
     closeSettings: string
     exportConfig: string
     importConfig: string

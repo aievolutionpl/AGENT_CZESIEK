@@ -42,12 +42,12 @@ export const pl = defineLocale({
     previewHelp: 'Źródło mogło zostać przeniesione lub zmienione. Odśwież listę i spróbuj ponownie.',
     previewLimit: 'Podgląd skrócono dla czytelności. Importowana jest cała rozmowa.',
     you: 'Ty',
-    snapshot: 'Ta rozmowa jest już w Hermesie. Otwórz istniejącą kopię, aby kontynuować.',
+    snapshot: 'Ta rozmowa jest już u Cześka. Otwórz istniejącą kopię, aby kontynuować.',
     copyNotice:
       'Kopiuje tekst rozmowy. Pliki źródłowe pozostają bez zmian. Wyjście narzędzi i tok rozumowania nie są przenoszone.',
     importing: 'Importowanie…',
-    open: 'Otwórz w Hermesie',
-    continue: 'Kontynuuj w Hermesie',
+    open: 'Otwórz u Cześka',
+    continue: 'Kontynuuj z Cześkiem',
     importError: 'Nie udało się zaimportować tej rozmowy.'
   },
   common: {
@@ -533,7 +533,7 @@ export const pl = defineLocale({
         noPresets: 'OpenRouter nie zwrócił jeszcze pasujących modeli. Odśwież listę modeli w menu modelu.'
       },
       news: {
-        title: 'AI News Live',
+        title: 'Wiadomości ze świata AI',
         refresh: 'Odśwież wiadomości',
         loading: 'Pobieram wiadomości…',
         error: 'Nie udało się pobrać wiadomości. Spróbuj odświeżyć za chwilę.',
@@ -595,7 +595,7 @@ export const pl = defineLocale({
         gemini: 'Gemini Live'
       },
       nav: {
-        tagline: 'Ludzie · Wiedza · Realne efekty',
+        tagline: 'AI Evolution Polska',
         search: 'Szukaj…',
         sections: { work: 'Praca', knowledge: 'Wiedza', connections: 'Połączenia', system: 'System' },
         promoTitle: 'Buduj więcej z AI.',
@@ -636,7 +636,7 @@ export const pl = defineLocale({
   jarvisConnections: {
     title: 'Integracje',
     subtitle:
-      'Połącz Google, Kalendarz, GitHub, Notion i inne usługi do pracy. Komunikatory oraz automatyzacje mają osobne, prostsze sekcje w menu.',
+      'Połącz Google, GitHub, Notion i inne usługi do pracy. Poniżej skonfigurujesz też komunikatory, aby rozmawiać z Cześkiem z telefonu.',
     chosenLabel: 'Wybrane podczas konfiguracji',
     allLabel: 'Wszystkie połączenia',
     stepsLabel: 'Jak połączyć',
@@ -1187,6 +1187,95 @@ export const pl = defineLocale({
   },
 
   settings: {
+    desktop: {
+      moa: {
+        title: 'Zespół modeli',
+        intro:
+          'Zapisz zespoły modeli jako zestawy. Modele pomocnicze proponują odpowiedzi, a model prowadzący łączy je i wykonuje zadanie.',
+        preset: 'Zestaw',
+        newPreset: 'Nowy zestaw',
+        enabled: 'Włączony',
+        setDefault: 'Ustaw jako domyślny',
+        remove: 'Usuń',
+        add: 'Dodaj zestaw',
+        default: 'Domyślny',
+        reference: 'Model pomocniczy',
+        addReference: 'Dodaj model pomocniczy',
+        aggregator: 'Model prowadzący',
+        enable: 'Włącz model',
+        disable: 'Wyłącz model'
+      },
+      uninstall: {
+        title: 'Odinstaluj Agenta Cześka',
+        zone: 'Usuwanie aplikacji',
+        loading: 'Sprawdzanie zainstalowanych składników…',
+        confirm: 'Potwierdź odinstalowanie',
+        removes: 'Zostaną usunięte:',
+        irreversible: 'Tej operacji nie można cofnąć.',
+        app: 'Aplikacja',
+        running: 'Odinstalowywanie…',
+        yes: 'Tak, odinstaluj',
+        intro:
+          'Wybierz, co usunąć. Aplikacja zamknie się, aby dokończyć operację. Cześka możesz później zainstalować ponownie.',
+        failed: 'Nie udało się rozpocząć odinstalowania.',
+        guiTitle: 'Usuń tylko aplikację desktopową',
+        guiDescription: 'Zachowaj silnik agenta, ustawienia i rozmowy.',
+        guiConsequence: 'aplikacja desktopowa i dane jej interfejsu',
+        liteTitle: 'Usuń aplikację i silnik, zachowaj moje dane',
+        liteDescription: 'Zachowaj ustawienia, rozmowy i klucze API do ponownej instalacji.',
+        liteConsequence: 'aplikacja i silnik; ustawienia, rozmowy i klucze API pozostaną',
+        fullTitle: 'Usuń wszystko',
+        fullDescription: 'Usuń aplikację, silnik, ustawienia, rozmowy, harmonogramy, klucze API i logi.',
+        fullConsequence: 'aplikacja, silnik i wszystkie ich dane użytkownika'
+      },
+      computer: {
+        loading: 'Sprawdzanie sterowania komputerem…',
+        readFailed: 'Nie udało się sprawdzić sterowania komputerem',
+        grantFailed: 'Nie udało się poprosić o uprawnienia',
+        approveTitle: 'Zatwierdź w ustawieniach systemowych',
+        approveBody: 'macOS pokaże prośbę o uprawnienia dla CuaDriver. Zatwierdź ją i wróć tutaj.',
+        unsupported: 'Sterowanie komputerem jest niedostępne na tej platformie',
+        install: 'Zainstaluj poniżej składnik cua-driver, aby sterować tym komputerem.',
+        installGrant: 'Następnie włącz tutaj dostępność i nagrywanie ekranu.',
+        identity: 'Uprawnienia otrzymuje CuaDriver — składnik, który steruje Twoim Makiem.',
+        linux: 'Sterowanie pulpitem korzysta z X11/XWayland.',
+        windows: 'Przy pierwszym uruchomieniu CuaDriver Windows może wyświetlić komunikat zabezpieczeń.',
+        recheck: 'Sprawdź ponownie',
+        accessibility: 'Dostępność',
+        accessibilityHint: 'Pozwala klikać, pisać i odczytywać elementy okien.',
+        screen: 'Nagrywanie ekranu',
+        screenHint: 'Pozwala wykonywać zrzuty okien aplikacji.',
+        health: 'Stan sterowania komputerem',
+        ready: 'Gotowe',
+        notReady: 'Niegotowe',
+        unknown: 'Nieznany',
+        granted: 'Przyznano',
+        notGranted: 'Nie przyznano',
+        success: 'Sterowanie komputerem jest gotowe. Poproś Cześka o otwarcie aplikacji i wykonanie zadania.',
+        waiting: 'Oczekiwanie na zgodę…',
+        grant: 'Przyznaj uprawnienia'
+      },
+      pool: {
+        count: 'Agenci w gotowości',
+        countHint:
+          'Utrzymuj procesy agentów w tle, aby szybciej się między nimi przełączać. Każdy zajmuje około 60 MB pamięci. Zmiana działa od razu.',
+        timeout: 'Czas bezczynności',
+        timeoutHint:
+          'Po tym czasie nieużywany proces agenta zostanie zatrzymany. Dłuższy czas pozwala szybciej wrócić do pracy z agentem.',
+        timeoutLabel: 'Czas bezczynności w milisekundach'
+      },
+      appearance: {
+        search: 'Szukaj zainstalowanych motywów lub w katalogu VS Code…',
+        noMatches: 'Żaden zainstalowany motyw nie pasuje do wyszukiwania.',
+        options: 'Pokaż opcje'
+      },
+      skills: {
+        available: 'Aktywne',
+        installed: 'Zainstalowane',
+        manage: 'Zarządzaj umiejętnościami',
+        recent: 'Ostatnio używane umiejętności'
+      }
+    },
     closeSettings: 'Zamknij ustawienia',
     exportConfig: 'Eksportuj konfigurację',
     importConfig: 'Importuj konfigurację',
@@ -1340,7 +1429,7 @@ export const pl = defineLocale({
       otpPlaceholder: 'Sekret Base32 lub link otpauth://',
       otpHint:
         'To „klucz konfiguracyjny”, który strona pokazuje przy włączaniu 2FA. Gdy go zapiszesz, Agent Czesiek sam generuje kody.',
-      twoFactorBadge: '2FA auto',
+      twoFactorBadge: 'Automatyczne 2FA',
       deleteTitle: 'Usunąć tę pozycję?',
       deleteDescription: label => `„${label}” zostanie usunięta. Tej operacji nie można cofnąć.`,
       deleteConfirm: 'Usuń',
@@ -3262,12 +3351,18 @@ export const pl = defineLocale({
       }
     },
     platformIntro: {
-      telegram: 'Najprościej: wybierz szybką konfigurację przez QR. Możesz też utworzyć bota przez @BotFather, wkleić token i dodać swój identyfikator użytkownika.',
-      whatsapp: 'Uruchom mostek WhatsApp dołączony do Hermesa, zeskanuj kod QR przy pierwszym starcie i włącz kanał. Dostęp ogranicz do swoich numerów.',
-      bluebubbles: 'iMessage wymaga komputera Mac z aplikacją BlueBubbles Server. Wklej adres serwera i hasło, zapisz ustawienia, a potem uruchom bramę ponownie.',
-      signal: 'Signal wymaga dostępnego mostka signal-cli REST oraz zarejestrowanego numeru telefonu. Wpisz adres mostka i numer, następnie uruchom bramę ponownie.',
-      discord: 'Utwórz aplikację i bota w Discord Developer Portal, skopiuj token i zaproś bota na serwer z odpowiednimi uprawnieniami.',
-      matrix: 'Zaloguj konto bota na swoim serwerze Matrix. Wklej token dostępu, identyfikator użytkownika i adres serwera.'
+      telegram:
+        'Najprościej: wybierz szybką konfigurację przez QR. Możesz też utworzyć bota przez @BotFather, wkleić token i dodać swój identyfikator użytkownika.',
+      whatsapp:
+        'Uruchom mostek WhatsApp dołączony do Hermesa, zeskanuj kod QR przy pierwszym starcie i włącz kanał. Dostęp ogranicz do swoich numerów.',
+      bluebubbles:
+        'iMessage wymaga komputera Mac z aplikacją BlueBubbles Server. Wklej adres serwera i hasło, zapisz ustawienia, a potem uruchom bramę ponownie.',
+      signal:
+        'Signal wymaga dostępnego mostka signal-cli REST oraz zarejestrowanego numeru telefonu. Wpisz adres mostka i numer, następnie uruchom bramę ponownie.',
+      discord:
+        'Utwórz aplikację i bota w Discord Developer Portal, skopiuj token i zaproś bota na serwer z odpowiednimi uprawnieniami.',
+      matrix:
+        'Zaloguj konto bota na swoim serwerze Matrix. Wklej token dostępu, identyfikator użytkownika i adres serwera.'
     }
   },
 
@@ -4359,7 +4454,8 @@ export const pl = defineLocale({
     connectExistingDesc:
       'Użyj zdalnego backendu z tokenem sesji albo logowaniem w przeglądarce. Instalacja lokalna nie zostanie uruchomiona.',
     installLocalTitle: 'Przygotuj nowego współpracownika',
-    installLocalDesc: 'Pełny pakiet Windows zawiera gotowy silnik. Czesiek użyje własnego profilu, bez zmieniania innych instalacji.',
+    installLocalDesc:
+      'Pełny pakiet Windows zawiera gotowy silnik. Czesiek użyje własnego profilu, bez zmieniania innych instalacji.',
     localStartUnavailable:
       'Nie udało się rozpocząć instalacji lokalnej. Zrestartuj Agent Czesiek Desktop i spróbuj ponownie.',
     remoteSetupTitle: 'Połącz z istniejącym Agentem Cześkiem',

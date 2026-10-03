@@ -60,7 +60,7 @@ export function SectionHeading({
   title: string
 }) {
   return (
-    <div className="mb-2.5 flex items-center gap-2 pt-2 text-base font-semibold">
+    <div className="mb-3 flex items-center gap-2 pt-2 text-lg font-semibold tracking-tight">
       <Icon className="size-4 shrink-0 text-muted-foreground" />
       <span>{title}</span>
       {meta && <Pill>{meta}</Pill>}
@@ -158,11 +158,7 @@ export function ListRow({
       >
         <div className="min-w-0">
           <div className="text-base font-medium text-foreground">{title}</div>
-          {description && (
-            <div className="mt-1 text-sm leading-relaxed text-(--ui-text-tertiary)">
-              {description}
-            </div>
-          )}
+          {description && <div className="mt-1 text-sm leading-relaxed text-(--ui-text-tertiary)">{description}</div>}
           {hint && <div className="mt-1 block font-mono text-[0.68rem] text-muted-foreground">{hint}</div>}
           {below}
         </div>
