@@ -1,0 +1,170 @@
+/* Wallpaper is painted once under the whole workspace, so both rails frost
+   the same scene. It does not reveal other apps or the operating-system desktop. */
+:root[data-czesiek-material='liquid'] {
+  --glass-bg: rgb(255 255 255 / 0.38);
+  --glass-bg-strong: rgb(255 255 255 / 0.54);
+  --glass-border: rgb(255 255 255 / 0.74);
+  --glass-highlight: rgb(255 255 255 / 0.9);
+  --glass-blur: 18px;
+  --liquid-control: rgb(255 255 255 / 0.4);
+  --liquid-shadow: 0 12px 32px -18px rgb(35 55 100 / 0.28);
+}
+
+:root.dark[data-czesiek-material='liquid'] {
+  --glass-bg: rgb(13 21 40 / 0.46);
+  --glass-bg-strong: rgb(13 21 40 / 0.6);
+  --glass-border: rgb(195 224 255 / 0.26);
+  --glass-highlight: rgb(218 238 255 / 0.32);
+  --liquid-control: rgb(27 40 63 / 0.54);
+  --liquid-shadow: 0 18px 38px -20px rgb(0 0 0 / 0.6);
+}
+
+:root[data-czesiek-material='liquid'] [data-jarvis-shell] {
+  background:
+    linear-gradient(rgb(248 251 255 / 0.18), rgb(240 248 255 / 0.08)),
+    url('../../assets/backgrounds/czesiek-glass-light.webp') center bottom / cover no-repeat;
+}
+
+:root.dark[data-czesiek-material='liquid'] [data-jarvis-shell] {
+  background:
+    linear-gradient(rgb(4 9 21 / 0.22), rgb(4 9 21 / 0.12)),
+    url('../../assets/backgrounds/czesiek-glass-dark.webp') center bottom / cover no-repeat;
+}
+
+:root[data-czesiek-material='liquid']
+  [data-jarvis-shell]
+  :is(
+    [data-jarvis-view],
+    [data-contrib-shell],
+    [data-slot='sidebar-wrapper'],
+    [data-slot='sidebar-inset'],
+    [data-chat-surface],
+    [data-slot='composer-bounds'],
+    [data-jarvis-dashboard],
+    main[data-home='true'],
+    .jarvis-space
+  ) {
+  background: transparent;
+}
+
+:root[data-czesiek-material='liquid']
+  [data-jarvis-shell]
+  :is(
+    .jarvis-navigation,
+    .jarvis-dashboard__rail,
+    .jarvis-glass,
+    .jarvis-glass-strong,
+    .jarvis-voice-dock,
+    [data-slot='composer-surface']
+  ) {
+  border: 1px solid var(--glass-border);
+  background: linear-gradient(145deg, rgb(255 255 255 / 0.14), transparent 45%), var(--glass-bg-strong);
+  box-shadow:
+    inset 0 1px 0 var(--glass-highlight),
+    inset 0 -1px 0 rgb(80 135 220 / 0.12),
+    var(--liquid-shadow);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(165%);
+  backdrop-filter: blur(var(--glass-blur)) saturate(165%);
+}
+
+:root[data-czesiek-material='liquid'] .jarvis-dashboard__rail {
+  margin: 8px;
+  border-radius: 24px;
+}
+
+:root[data-czesiek-material='liquid']
+  [data-jarvis-shell]
+  :is(
+    .jarvis-nav-row,
+    .jarvis-new-conversation,
+    .jarvis-icon-btn,
+    .jarvis-ctl,
+    [data-slot='button'][data-variant='ghost'],
+    [data-slot='button'][data-variant='outline'],
+    [data-slot='button'][data-variant='secondary'],
+    button[role='radio']
+  ) {
+  border: 1px solid color-mix(in srgb, var(--glass-border) 74%, transparent);
+  border-radius: 12px;
+  background: linear-gradient(160deg, rgb(255 255 255 / 0.18), transparent 60%), var(--liquid-control);
+  box-shadow:
+    inset 0 1px 0 var(--glass-highlight),
+    0 3px 8px -6px rgb(30 50 100 / 0.3);
+  -webkit-backdrop-filter: blur(8px) saturate(140%);
+  backdrop-filter: blur(8px) saturate(140%);
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+:root[data-czesiek-material='liquid']
+  [data-jarvis-shell]
+  :is(
+    .jarvis-nav-row,
+    .jarvis-new-conversation,
+    .jarvis-icon-btn,
+    .jarvis-ctl,
+    [data-slot='button'][data-variant='ghost'],
+    [data-slot='button'][data-variant='outline'],
+    [data-slot='button'][data-variant='secondary'],
+    button[role='radio']
+  ):hover:not(:disabled) {
+  border-color: var(--glass-highlight);
+  background-color: color-mix(in srgb, var(--ui-accent) 9%, var(--liquid-control));
+  box-shadow:
+    inset 0 1px 0 var(--glass-highlight),
+    inset 0 -1px 0 rgb(100 170 240 / 0.28),
+    0 5px 15px -10px rgb(30 70 140 / 0.4);
+}
+
+:root[data-czesiek-material='liquid'] [data-jarvis-shell] .jarvis-nav-active {
+  background: color-mix(in srgb, var(--ui-accent) 12%, var(--liquid-control));
+  border-color: color-mix(in srgb, var(--ui-accent) 25%, var(--glass-border));
+}
+
+:root[data-czesiek-material='liquid'] [data-jarvis-shell] [data-slot='button'][data-variant='default'] {
+  border: 1px solid rgb(255 255 255 / 0.42);
+  border-radius: 12px;
+  background-image: linear-gradient(150deg, rgb(255 255 255 / 0.22), transparent 60%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.38),
+    0 5px 14px -10px rgb(30 70 140 / 0.5);
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  :root[data-czesiek-material='liquid'] {
+    --glass-bg: var(--ui-chat-surface-background);
+    --glass-bg-strong: var(--ui-chat-surface-background);
+    --liquid-control: var(--ui-bg-secondary);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root[data-czesiek-material='liquid'] [data-jarvis-shell] button {
+    transition: none;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  :root[data-czesiek-material='liquid'] {
+    --glass-bg: var(--ui-chat-surface-background);
+    --glass-bg-strong: var(--ui-chat-surface-background);
+    --liquid-control: var(--ui-bg-secondary);
+  }
+
+  :root[data-czesiek-material='liquid']
+    [data-jarvis-shell]
+    :is(
+      .jarvis-navigation,
+      .jarvis-dashboard__rail,
+      .jarvis-glass,
+      .jarvis-glass-strong,
+      .jarvis-voice-dock,
+      [data-slot='composer-surface'],
+      button
+    ) {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}

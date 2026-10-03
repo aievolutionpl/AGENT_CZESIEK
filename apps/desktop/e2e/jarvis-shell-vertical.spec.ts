@@ -153,7 +153,7 @@ async function completeOnboardingAndReload(): Promise<void> {
   )
 
   await page.reload()
-  await waitForAppReady(fixture!, 120_000)
+  await waitForAppReady(fixture!, 120_000, 'pl')
 
   // The generic provider picker may open after the gateway connects. This
   // suite tests the Jarvis shell, so use its persistent first-run escape.
@@ -174,6 +174,7 @@ async function completeOnboardingAndReload(): Promise<void> {
     page.locator('[data-testid="jarvis-onboarding"]'),
     'onboarding should be dismissed — the seeded localStorage scope key may no longer match'
   ).toHaveCount(0)
+  await page.locator('[data-jarvis-nav-view="jarvis"]').click()
 }
 
 /**
@@ -555,7 +556,7 @@ test.describe('Jarvis product shell', () => {
 
     // The backend, not the renderer, holds the dismissal: it survives a reload.
     await page.reload()
-    await waitForAppReady(fixture!, 120_000)
+    await waitForAppReady(fixture!, 120_000, 'pl')
     await expect(firstAutomation).toBeVisible({ timeout: 30_000 })
     await expect(knowOwner).toHaveCount(0)
   })
@@ -642,7 +643,7 @@ test.describe('Jarvis product shell', () => {
     await expect.poll(() => fs.readFileSync(path.join(fixture!.sandbox.hermesHome, 'vault', id!), 'utf8')).toBe(content)
     await page.goto(`${page.url().split('#')[0]}#/starmap?note=${encodeURIComponent(id!)}`)
     await page.reload()
-    await waitForAppReady(fixture!, 120_000)
+    await waitForAppReady(fixture!, 120_000, 'pl')
     await expect(page.getByTestId('vault-view').locator('textarea')).toBeVisible()
     await expect(page.getByTestId('vault-view').locator('textarea')).toHaveValue(content)
     await expectVisualSnapshot(page, { name: 'memory-saved', app: fixture!.app })

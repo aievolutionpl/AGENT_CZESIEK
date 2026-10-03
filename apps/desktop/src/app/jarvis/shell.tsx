@@ -1,4 +1,5 @@
 import './glass.css'
+import './liquid-glass.css'
 
 import { useStore } from '@nanostores/react'
 import type { ReactNode } from 'react'
@@ -6,6 +7,7 @@ import { useEffect, useState } from 'react'
 
 import { useI18n } from '@/i18n'
 import { cn } from '@/lib/utils'
+import { $interfaceMaterial } from '@/store/interface-material'
 import { $productShellNav } from '@/store/product-shell'
 
 import { JarvisCore } from './core'
@@ -49,6 +51,11 @@ export function JarvisShell({
   surfaces
 }: JarvisShellProps) {
   const { t } = useI18n()
+  const material = useStore($interfaceMaterial)
+
+  useEffect(() => {
+    document.documentElement.dataset.czesiekMaterial = material
+  }, [material])
 
   const [uncontrolledView, setUncontrolledView] = useState<JarvisShellView>(() =>
     isJarvisShellView(initialView) ? initialView : 'jarvis'

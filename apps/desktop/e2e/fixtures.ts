@@ -634,7 +634,8 @@ async function dismissProductWelcome(page: Page): Promise<void> {
 
 export async function waitForAppReady(
   fixture: MockBackendFixture | NoProviderFixture | DeadBackendFixture,
-  timeoutMs = 60_000
+  timeoutMs = 60_000,
+  expectedLanguage: 'en' | 'pl' = 'en'
 ): Promise<void> {
   const { page, app } = fixture
   await page.waitForSelector('[data-jarvis-shell], textarea, [contenteditable="true"]', {
@@ -649,6 +650,28 @@ export async function waitForAppReady(
     timeout: timeoutMs
   })
   await dismissProductWelcome(page)
+
+  const chooseLater = page.getByRole('button', { name: /Wybiorę dostawcę później|I'll choose provider later/ })
+
+  if (await chooseLater.waitFor({ state: 'visible', timeout: 8_000 }).then(() => true, () => false)) {
+    await chooseLater.click()
+    await page.locator('[data-jarvis-nav-view="jarvis"]').click()
+  }
+
+  await dismissProductWelcome(page)
+
+  // First-run setup may select Polish after config loads. Generic scenarios
+  // explicitly use English; product scenarios pass Polish here.
+  if ((await page.locator('html').getAttribute('lang')) !== expectedLanguage) {
+    await page.locator('[data-jarvis-nav-view="settings"]').click()
+    await page.locator('[data-tour="nav-config:appearance"]').click()
+    await page.getByRole('button', { name: /Zmień język|Switch language/ }).click()
+    await page.locator('[cmdk-input]').fill(expectedLanguage === 'pl' ? 'Polski' : 'English')
+    await page.locator('[cmdk-input]').press('ArrowDown')
+    await page.locator('[cmdk-input]').press('Enter')
+    await page.waitForFunction(language => document.documentElement.lang === language, expectedLanguage)
+    await page.locator('[data-jarvis-nav-view="jarvis"]').click()
+  }
 
   // Now poll until no full-screen overlay covers the viewport center.
   // elementFromPoint returns the topmost element at a point — if it's part
@@ -770,7 +793,7 @@ export async function waitForBootFailure(page: Page, timeoutMs = 60_000): Promis
         text.includes('Connection settings')
 
       // The error toast / notification that fires on failDesktopBoot().
-      const hasErrorToast = text.includes('Desktop boot failed')
+    const hasErrorToast = text.includes('Desktop boot failed') || text.includes('Uruchomienie aplikacji nie powiodło się')
 
       return hasFailureUI || hasErrorToast
     },

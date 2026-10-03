@@ -2,6 +2,8 @@
 
 ## Workspace, biuro agentów i nauka AI
 
+- Liquid Glass: `apps/desktop/src/app/jarvis/liquid-glass.css` (tapeta całego okna i materiały), `src/store/interface-material.ts` (lokalny wybór stylu), `app/settings/interface-material.tsx` (przełącznik w Wygląd). Domyślnie Liquid Glass; nie zmienia natywnej przezroczystości okna ani uprawnień agenta.
+
 - Nawigacja: `apps/desktop/src/app/jarvis/navigation.tsx`; nazwa Workspace zachowuje dotychczasową trasę `/`.
 - Biuro: `app/agents/presets.ts` (gotowe role), `preset-list.tsx` (działy i zadania), `preset-editor.tsx` (własne role), `character-avatar.tsx` + `office-team.css` (atlas i ruch). Zapis nadal przez `preset-store.ts` z CAS; uruchomienie przez `launch-preset.ts` w nowej rozmowie.
 - Edukacja: `apps/desktop/src/app/learn/lessons.ts` (treść), `index.tsx` (lekcje i słownik), trasa `/learn` w `app/routes.ts` i `app/contrib/surfaces.tsx`.
