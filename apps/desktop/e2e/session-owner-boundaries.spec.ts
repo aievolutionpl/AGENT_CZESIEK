@@ -13,14 +13,15 @@ test('a submitted turn remains attached to its originating session', async () =>
 
   try {
     await waitForAppReady(fixture)
-    const surface = fixture.page.locator('[data-composer-target]:not([data-pane-hidden] [data-composer-target])').last()
-    const composer = surface.locator('[contenteditable="true"]').first()
+    const surface = fixture.page.locator('[data-chat-surface]').filter({ visible: true }).last()
+    const composer = fixture.page.getByRole('textbox', { name: 'Message', exact: true })
     await composer.waitFor({ state: 'visible' })
     await composer.click()
     await composer.type('owner-boundary smoke test')
     await fixture.page.keyboard.press('Enter')
 
-    await expect(surface.getByText('owner-boundary smoke test', { exact: true })).toBeVisible({ timeout: 15_000 })
+    await expect(surface.locator('[data-slot="aui_directive-text"]').filter({ hasText: 'owner-boundary smoke test' }))
+      .toBeVisible({ timeout: 15_000 })
   } finally {
     await fixture.cleanup()
   }

@@ -127,12 +127,7 @@ test("an open Bot Chat's tab reads the bot's name, not the canonical 'Bot Chat' 
   // A `+` side thread beside the Bot Chat gives the main zone a tab strip —
   // the surface where every bot chat used to read "Bot Chat".
   await page.keyboard.press('Control+t')
-  const composer = page
-    .locator('[data-composer-target]:not([data-pane-hidden] [data-composer-target])')
-    .last()
-    .locator('[data-slot="composer-root"] [contenteditable="true"]')
-    .filter({ visible: true })
-    .first()
+  const composer = page.getByRole('textbox', { name: 'Message', exact: true })
   await expect(composer).toBeVisible({ timeout: 15_000 })
   await composer.click()
   await composer.fill('hello alpha thread')
