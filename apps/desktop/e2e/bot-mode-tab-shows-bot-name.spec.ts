@@ -133,8 +133,7 @@ test("an open Bot Chat's tab reads the bot's name, not the canonical 'Bot Chat' 
 
   // A `+` side thread beside the Bot Chat gives the main zone a tab strip —
   // the surface where every bot chat used to read "Bot Chat".
-  await alphaRow.click({ button: 'right' })
-  await page.getByRole('menuitem', { name: 'New chat with this bot' }).click()
+  await page.keyboard.press('Control+t')
   const composer = page
     .locator('[data-slot="composer-root"] [contenteditable="true"]')
     .filter({ visible: true })

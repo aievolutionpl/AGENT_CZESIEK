@@ -138,10 +138,8 @@ test('a bot row click lands on the Bot Chat the row previews, not a side thread'
   )
   await settle(page, 15_000)
 
-  // The bot menu pins the side chat to alpha's gateway/profile. The global
-  // new-tab shortcut can create a regular default-profile conversation.
-  await alphaRow.click({ button: 'right' })
-  await page.getByRole('menuitem', { name: 'New chat with this bot' }).click()
+  // A `+` side thread for alpha, with a real turn so it is a persisted tile.
+  await page.keyboard.press('Control+t')
   const composer = page
     .locator('[data-slot="composer-root"] [contenteditable="true"]')
     .filter({ visible: true })
