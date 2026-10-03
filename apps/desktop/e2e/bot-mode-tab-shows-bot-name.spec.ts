@@ -110,7 +110,10 @@ test("an open Bot Chat's tab reads the bot's name, not the canonical 'Bot Chat' 
 
   await openBots(page)
 
-  const alphaRow = page.getByRole('button', { name: /^alpha\b/i }).filter({ visible: true }).first()
+  const alphaRow = page
+    .getByRole('button', { name: /^alpha\b/i })
+    .filter({ visible: true })
+    .first()
   await expect(alphaRow).toBeVisible({ timeout: 30_000 })
 
   await openUntil(
@@ -123,8 +126,12 @@ test("an open Bot Chat's tab reads the bot's name, not the canonical 'Bot Chat' 
 
   // A `+` side thread beside the Bot Chat gives the main zone a tab strip —
   // the surface where every bot chat used to read "Bot Chat".
-  await page.keyboard.press('Control+t')
-  const composer = page.locator('[data-slot="composer-root"] [contenteditable="true"]').filter({ visible: true }).first()
+  await alphaRow.click({ button: 'right' })
+  await page.getByRole('menuitem', { name: 'New chat with this bot' }).click()
+  const composer = page
+    .locator('[data-slot="composer-root"] [contenteditable="true"]')
+    .filter({ visible: true })
+    .first()
   await expect(composer).toBeVisible({ timeout: 15_000 })
   await composer.click()
   await composer.fill('hello alpha thread')
