@@ -39,12 +39,13 @@
 
 import { expect, type Page, test } from '@playwright/test'
 
+import { INTERIM_TEXTS, restartMockServer } from '../../../tests-js/scripts/mock-server'
+
 import {
   type MockBackendFixture,
   setupMockBackend,
   waitForAppReady,
 } from './fixtures'
-import { INTERIM_TEXTS, restartMockServer } from '../../../tests-js/scripts/mock-server'
 
 // ─── Helpers ──────────────────────────────────────────────────────────
 
@@ -57,7 +58,7 @@ import { INTERIM_TEXTS, restartMockServer } from '../../../tests-js/scripts/mock
  * model-backed title upgrade — the instant derived title needs no LLM call —
  * so the mock's script indices line up with real chat turns again.
  */
-const DISABLE_AUTO_TITLE = 'auxiliary:\n  title_generation:\n    enabled: false'
+const DISABLE_AUTO_TITLE = 'auxiliary:\n  title_generation:\n    enabled: false\nplatform_toolsets:\n  cli: [todo]'
 
 /** Unique trigger keyword the mock server detects to switch to the script. */
 const TRIGGER = 'E2E_INTERIM_TRIGGER'

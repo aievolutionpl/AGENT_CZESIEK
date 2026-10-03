@@ -1,44 +1,23 @@
-import { expect, test } from './test'
+import fs from 'node:fs'
+import path from 'node:path'
 
 import { type MockBackendFixture, setupMockBackend, waitForAppReady } from './fixtures'
+import { expect, test } from './test'
 
 let fixture: MockBackendFixture | null = null
 
-const graph = {
-  nodes: [
-    { id: 'memory:profile:0', label: 'Remember the release checklist', kind: 'memory', category: 'memory', useCount: 1, state: 'active', createdBy: null, pinned: false },
-    { id: 'skill:release:0', label: 'Release checklist', kind: 'skill', category: 'release', useCount: 2, state: 'active', createdBy: null, pinned: false }
-  ],
-  edges: [{ source: 'memory:profile:0', target: 'skill:release:0' }],
-  clusters: [{ category: 'release', count: 2 }],
-  memory: [],
-  stats: {}
-}
-
-async function dismissOnboarding(): Promise<void> {
-  const page = fixture!.page
-  const onboarding = page.locator('[data-testid="jarvis-onboarding"]')
-
-  if (await onboarding.count()) {
-    await page.evaluate(() => {
-      for (const key of Object.keys(localStorage)) {
-        if (key.startsWith('ai-evolution-jarvis-onboarding-v1:')) {
-          localStorage.setItem(key, JSON.stringify({ version: 1, currentStep: 'approvals', completedSteps: ['profile', 'engine', 'model', 'voice', 'access', 'approvals'], selections: {} }))
-        }
-      }
-      localStorage.setItem('ai-evolution-jarvis-onboarding-v1:local::default', JSON.stringify({ version: 1, currentStep: 'approvals', completedSteps: ['profile', 'engine', 'model', 'voice', 'access', 'approvals'], selections: {} }))
-    })
-    await page.reload()
-  }
-
-  await waitForAppReady(fixture!, 120_000)
-}
-
 test.beforeAll(async () => {
   fixture = await setupMockBackend()
-  await dismissOnboarding()
-  await fixture.page.route('**/api/learning/graph**', route => route.fulfill({ body: JSON.stringify(graph), contentType: 'application/json', status: 200 }))
-  await fixture.page.goto(`${fixture.page.url().split('#')[0]}#/starmap`)
+  const memories = path.join(fixture.sandbox.hermesHome, 'memories')
+  const skills = path.join(fixture.sandbox.hermesHome, 'skills')
+  const releaseSkill = path.join(skills, 'release', 'release-checklist')
+  fs.mkdirSync(memories, { recursive: true })
+  fs.mkdirSync(releaseSkill, { recursive: true })
+  fs.writeFileSync(path.join(memories, 'USER.md'), 'Remember the release checklist\nVerify the release before publishing.\n')
+  fs.writeFileSync(path.join(releaseSkill, 'SKILL.md'), '---\nname: Release checklist\ndescription: Verify releases\ncategory: release\n---\nCheck the release result.\n')
+  fs.writeFileSync(path.join(skills, '.usage.json'), JSON.stringify({ 'Release checklist': { use_count: 2 } }))
+  await waitForAppReady(fixture, 120_000)
+  await fixture.page.goto(`${fixture.page.url().split('#')[0]}#/starmap?view=graph`)
   await expect(fixture.page.locator('canvas')).toBeVisible({ timeout: 30_000 })
 })
 
@@ -49,25 +28,12 @@ test.afterAll(async () => {
 
 test('memory graph keeps 2D rendering and exposes a searchable list', async () => {
   const page = fixture!.page
-
   await expect(page.getByRole('button', { name: 'Reset view' })).toBeVisible()
-  const contextTypes = await page.locator('canvas').evaluate(element => {
-    const canvas = element as HTMLCanvasElement
-    const original = canvas.getContext.bind(canvas)
-    const calls: string[] = []
-    canvas.getContext = ((type: string, ...args: unknown[]) => {
-      calls.push(type)
-      return original(type, ...(args as [never]))
-    }) as typeof canvas.getContext
-    return calls
-  })
-  expect(contextTypes).not.toContain('webgl')
-  expect(contextTypes).not.toContain('webgl2')
-
-  await page.getByRole('button', { name: 'List' }).click()
-  await expect(page.getByRole('list')).toBeVisible()
+  expect(await page.locator('canvas').evaluate(element => Boolean((element as HTMLCanvasElement).getContext('2d')))).toBe(true)
+  await page.getByRole('button', { name: 'Memory', exact: true }).click()
+  await expect(page.getByRole('region', { name: 'Memory', exact: true }).getByRole('list')).toBeVisible()
   await page.getByRole('textbox', { name: 'Search memory' }).fill('release')
   await expect(page.getByRole('button', { name: 'Remember the release checklist' })).toBeVisible()
   await page.getByRole('button', { name: 'Remember the release checklist' }).click()
-  await expect(page.getByRole('article', { name: /Memory details for Remember/ })).toBeVisible()
+  await expect(page.getByRole('article', { name: /Memory details for Remember/ })).toContainText('Verify the release before publishing.')
 })
