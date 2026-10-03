@@ -144,6 +144,22 @@ describe('PersistentTerminal rect tracking', () => {
     delete (window as unknown as { hermesDesktop?: unknown }).hermesDesktop
   })
 
+  it('positions the host relative to a fixed containing block', () => {
+    installRaf()
+    const containingBlock = globalThis.document.createElement('div')
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(rect(40, 250, 200, 100))
+    containingBlock.getBoundingClientRect = () => rect(20, 230, 400, 400)
+    vi.spyOn(HTMLElement.prototype, 'offsetParent', 'get').mockImplementation(function (this: HTMLElement) {
+      return this.hasAttribute('data-persistent-terminal') ? containingBlock : null
+    })
+    mount.render(<Harness />)
+    const host = mount.container.querySelector<HTMLElement>('[data-persistent-terminal]')!
+    expect(host.style.top).toBe('20px')
+    expect(host.style.left).toBe('20px')
+    expect(host.style.width).toBe('200px')
+    expect(host.style.height).toBe('100px')
+  })
+
   it('settles after rect changes instead of polling forever', () => {
     const raf = installRaf()
     let currentRect = rect(10, 20, 200, 100)

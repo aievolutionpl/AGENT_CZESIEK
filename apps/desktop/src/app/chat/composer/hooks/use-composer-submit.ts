@@ -202,7 +202,7 @@ export function useComposerSubmit({
 
     if (queueEdit) {
       exitQueuedEdit('save')
-    } else if (busy) {
+    } else if (busy || compacting) {
       // Slash commands should execute immediately even while the agent is
       // busy — they're client-side operations (/yolo, /skin, /new, /help,
       // etc.) or self-contained gateway RPCs (/status, /compress).  onSubmit

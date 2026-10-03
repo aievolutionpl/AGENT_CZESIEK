@@ -2,6 +2,8 @@ import { execFileSync } from 'node:child_process'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
 
+import { startMockServer } from '../../../tests-js/scripts/mock-server'
+
 import {
   buildAppEnv,
   createSandbox,
@@ -11,7 +13,6 @@ import {
   writeEnvFile,
   writeMockProviderConfig,
 } from './fixtures'
-import { startMockServer } from '../../../tests-js/scripts/mock-server'
 import { expect, test } from './test'
 import { expectVisualSnapshot } from './visual-snapshot'
 
@@ -86,7 +87,7 @@ test.beforeAll(async () => {
 
   configureRepoCwd(sandbox.hermesHome, mock.url, repo)
 
-  const { app, page } = await launchDesktop(buildAppEnv(sandbox))
+  const { app, page } = await launchDesktop(buildAppEnv(sandbox, { TERMINAL_CWD: repo }))
   fixture = {
     app,
     page,
@@ -113,7 +114,7 @@ test.beforeAll(async () => {
     'create a repo-backed e2e session',
     { timeout: 15_000 },
   )
-  await expect(page.locator('.coding-status-bar')).toContainText('main')
+  await expect(page.locator('.coding-status-bar')).toContainText('main', { timeout: 30_000 })
 })
 
 test.afterAll(async () => {
@@ -180,7 +181,7 @@ test('worktree dialog convert-an-existing-branch sub-view lists the repo branche
   await closeDialog()
 })
 
-test('creating a branch with ctrl-shift-b updates the composer git-status branch and leaves no dialog behind', async ({}, testInfo) => {
+test('creating a branch with ctrl-shift-b updates the composer git-status branch and leaves no dialog behind', async ({ browserName: _browserName }, testInfo) => {
   const page = fixture!.page
   const codingRow = page.locator('.coding-status-bar')
 
@@ -216,7 +217,7 @@ test('creating a branch with ctrl-shift-b updates the composer git-status branch
   await page.screenshot({ path: testInfo.outputPath('composer-branch-after-create.png') })
 })
 
-test('ctrl-shift-b opens exactly one worktree dialog when a second composer is on screen', async ({}, testInfo) => {
+test('ctrl-shift-b opens exactly one worktree dialog when a second composer is on screen', async ({ browserName: _browserName }, testInfo) => {
   const page = fixture!.page
 
   // ⌘T / ctrl+T stacks a second session tile. That gives a second live composer

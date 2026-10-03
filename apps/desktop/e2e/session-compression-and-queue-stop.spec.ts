@@ -2,10 +2,11 @@
  * E2E coverage for session compression, which rotates a live backend session.
  */
 
-import { expect, test, type Page } from '@playwright/test'
+import { expect, type Page, test } from '@playwright/test'
+
+import { MOCK_REPLY, receivedUserTexts, restartMockServer } from '../../../tests-js/scripts/mock-server'
 
 import { type MockBackendFixture, setupMockBackend, waitForAppReady } from './fixtures'
-import { MOCK_REPLY, receivedUserTexts, restartMockServer } from '../../../tests-js/scripts/mock-server'
 
 async function send(page: Page, text: string, delay = 15): Promise<void> {
   const composer = page.locator('[contenteditable="true"]').first()
@@ -122,7 +123,7 @@ auxiliary:
     await fixture?.cleanup()
   })
 
-  test('queues an Enter-submitted draft instead of steering while compaction is active', async ({}, testInfo) => {
+  test('queues an Enter-submitted draft instead of steering while compaction is active', async ({ browserName: _browserName }, testInfo) => {
     const { page } = fixture
     const queued = 'E2E_QUEUED_DURING_COMPACTION'
 
@@ -136,8 +137,10 @@ auxiliary:
     // a 160-token skills-index cleanup on main broke the test for a day.
     await pasteAndSend(page, 'E2E_COMPACTION_HISTORY_ONE '.repeat(5))
     await waitForTranscript(page, MOCK_REPLY)
+    await expect(page.locator('[data-slot="composer-root"] button[aria-label="Stop"]')).toHaveCount(0, { timeout: 30_000 })
     await pasteAndSend(page, 'E2E_COMPACTION_HISTORY_TWO '.repeat(5))
-    await waitForTranscript(page, MOCK_REPLY)
+    await page.waitForFunction(reply => ((document.querySelector('[data-slot="aui_thread-viewport"]')?.textContent ?? '').split(reply).length - 1) >= 2, MOCK_REPLY)
+    await expect(page.locator('[data-slot="composer-root"] button[aria-label="Stop"]')).toHaveCount(0, { timeout: 30_000 })
     await pasteAndSend(page, 'E2E_TRIGGER_AUTOMATIC_COMPACTION '.repeat(1500))
     await fixture.mock.waitForHeldCompletion()
     await expect(page.getByRole('status', { name: 'Summarizing thread' }).last()).toBeVisible()

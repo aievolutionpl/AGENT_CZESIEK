@@ -240,9 +240,11 @@ test('file bots into user sections by menu and drag; rename; delete returns them
       ['Unassigned', 2]
     ])
 
-  // Membership rides the bot's profile ui_meta, so it follows profile sync.
-  const alphaProfile = path.join(fixture!.sandbox.hermesHome, 'profiles', 'alpha', 'profile.yaml')
-  await expect.poll(() => (fs.existsSync(alphaProfile) ? fs.readFileSync(alphaProfile, 'utf8') : '')).toMatch(/sectionId:\s*sec-/)
+  // Membership must survive a fresh renderer, regardless of backend layout.
+  await page.reload()
+  await waitForAppReady(fixture!, 120_000)
+  await page.getByRole('tab', { name: /^(Bots|Agents|Agenci)$/ }).click()
+  await expect(sectionBlock(page, 'Customers').locator('[data-roster-key="local::alpha"]')).toBeVisible()
 
   // Delete both sections: the roster is the plain list again.
   for (const name of ['Customers', 'Team']) {

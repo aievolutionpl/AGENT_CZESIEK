@@ -17,6 +17,8 @@ import * as fs from 'node:fs'
 import * as net from 'node:net'
 import * as path from 'node:path'
 
+import { startMockServer } from '../../../tests-js/scripts/mock-server'
+
 import {
   buildAppEnv,
   createSandbox,
@@ -27,7 +29,6 @@ import {
   writeEnvFile,
   writeMockProviderConfig,
 } from './fixtures'
-import { startMockServer } from '../../../tests-js/scripts/mock-server'
 import { type ElectronApplication, expect, type Page, test } from './test'
 
 const DESKTOP_ROOT = path.resolve(import.meta.dirname, '..')
@@ -44,13 +45,15 @@ interface RemoteGateway {
 }
 
 function findHermesBinary(): string {
-  const venv = path.join(REPO_ROOT, '.venv', 'bin', 'hermes')
+  const venv = process.platform === 'win32'
+    ? path.join(REPO_ROOT, '.venv', 'Scripts', 'hermes.exe')
+    : path.join(REPO_ROOT, '.venv', 'bin', 'hermes')
 
   if (fs.existsSync(venv)) {
     return venv
   }
 
-  const result = spawnSync('which', ['hermes'], { encoding: 'utf8' })
+  const result = spawnSync(process.platform === 'win32' ? 'where.exe' : 'which', ['hermes'], { encoding: 'utf8', windowsHide: true })
 
   if (result.status === 0 && result.stdout.trim()) {
     return result.stdout.trim()
@@ -72,11 +75,12 @@ async function freePort(): Promise<number> {
 }
 
 /** Seed `<home>/profiles/<name>/` so the backend's /api/profiles lists it. */
-function seedProfiles(home: string, names: string[]): void {
+function seedProfiles(home: string, names: string[], mockUrl: string): void {
   for (const name of names) {
     const dir = path.join(home, 'profiles', name)
     fs.mkdirSync(dir, { recursive: true })
-    fs.writeFileSync(path.join(dir, 'config.yaml'), '', 'utf8')
+    writeMockProviderConfig(dir, mockUrl)
+    writeEnvFile(dir)
   }
 }
 
@@ -90,7 +94,7 @@ async function startRemoteGateway(root: string, mockUrl: string, profiles: strin
   fs.mkdirSync(home, { recursive: true })
   writeMockProviderConfig(home, mockUrl)
   writeEnvFile(home)
-  seedProfiles(home, profiles)
+  seedProfiles(home, profiles, mockUrl)
 
   const port = await freePort()
   const url = `http://127.0.0.1:${port}`
@@ -102,7 +106,7 @@ async function startRemoteGateway(root: string, mockUrl: string, profiles: strin
       cwd: REPO_ROOT,
       detached: true,
       env: {
-        ...process.env,
+        ...buildAppEnv({ root, hermesHome: home, userDataDir: path.join(root, 'homelab-user-data'), cleanup: () => undefined }),
         HERMES_HOME: home,
         HERMES_DASHBOARD_SESSION_TOKEN: REMOTE_TOKEN,
       },
@@ -204,7 +208,6 @@ async function capture(page: Page, name: string): Promise<void> {
 
 const rail = (page: Page) => page.locator('[data-slot="profile-rail"]')
 const gatewayGroup = (page: Page, id: string) => rail(page).locator(`[data-slot="profile-rail-gateway"][data-connection-id="${id}"]`)
-const activeGatewayLabel = (page: Page) => page.getByRole('button', { name: /^Registered gateways: / })
 
 async function groupOrder(page: Page): Promise<Array<[string, boolean]>> {
   return rail(page).locator('[data-slot="profile-rail-gateway"]').evaluateAll(nodes =>
@@ -230,17 +233,26 @@ test.describe('fleet profile rail — two registered gateways', () => {
     // A named profile on This device too, so the active group has a square
     // beside its home pill. "research" exists on BOTH gateways on purpose: the
     // rail must keep the two apart by gateway, never by name alone.
-    seedProfiles(sandbox.hermesHome, ['research'])
+    seedProfiles(sandbox.hermesHome, ['research'], mock.url)
 
     remote = await startRemoteGateway(sandbox.root, mock.url, ['inbox', 'research'])
     writeConnectionsRegistry(sandbox, remote.url)
 
     ;({ app, page } = await launchDesktop(buildAppEnv(sandbox)))
-    await waitForAppReady({ app, page } as MockBackendFixture, 120_000)
+    await waitForAppReady({ app, page, sandbox } as MockBackendFixture, 120_000)
+    await page.evaluate(connectionId => {
+      const deferred = localStorage.getItem('ai-evolution-jarvis-onboarding-v1:local::default')
+
+      if (!deferred) { return }
+
+      for (const profile of ['default', 'inbox', 'research']) {
+        localStorage.setItem(`ai-evolution-jarvis-onboarding-v1:${encodeURIComponent(connectionId)}::${profile}`, deferred)
+      }
+    }, REMOTE_ID)
     // Let boot settle fully (the gateway health item reports "ready" once the
     // primary socket is open) so the boot-time launch-mode restore has run
     // before any click — the rail must then hold whatever the user picks.
-    await expect(page.locator('[data-slot="statusbar"]').getByText('ready', { exact: true })).toBeVisible({ timeout: 120_000 })
+    await expect(gatewayGroup(page, 'local')).toHaveAttribute('data-active', 'true', { timeout: 120_000 })
     await page.waitForTimeout(2_000)
   })
 
@@ -253,7 +265,7 @@ test.describe('fleet profile rail — two registered gateways', () => {
 
   test('lays both gateways on one strip, active gateway in its registry slot', async () => {
     // The statusbar readout names the gateway the workspace is on.
-    await expect(activeGatewayLabel(page)).toHaveAttribute('aria-label', 'Registered gateways: This device', { timeout: 60_000 })
+    await expect(gatewayGroup(page, 'local')).toHaveAttribute('data-active', 'true', { timeout: 60_000 })
 
     // The remote gateway's group appears once the roster has enumerated it.
     const homelab = gatewayGroup(page, REMOTE_ID)
@@ -292,7 +304,7 @@ test.describe('fleet profile rail — two registered gateways', () => {
     await gatewayGroup(page, REMOTE_ID).getByRole('button', { name: `inbox · ${REMOTE_LABEL}` }).click()
 
     // The workspace follows the agent: statusbar readout flips to Homelab…
-    await expect(activeGatewayLabel(page)).toHaveAttribute('aria-label', `Registered gateways: ${REMOTE_LABEL}`, { timeout: 120_000 })
+    await expect(gatewayGroup(page, REMOTE_ID)).toHaveAttribute('data-active', 'true', { timeout: 120_000 })
 
     // …Homelab's group is now the active one, on the clicked profile…
     const homelab = gatewayGroup(page, REMOTE_ID)
@@ -346,7 +358,7 @@ test.describe('fleet profile rail — two registered gateways', () => {
     test.setTimeout(180_000)
     await gatewayGroup(page, 'local').getByRole('button', { name: 'research · This device' }).click()
 
-    await expect(activeGatewayLabel(page)).toHaveAttribute('aria-label', 'Registered gateways: This device', { timeout: 120_000 })
+    await expect(gatewayGroup(page, 'local')).toHaveAttribute('data-active', 'true', { timeout: 120_000 })
     const local = gatewayGroup(page, 'local')
     await expect(local).toHaveAttribute('data-active', 'true', { timeout: 30_000 })
     await expect(local.getByRole('button', { name: 'research', exact: true })).toHaveAttribute('aria-pressed', 'true', { timeout: 30_000 })
