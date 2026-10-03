@@ -60,7 +60,7 @@ async function waitForTranscriptText(page: Page, text: string): Promise<void> {
       return (active?.querySelector('[data-slot="aui_thread-viewport"]')?.textContent ?? '').includes(expected)
     },
     [text, SURFACE] as [string, string],
-    { timeout: 30_000 },
+    { timeout: 30_000 }
   )
 }
 
@@ -80,7 +80,7 @@ async function textNodeOccurrences(page: Page, text: string): Promise<number> {
       }
       return count
     },
-    [text, SURFACE] as [string, string],
+    [text, SURFACE] as [string, string]
   )
 }
 
@@ -103,7 +103,7 @@ async function transcriptMessageOrder(page: Page): Promise<string[]> {
     if (!viewport) return []
 
     return Array.from(
-      viewport.querySelectorAll<HTMLElement>('[data-role="user"], [data-role="assistant"], [data-role="system"]'),
+      viewport.querySelectorAll<HTMLElement>('[data-role="user"], [data-role="assistant"], [data-role="system"]')
     )
       .map(message => message.textContent?.trim() ?? '')
       .filter(Boolean)
@@ -127,12 +127,17 @@ async function openFreshDraft(page: Page, priorSessionText: string): Promise<voi
       return surfaces.length > 0 && !transcript.includes(priorText)
     },
     [priorSessionText, SURFACE] as [string, string],
-    { timeout: 15_000 },
+    { timeout: 15_000 }
   )
 }
 
 async function openSidebarSession(page: Page, sidebarText: string, expectedTranscriptText: string): Promise<void> {
-  const row = page.locator('[data-slot="sidebar"] button').filter({ hasText: sidebarText }).first()
+  // Narrow rails abbreviate titles. The unique prompt prefix selects the row;
+  // the full transcript below still verifies the intended session.
+  const row = page
+    .locator('[data-slot="sidebar"] button')
+    .filter({ hasText: sidebarText.slice(0, 40) })
+    .first()
   await row.waitFor({ state: 'visible', timeout: 30_000 })
   await row.click()
   await waitForTranscriptText(page, expectedTranscriptText)
@@ -175,7 +180,7 @@ test.describe('correction session switch', () => {
 
   test.beforeEach(async () => {
     fixture = await setupMockBackend({
-      mockServer: { holdFirstStreamForPrompt: INFERENCE_SWITCH_TRIGGER },
+      mockServer: { holdFirstStreamForPrompt: INFERENCE_SWITCH_TRIGGER }
     })
     await waitForAppReady(fixture, 120_000)
   })
@@ -223,7 +228,7 @@ test.describe('correction session switch', () => {
     await expect
       .poll(async () => relevantOrder(await transcriptTextOrder(page)), {
         message: 'correction should stay in place after the warm resume',
-        timeout: 30_000,
+        timeout: 30_000
       })
       .toEqual(orderBeforeSwitch)
     await page.screenshot({ path: testInfo.outputPath('correction-after-warm-resume.png') })
@@ -238,7 +243,7 @@ test.describe('correction session switch', () => {
     await expect
       .poll(async () => steerTurnOrder(await transcriptMessageOrder(page)), {
         message: 'steered turn should settle as prompt → correction → corrected reply',
-        timeout: 30_000,
+        timeout: 30_000
       })
       .toEqual([ORIGINAL_PROMPT, CORRECTION, CORRECTED_REPLY])
   })

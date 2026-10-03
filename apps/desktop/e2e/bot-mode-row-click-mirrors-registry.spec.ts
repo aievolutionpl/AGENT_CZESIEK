@@ -113,8 +113,14 @@ test('a bot row click lands on the Bot Chat the row previews, not a side thread'
 
   await openBots(page)
 
-  const alphaRow = page.getByRole('button', { name: /^alpha\b/i }).filter({ visible: true }).first()
-  const betaRow = page.getByRole('button', { name: /^beta\b/i }).filter({ visible: true }).first()
+  const alphaRow = page
+    .getByRole('button', { name: /^alpha\b/i })
+    .filter({ visible: true })
+    .first()
+  const betaRow = page
+    .getByRole('button', { name: /^beta\b/i })
+    .filter({ visible: true })
+    .first()
   await expect(alphaRow).toBeVisible({ timeout: 30_000 })
   await expect(betaRow).toBeVisible({ timeout: 30_000 })
   const seededTurn = page.getByText('Hello alpha', { exact: true }).filter({ visible: true })
@@ -125,9 +131,14 @@ test('a bot row click lands on the Bot Chat the row previews, not a side thread'
   )
   await settle(page, 15_000)
 
-  // A `+` side thread for alpha, with a real turn so it is a persisted tile.
-  await page.keyboard.press('Control+t')
-  const composer = page.locator('[data-slot="composer-root"] [contenteditable="true"]').filter({ visible: true }).first()
+  // The bot menu pins the side chat to alpha's gateway/profile. The global
+  // new-tab shortcut can create a regular default-profile conversation.
+  await alphaRow.click({ button: 'right' })
+  await page.getByRole('menuitem', { name: 'New chat with this bot' }).click()
+  const composer = page
+    .locator('[data-slot="composer-root"] [contenteditable="true"]')
+    .filter({ visible: true })
+    .first()
   await expect(composer).toBeVisible({ timeout: 15_000 })
   await composer.click()
   await composer.fill('hello alpha thread')
@@ -148,10 +159,11 @@ test('a bot row click lands on the Bot Chat the row previews, not a side thread'
   await expect
     .poll(
       () =>
-        page.evaluate(() =>
-          [...document.querySelectorAll<HTMLElement>('[data-zone-tabstrip="grp-main"] [data-tree-tab]')]
-            .map(element => element.getAttribute('data-tree-tab') ?? '')
-            .filter(id => id.startsWith('session-tile:')).length
+        page.evaluate(
+          () =>
+            [...document.querySelectorAll<HTMLElement>('[data-zone-tabstrip="grp-main"] [data-tree-tab]')]
+              .map(element => element.getAttribute('data-tree-tab') ?? '')
+              .filter(id => id.startsWith('session-tile:')).length
         ),
       { timeout: 15_000 }
     )
