@@ -135,6 +135,8 @@ test("an open Bot Chat's tab reads the bot's name, not the canonical 'Bot Chat' 
   // the surface where every bot chat used to read "Bot Chat".
   await page.keyboard.press('Control+t')
   const composer = page
+    .locator('[data-composer-target]:not([data-pane-hidden] [data-composer-target])')
+    .last()
     .locator('[data-slot="composer-root"] [contenteditable="true"]')
     .filter({ visible: true })
     .first()
