@@ -1,10 +1,13 @@
-import { type MockBackendFixture, setupMockBackend, waitForAppReady } from './fixtures'
+import { deferConfiguredProfileWelcome, type MockBackendFixture, setupMockBackend, waitForAppReady } from './fixtures'
 import { expect, test } from './test'
 
 let fixture: MockBackendFixture | null = null
 
 async function openBots(page: MockBackendFixture['page']): Promise<void> {
-  const tab = page.getByRole('button', { name: 'Bots', exact: true }).or(page.getByRole('tab', { name: 'Bots', exact: true })).first()
+  const tab = page
+    .getByRole('button', { name: 'Bots', exact: true })
+    .or(page.getByRole('tab', { name: 'Bots', exact: true }))
+    .first()
   await tab.click()
   await expect(page.getByRole('button', { name: 'New bot or group chat' })).toBeVisible()
 }
@@ -35,6 +38,8 @@ test('local bot replaces an open group main workspace', async () => {
   test.setTimeout(240_000)
   const page = fixture!.page
 
+  await deferConfiguredProfileWelcome(page, ['programmer', 'reviewer'])
+
   await openBots(page)
   await createAgent(page, 'programmer', 'Programmer')
   await createAgent(page, 'reviewer', 'Reviewer')
@@ -57,7 +62,10 @@ test('local bot replaces an open group main workspace', async () => {
   await expect(groupTab).toHaveAttribute('aria-selected', 'true')
   await expect(groupComposer).toBeVisible()
 
-  const programmer = page.getByRole('button', { name: /^Programmer\b/ }).filter({ visible: true }).first()
+  const programmer = page
+    .getByRole('button', { name: /^Programmer\b/ })
+    .filter({ visible: true })
+    .first()
   await programmer.click()
 
   // The bot's canonical chat opens INTO the main workspace pane (post
@@ -76,5 +84,7 @@ test('local bot replaces an open group main workspace', async () => {
   // around indefinitely (see bot-mode-row-click-mirrors-registry's settle()),
   // so its presence no longer distinguishes a stranded handoff. The splash
   // and composer above are the proof the bot's chat took the workspace.
-  await expect(page.locator('[data-slot="composer-root"] [contenteditable="true"]').filter({ visible: true }).first()).toBeVisible()
+  await expect(
+    page.locator('[data-slot="composer-root"] [contenteditable="true"]').filter({ visible: true }).first()
+  ).toBeVisible()
 })
