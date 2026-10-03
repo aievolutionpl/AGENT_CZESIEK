@@ -1,6 +1,8 @@
 import fs from 'node:fs'
 import path from 'node:path'
 
+import { startMockServer } from '../../../tests-js/scripts/mock-server'
+
 import {
   buildAppEnv,
   createSandbox,
@@ -10,7 +12,6 @@ import {
   writeEnvFile,
   writeMockProviderConfig
 } from './fixtures'
-import { startMockServer } from '../../../tests-js/scripts/mock-server'
 import { RealSessionBuilder } from './real-session-builder'
 import { expect, test } from './test'
 
@@ -114,7 +115,7 @@ test('file bots into user sections by menu and drag; rename; delete returns them
 
   const tab = page
     .getByRole('button', { name: 'Bots', exact: true })
-    .or(page.getByRole('tab', { name: 'Bots', exact: true }))
+    .or(page.getByRole('tab', { name: /^(Bots|Agents|Agenci)$/ }))
     .first()
 
   await tab.click()
@@ -239,9 +240,11 @@ test('file bots into user sections by menu and drag; rename; delete returns them
       ['Unassigned', 2]
     ])
 
-  // Membership rides the bot's profile ui_meta, so it follows profile sync.
-  const alphaProfile = path.join(fixture!.sandbox.hermesHome, 'profiles', 'alpha', 'profile.yaml')
-  await expect.poll(() => (fs.existsSync(alphaProfile) ? fs.readFileSync(alphaProfile, 'utf8') : '')).toMatch(/sectionId:\s*sec-/)
+  // Membership must survive a fresh renderer, regardless of backend layout.
+  await page.reload()
+  await waitForAppReady(fixture!, 120_000)
+  await page.getByRole('tab', { name: /^(Bots|Agents|Agenci)$/ }).click()
+  await expect(sectionBlock(page, 'Customers').locator('[data-roster-key="local::alpha"]')).toBeVisible()
 
   // Delete both sections: the roster is the plain list again.
   for (const name of ['Customers', 'Team']) {

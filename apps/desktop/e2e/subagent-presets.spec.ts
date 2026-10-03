@@ -10,7 +10,7 @@ test('a ready teammate prepares an editable delegated task without submitting it
     await page.getByRole('button', { name: /Kliknij logo, aby rozpocząć|Click the logo to begin/ }).click()
     await page.getByRole('button', { name: /Dokończę później|Finish later/ }).click()
     await page.getByRole('button', { name: 'Workspace', exact: true }).click()
-    await waitForAppReady(backend, 120_000)
+    await waitForAppReady(backend, 120_000, 'pl')
     const later = page.getByRole('button', { name: /Wybiorę dostawcę później|I'll choose provider later/ })
 
     if (

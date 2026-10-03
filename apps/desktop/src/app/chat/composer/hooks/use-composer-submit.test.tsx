@@ -286,9 +286,9 @@ describe('useComposerSubmit busy-turn routing', () => {
     expect(onSubmit).not.toHaveBeenCalled()
   })
 
-  it('queues a plain-text follow-up while the active turn is compacting', () => {
+  it.each([true, false])('queues a follow-up during compaction when busy is %s', busy => {
     const { hook, onCancel, onSteer, onSubmit, queueCurrentDraft } = renderSubmitHook({
-      busy: true,
+      busy,
       compacting: true,
       text: 'wait for the summary'
     })

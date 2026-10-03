@@ -1,6 +1,8 @@
 import fs from 'node:fs'
 import path from 'node:path'
 
+import { MOCK_REPLY, startMockServer } from '../../../tests-js/scripts/mock-server'
+
 import {
   buildAppEnv,
   createSandbox,
@@ -10,7 +12,6 @@ import {
   writeEnvFile,
   writeMockProviderConfig
 } from './fixtures'
-import { MOCK_REPLY, startMockServer } from '../../../tests-js/scripts/mock-server'
 import { RealSessionBuilder } from './real-session-builder'
 import { expect, test } from './test'
 
@@ -26,7 +27,7 @@ let fixture: MockBackendFixture | null = null
 async function openBots(page: Page): Promise<void> {
   const tab = page
     .getByRole('button', { name: 'Bots', exact: true })
-    .or(page.getByRole('tab', { name: 'Bots', exact: true }))
+    .or(page.getByRole('tab', { name: /^(Bots|Agents|Agenci)$/ }))
     .first()
 
   await tab.click()

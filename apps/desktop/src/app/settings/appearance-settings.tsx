@@ -61,6 +61,7 @@ import { setHermesConfigCache, useHermesConfigRecord } from '../hooks/use-config
 
 import { MODE_OPTIONS } from './constants'
 import { setNested } from './helpers'
+import { InterfaceMaterialSettings } from './interface-material'
 import { PersonalProfileSettings } from './personal-profile'
 import { PetSettings } from './pet-settings'
 import { ListRow, SectionHeading, SettingsContent, ToggleRow } from './primitives'
@@ -528,6 +529,7 @@ export function AppearanceSettings() {
       <div>
         <SectionHeading icon={Palette} title={a.title} />
         <PersonalProfileSettings />
+        <InterfaceMaterialSettings />
         <p className="max-w-2xl text-[length:var(--conversation-caption-font-size)] leading-(--conversation-caption-line-height) text-(--ui-text-tertiary)">
           {a.intro}
         </p>

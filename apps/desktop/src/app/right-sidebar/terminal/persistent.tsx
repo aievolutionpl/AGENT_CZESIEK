@@ -62,6 +62,7 @@ const sameRect = (a: Rect | null, b: Rect) =>
   !!a && a.hidden === b.hidden && a.top === b.top && a.left === b.left && a.width === b.width && a.height === b.height
 
 export function PersistentTerminal({ onAddSelectionToChat }: PersistentTerminalProps) {
+  const hostRef = useRef<HTMLDivElement>(null)
   const slot = useStore($slot)
   const terminalTakeover = useStore($terminalTakeover)
   const [rect, setRect] = useState<Rect | null>(null)
@@ -131,13 +132,19 @@ export function PersistentTerminal({ onAddSelectionToChat }: PersistentTerminalP
       // full pixel footprint, so half-pixel rects can't leak page bg through.
       const top = Math.floor(r.top)
       const left = Math.floor(r.left)
+      // Workspace containment makes fixed descendants local to its padding box.
+      // Slot measurements are viewport coordinates; convert to the host's origin.
+      const containingBlock = hostRef.current?.offsetParent as HTMLElement | null
+      const origin = containingBlock?.getBoundingClientRect()
+      const originTop = origin ? origin.top + containingBlock!.clientTop - containingBlock!.scrollTop : 0
+      const originLeft = origin ? origin.left + containingBlock!.clientLeft - containingBlock!.scrollLeft : 0
 
       // Inactive keep-alive panes deliberately retain the same rect as the
       // foreground pane, so visibility must be sampled independently.
       const next: Rect = {
         hidden: isElementInHiddenPane(slot),
-        top,
-        left,
+        top: top - originTop,
+        left: left - originLeft,
         width: Math.ceil(r.right) - left,
         height: Math.ceil(r.bottom) - top
       }
@@ -287,7 +294,7 @@ export function PersistentTerminal({ onAddSelectionToChat }: PersistentTerminalP
   // booting xterm/node-pty at 0×0 starts the shell at 80×24 and spawns a visible
   // conhost on Windows. After that `mounted` latches: shells persist while hidden.
   return (
-    <div aria-hidden={!visible} data-persistent-terminal="" style={style}>
+    <div aria-hidden={!visible} data-persistent-terminal="" ref={hostRef} style={style}>
       {mounted && <TerminalWorkspace onAddSelectionToChat={onAddSelectionToChat} />}
     </div>
   )

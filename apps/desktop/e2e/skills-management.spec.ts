@@ -7,11 +7,11 @@ test.describe('skills management', () => {
 
     try {
       await waitForAppReady(fixture)
-      await fixture.page.getByRole('link', { name: 'Skills' }).click()
+      await fixture.page.getByRole('button', { name: 'More features' }).click()
+      await fixture.page.locator('[data-jarvis-nav-view="tools"]').click()
 
-      await expect(fixture.page.getByRole('heading', { name: /skills/i })).toBeVisible()
-      await expect(fixture.page.getByPlaceholder(/search skills/i)).toBeVisible()
-      await expect(fixture.page.getByText(/changes apply to new sessions/i)).toBeVisible()
+      await expect(fixture.page.getByRole('textbox', { name: /search skills/i })).toBeVisible()
+      await expect(fixture.page.getByRole('button', { name: 'Wklej lub utwórz skilla' })).toBeVisible()
     } finally {
       await fixture.cleanup()
     }

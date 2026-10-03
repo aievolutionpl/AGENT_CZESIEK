@@ -73,7 +73,7 @@ test('office teammates, learning and profile settings work through the product s
       }
     })
     await page.reload()
-    await waitForAppReady(fixture, 120_000)
+    await waitForAppReady(fixture, 120_000, 'pl')
     const later = page.getByRole('button', { name: /Wybiorę dostawcę później|I'll choose provider later/ })
 
     if (
@@ -86,9 +86,23 @@ test('office teammates, learning and profile settings work through the product s
     }
 
     await expect(later).toBeHidden()
+    await page.locator('[data-jarvis-nav-view="jarvis"]').click()
     await expect(page.getByRole('button', { name: 'Workspace', exact: true })).toBeVisible()
     await expect(page.locator('[data-testid="jarvis-home-hero"]')).toBeVisible({ timeout: 60_000 })
     await capture('workspace-office.png')
+    const cdp = await app.context().newCDPSession(page)
+    await cdp.send('Emulation.setDeviceMetricsOverride', { width: 1920, height: 1080, deviceScaleFactor: 1, mobile: false })
+    const historyPanel = page.getByRole('button', { name: 'Pokaż lub ukryj lewy panel' })
+
+    if ((await historyPanel.getAttribute('aria-pressed')) === 'true') {await historyPanel.click()}
+    const rightPanel = page.getByRole('button', { name: 'Pokaż lub ukryj prawy panel' })
+
+    if ((await rightPanel.getAttribute('aria-pressed')) !== 'true') {await rightPanel.click()}
+    await expect(page.getByTestId('jarvis-rail')).toBeVisible()
+    await capture('workspace-liquid-glass.png')
+    await rightPanel.click()
+    await cdp.send('Emulation.clearDeviceMetricsOverride')
+    await cdp.detach()
     await page.locator('[data-jarvis-nav-view="agents"]').click()
     await expect(page.getByRole('heading', { name: 'Twoje biuro agentów' })).toBeVisible()
     await expect(page.getByRole('heading', { name: 'Maja · Marketing' })).toBeVisible()
@@ -122,6 +136,17 @@ test('office teammates, learning and profile settings work through the product s
     })
 
     expect(savedConfig).toMatchObject({ display: { czesiek_profile: { name: 'Ada testowa' } } })
+    await page.getByRole('radio', { name: /Liquid Glass/ }).scrollIntoViewIfNeeded()
+    await capture('settings-liquid-glass.png')
+    await page.getByRole('radio', { name: /Klasyczny/ }).click()
+    await expect(page.locator('html')).toHaveAttribute('data-czesiek-material', 'standard')
+    await page.reload()
+    await expect(page.locator('html')).toHaveAttribute('data-czesiek-material', 'standard')
+    await page.locator('[data-jarvis-nav-view="settings"]').click()
+    await page.locator('[data-tour="nav-config:appearance"]').click()
+    await page.getByRole('radio', { name: /Liquid Glass/ }).click()
+    await expect(page.locator('html')).toHaveAttribute('data-czesiek-material', 'liquid')
+
     await page.locator('[data-tour="nav-config:voice"]').click()
     await capture('settings-voice.png')
     await page.getByText('Więcej ustawień głosu', { exact: true }).click()

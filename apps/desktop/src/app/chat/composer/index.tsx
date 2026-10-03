@@ -310,7 +310,7 @@ export function ChatBar({
   } = useComposerQueue({
     activeQueueSessionKey,
     attachments,
-    busy,
+    busy: busy || compacting,
     clearDraft,
     draftRef,
     focusInput,

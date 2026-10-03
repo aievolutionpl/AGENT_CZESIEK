@@ -123,6 +123,8 @@ Poniżej są rzeczywiste zrzuty aplikacji Electron z tej aktualizacji, wykonane 
 
 ![Workspace Agenta Cześka z orbem i pogrupowanym menu](docs/assets/czesiek/workspace-office.png)
 
+![Liquid Glass z tapetą pod lewym menu i prawym panelem](docs/assets/czesiek/workspace-liquid-glass.png)
+
 **Workspace** to główne miejsce rozmowy. Menu rozdziela pracę, połączenia i wiedzę; profil oraz ustawienia są na dole. Orb pokazuje stan rozmowy i pracy. Panele po bokach można chować, żeby zostawić więcej miejsca na rozmowę.
 
 ### Onboarding: od logo do własnego asystenta
@@ -160,6 +162,10 @@ Wybierz dział, znajdź specjalistę i wstaw przykładowe zadanie albo własne p
 ![Personalizacja użytkownika w ustawieniach wyglądu](docs/assets/czesiek/settings-profile.png)
 
 W **Ustawienia → Wygląd** zapisz swój profil współpracy. Zmiany instrukcji stosują się od nowej rozmowy, aby nie przebudowywać kontekstu trwającej sesji. Motyw, skalę i przejrzystość zmienisz dalej na tym ekranie.
+
+![Przełączanie Liquid Glass i klasycznego wyglądu](docs/assets/czesiek/settings-liquid-glass.png)
+
+**Liquid Glass** jest domyślnym stylem: jedna tapeta obejmuje całe okno, a boczne menu i przyciski mają półprzezroczyste powierzchnie, rozmycie oraz delikatne refleksy. W sekcji **Wygląd interfejsu** wybierzesz też **Klasyczny**. Wybór zapisuje się na tym komputerze i pozostaje po ponownym uruchomieniu. Systemowe ograniczenie przezroczystości wyłącza rozmycie i zapewnia kryjące, czytelne panele.
 
 </details>
 
