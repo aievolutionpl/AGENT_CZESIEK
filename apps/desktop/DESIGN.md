@@ -113,6 +113,12 @@ Rules:
 
 ## Window glass
 
+Agent Czesiek route overlays use the shared `czesiek-overlay-card` material:
+near-opaque theme fill, frosted backdrop and a brief entrance. The product
+signature uses `jarvis-brand-signature` with readable text tokens. Both
+reduced-motion and reduced-transparency preferences are respected; the brand
+wordmark uses the primary text colour for contrast at sidebar size.
+
 Glass defaults to **29% Tint, Sidebar only** in both light and dark appearances.
 Fade defaults to zero so the content column and text stay opaque. Native frost
 keeps its platform/appearance defaults. Explicitly saved settings take precedence;

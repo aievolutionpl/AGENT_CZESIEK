@@ -493,13 +493,13 @@
   pointer-events: none;
   background:
     linear-gradient(180deg, rgb(246 250 255 / 0.28) 0%, rgb(236 246 255 / 0.08) 42%, rgb(244 249 255 / 0.2) 100%),
-    url('../../assets/backgrounds/dashboard-light.webp') center bottom / cover no-repeat;
+    url('../../assets/backgrounds/czesiek-glass-light.webp') center bottom / cover no-repeat;
 }
 
 :root.dark .jarvis-space {
   background:
     linear-gradient(180deg, rgb(3 8 18 / 0.24) 0%, transparent 42%, rgb(2 7 16 / 0.34) 100%),
-    url('../../assets/backgrounds/dashboard-dark.webp') center bottom / cover no-repeat;
+    url('../../assets/backgrounds/czesiek-glass-dark.webp') center bottom / cover no-repeat;
 }
 
 /* The supplied photography is the whole backdrop: the drifting dot field that

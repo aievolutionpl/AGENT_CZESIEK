@@ -61,7 +61,7 @@ const COPY = {
     unsavedTitle: 'Wyjść bez zapisywania?',
     emptyBody:
       'Twoja pamięć to zwykłe notatki markdown. Utwórz pierwszą i łącz notatki za pomocą [[podwójnych nawiasów]].',
-    emptyTitle: 'Vault jest pusty',
+    emptyTitle: 'Nie masz jeszcze notatek',
     links: 'Powiązane notatki',
     newNote: 'Nowa notatka',
     newPrompt: 'Tytuł notatki',

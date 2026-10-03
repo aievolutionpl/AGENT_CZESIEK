@@ -13,6 +13,7 @@ import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
 
 import { CONNECTION_STATUS_KEY, type ConnectionState, getConnectionStatus } from '@/api/connections'
+import integrationsArt from '@/assets/czesiek-integrations.webp'
 import { Button } from '@/components/ui/button'
 import { CopyButton } from '@/components/ui/copy-button'
 import { useActiveCapabilityScope } from '@/hooks/use-active-capability-scope'
@@ -62,8 +63,25 @@ function ExternalAnchor({ href, label }: { href: string; label: string }) {
 }
 
 const WIZARD_COPY = {
-  en: { connect: 'Connect Google', connected: 'Connected', manage: 'Manage' },
-  pl: { connect: 'Połącz Google', connected: 'Połączono', manage: 'Zarządzaj' }
+  en: { connect: 'Connect Google', connected: 'Configured', manage: 'Manage' },
+  pl: { connect: 'Połącz Google', connected: 'Skonfigurowano', manage: 'Zarządzaj' }
+} as const
+
+const STATUS_COPY = {
+  pl: {
+    failed: 'Nie udało się sprawdzić konfiguracji. Spróbuj ponownie.',
+    loading: 'Sprawdzam konfigurację integracji…',
+    ready: 'Skonfigurowano oznacza zapisane dane. Działanie usługi sprawdzisz podczas łączenia.',
+    refresh: 'Odśwież status',
+    empty: 'Nie znaleziono integracji. Zmień wpisaną nazwę.'
+  },
+  en: {
+    failed: 'Could not check configuration. Try again.',
+    loading: 'Checking integration configuration…',
+    ready: 'Configured means credentials are saved. Verify the service when connecting.',
+    refresh: 'Refresh status',
+    empty: 'No matching integrations. Try another name.'
+  }
 } as const
 
 function ConnectionCard({ connection, state }: { connection: JarvisConnection; state?: ConnectionState }) {
@@ -158,7 +176,8 @@ function ConnectionCard({ connection, state }: { connection: JarvisConnection; s
 
 function ConnectionsGrid({ query }: { query: string }) {
   const { scope, scopeKey } = useActiveCapabilityScope()
-  const { t } = useI18n()
+  const { locale, t } = useI18n()
+  const statusCopy = locale === 'pl' ? STATUS_COPY.pl : STATUS_COPY.en
   const copy = t.jarvisConnections
   const chosen = readJarvisOnboardingState()?.selections?.connections ?? []
 
@@ -199,6 +218,15 @@ function ConnectionsGrid({ query }: { query: string }) {
 
   return (
     <div className="grid gap-6">
+      <div className="jarvis-well flex flex-wrap items-center justify-between gap-3 p-3 text-sm text-(--ui-text-secondary)">
+        <p role="status">
+          {status.isError ? statusCopy.failed : status.isPending ? statusCopy.loading : statusCopy.ready}
+        </p>
+        <Button disabled={status.isFetching} onClick={() => void status.refetch()} size="sm" variant="secondary">
+          {statusCopy.refresh}
+        </Button>
+      </div>
+      {visible.length === 0 ? <p className="p-4 text-sm text-(--ui-text-secondary)">{statusCopy.empty}</p> : null}
       {group(copy.chosenLabel, first)}
       {group(first.length > 0 ? copy.allLabel : '', rest)}
     </div>
@@ -258,7 +286,7 @@ function CodeBlock({ code, label }: { code: string; label: string }) {
         {label}
         <CopyButton appearance="icon" label={label} text={code} />
       </figcaption>
-      <pre className="overflow-x-auto rounded-xl border border-(--ui-stroke-tertiary) bg-black/40 p-3 text-xs leading-5 text-[#dbe7ff]">
+      <pre className="overflow-x-auto rounded-xl border border-(--ui-stroke-tertiary) bg-(--ui-bg-secondary) p-3 text-xs leading-5 text-(--ui-text-primary)">
         <code>{code}</code>
       </pre>
     </figure>
@@ -335,7 +363,15 @@ export function ConnectionsView() {
     >
       <div className="h-full overflow-y-auto">
         <div className="mx-auto grid max-w-5xl gap-6 px-4 py-6 md:px-6">
-          <header className="grid gap-1">
+          <header className="jarvis-panel relative grid gap-2 overflow-hidden rounded-3xl p-5 sm:pr-44">
+            {tab === 'connections' ? (
+              <img
+                alt=""
+                aria-hidden="true"
+                className="pointer-events-none absolute right-0 top-0 hidden h-full w-44 object-contain sm:block"
+                src={integrationsArt}
+              />
+            ) : null}
             <h1 className="text-2xl font-semibold text-(--ui-text-primary)">
               {tab === 'connections' ? copy.title : tab === 'keys' ? copy.keys.title : copy.api.title}
             </h1>

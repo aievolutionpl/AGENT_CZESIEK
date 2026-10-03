@@ -31,6 +31,7 @@ export function WelcomeStep({ copy }: { copy: WelcomeCopy }) {
           src={logoUrl}
         />
         <div className="min-w-0">
+          <p className="jarvis-brand-signature mb-1">AI Evolution Polska</p>
           <p className="text-lg font-semibold">{copy.title}</p>
           <p className="mt-1 max-w-2xl text-sm leading-6 text-(--ui-text-secondary)">{copy.body}</p>
         </div>
@@ -60,7 +61,9 @@ export function WelcomeStep({ copy }: { copy: WelcomeCopy }) {
       </section>
 
       <section aria-label={copy.flowLabel}>
-        <p className="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-(--ui-text-tertiary)">{copy.flowLabel}</p>
+        <p className="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-(--ui-text-tertiary)">
+          {copy.flowLabel}
+        </p>
         <ol className="flex flex-wrap items-center gap-2">
           {copy.flow.map((stage, index) => (
             <li className="flex items-center gap-2" key={stage}>
@@ -79,7 +82,9 @@ export function WelcomeStep({ copy }: { copy: WelcomeCopy }) {
       </section>
 
       <section aria-label={copy.examplesLabel}>
-        <p className="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-(--ui-text-tertiary)">{copy.examplesLabel}</p>
+        <p className="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-(--ui-text-tertiary)">
+          {copy.examplesLabel}
+        </p>
         <ul className="grid gap-2 sm:grid-cols-2">
           {copy.examples.map(example => (
             <li className="flex items-start gap-2 text-sm leading-5 text-(--ui-text-primary)" key={example}>

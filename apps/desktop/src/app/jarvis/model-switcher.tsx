@@ -11,6 +11,7 @@ import type { ModelOptionProvider } from '@/types/hermes'
 
 import { LIVE_VOICE_MODELS, liveModelValue, useLiveVoiceModel } from './live-model-choice'
 import { hermesModelGroups, shortModelName } from './model-switcher-options'
+import { workModelHint } from './work-models'
 
 const COPY = {
   en: {
@@ -49,7 +50,8 @@ export function ModelSwitcher({ connected, onSelectModel, providers }: ModelSwit
   const [hermesOpen, setHermesOpen] = useState(false)
   const [voiceOpen, setVoiceOpen] = useState(false)
   const [pending, setPending] = useState<null | string>(null)
-  const groups = hermesModelGroups(providers, { model, provider })
+  const [modelQuery, setModelQuery] = useState('')
+  const groups = hermesModelGroups(providers, { model, provider }, undefined, modelQuery)
 
   const pickHermes = async (next: string, slug: string) => {
     if (!onSelectModel || pending) {
@@ -95,6 +97,20 @@ export function ModelSwitcher({ connected, onSelectModel, providers }: ModelSwit
           <p className="px-2 pt-1 pb-0.5 text-xs font-medium uppercase tracking-[0.16em] text-(--ui-text-tertiary)">
             {copy.hermes}
           </p>
+          <input
+            aria-label={locale === 'pl' ? 'Szukaj modelu' : 'Search models'}
+            className="jarvis-well my-2 w-full px-3 py-2 text-sm text-(--ui-text-primary)"
+            onChange={event => setModelQuery(event.target.value)}
+            placeholder={locale === 'pl' ? 'Szukaj modelu…' : 'Search models…'}
+            value={modelQuery}
+          />
+          {groups.length === 0 ? (
+            <p className="px-2 py-3 text-sm text-(--ui-text-secondary)">
+              {locale === 'pl'
+                ? 'Brak pasujących modeli. Zmień wyszukiwanie lub podłącz dostawcę w Ustawieniach → Modele.'
+                : 'No matching models. Change the search or connect a provider in Settings → Models.'}
+            </p>
+          ) : null}
           {groups.map(group => (
             <div className="grid gap-0.5" key={group.slug}>
               <p className="px-2 pt-2 text-xs text-(--ui-text-tertiary)">{group.name}</p>
@@ -112,7 +128,12 @@ export function ModelSwitcher({ connected, onSelectModel, providers }: ModelSwit
                     type="button"
                   >
                     <ModelBrandIcon hints={[group.slug]} model={name} size="sm" />
-                    <span className="min-w-0 flex-1 truncate">{shortModelName(name)}</span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate">{shortModelName(name)}</span>
+                      {workModelHint(name, locale) ? (
+                        <span className="block text-xs text-(--ui-text-secondary)">{workModelHint(name, locale)}</span>
+                      ) : null}
+                    </span>
                     {selected ? <Check className="size-4 shrink-0 text-(--ui-accent)" /> : null}
                   </button>
                 )

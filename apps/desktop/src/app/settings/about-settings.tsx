@@ -107,10 +107,11 @@ export function AboutSettings() {
 
   return (
     <SettingsContent>
-      <div className="flex flex-col items-center gap-3 pt-6 pb-2 text-center">
+      <div className="czesiek-brand-card flex flex-col items-center gap-3 px-4 py-6 text-center">
         <img alt="" className="size-20 object-contain" src={czesiekLogo} />
         <div>
-          <h2 className="text-lg font-semibold tracking-tight">{a.heading}</h2>
+          <p className="jarvis-brand-signature mb-2">AI Evolution Polska</p>
+          <h2 className="text-2xl font-semibold tracking-tight">{a.heading}</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             {version?.appVersion ? a.version(version.appVersion) : a.versionUnavailable}
           </p>

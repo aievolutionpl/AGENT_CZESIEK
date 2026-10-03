@@ -132,10 +132,12 @@ function SearchButton({ label }: { label: string }) {
 
 /** The person this workspace belongs to, one click from their profiles and agents. */
 function ProfileCard({ active, copy, onClick }: { active: boolean; copy: JarvisShellCopy; onClick: () => void }) {
+  const { locale } = useI18n()
   const activeProfile = useStore($activeGatewayProfile)
   const profiles = useStore($profiles)
   const row = profiles.find(profile => profile.name === activeProfile)
-  const name = row ? profileLabel(row) : activeProfile || 'default'
+  const rawName = row ? profileLabel(row) : activeProfile || 'default'
+  const name = rawName === 'default' ? (locale === 'pl' ? 'Profil główny' : 'Main profile') : rawName
 
   return (
     <button
@@ -209,9 +211,7 @@ export function JarvisNavigation({ activeView, copy, onSelect }: JarvisNavigatio
         />
         <div className="min-w-0">
           <div className="jarvis-wordmark truncate text-base font-semibold">{copy.productName}</div>
-          <div className="hidden truncate text-[0.65rem] uppercase tracking-[0.08em] text-(--ui-text-tertiary) md:block">
-            {navCopy.tagline}
-          </div>
+          <div className="jarvis-brand-signature hidden md:block">{navCopy.tagline}</div>
         </div>
       </div>
 
@@ -225,7 +225,7 @@ export function JarvisNavigation({ activeView, copy, onSelect }: JarvisNavigatio
         <div className="flex gap-2 overflow-x-auto pb-1 md:flex-col md:gap-4 md:overflow-visible md:pb-0">
           {JARVIS_NAV_GROUPS.map(group => (
             <div className="contents md:flex md:flex-col md:gap-0.5" key={group.id}>
-              <p className="hidden px-3 pb-1 text-[0.65rem] font-medium uppercase tracking-[0.12em] text-(--ui-text-tertiary) md:block">
+              <p className="hidden px-3 pb-1 text-xs font-semibold uppercase tracking-[0.06em] text-(--ui-text-secondary) md:block">
                 {navCopy.sections[group.id]}
               </p>
               {group.views.map((view: JarvisMainView) => {

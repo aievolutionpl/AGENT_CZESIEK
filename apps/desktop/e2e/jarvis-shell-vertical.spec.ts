@@ -1,3 +1,7 @@
+import fs from 'node:fs'
+import path from 'node:path'
+
+import type { CDPSession } from '@playwright/test'
 /**
  * E2E for the Jarvis product shell — the "pełny pion" the release gate blocks on.
  *
@@ -18,9 +22,7 @@
  * Prerequisite: `npm run build` must have been run so dist/ exists.
  *   npm exec playwright test e2e/jarvis-shell-vertical.spec.ts --reporter=list
  */
-import type { CDPSession } from '@playwright/test'
-import fs from 'node:fs'
-import path from 'node:path'
+import type { BrowserWindow as ElectronWindow } from 'electron'
 
 import { type MockBackendFixture, setupMockBackend, waitForAppReady } from './fixtures'
 import { expect, test } from './test'
@@ -185,9 +187,7 @@ test.describe('Jarvis product shell', () => {
     const before = await app.evaluate(({ BrowserWindow }) => {
       const windows = BrowserWindow.getAllWindows()
 
-      const orb = windows.find((window: import('electron').BrowserWindow) =>
-        window.webContents.getURL().includes('win=overlay')
-      )!
+      const orb = windows.find((window: ElectronWindow) => window.webContents.getURL().includes('win=overlay'))!
 
       return { bounds: orb.getBounds(), top: orb.isAlwaysOnTop() }
     })
@@ -197,7 +197,7 @@ test.describe('Jarvis product shell', () => {
       .poll(() =>
         app.evaluate(({ BrowserWindow }) => {
           const main = BrowserWindow.getAllWindows().find(
-            (window: import('electron').BrowserWindow) => !window.webContents.getURL().includes('win=overlay')
+            (window: ElectronWindow) => !window.webContents.getURL().includes('win=overlay')
           )!
 
           return main.isMinimized() || !main.isVisible()
@@ -214,7 +214,7 @@ test.describe('Jarvis product shell', () => {
     await expect
       .poll(() =>
         app.evaluate(({ BrowserWindow }) => {
-          const orb = BrowserWindow.getAllWindows().find((window: import('electron').BrowserWindow) =>
+          const orb = BrowserWindow.getAllWindows().find((window: ElectronWindow) =>
             window.webContents.getURL().includes('win=overlay')
           )!
 
@@ -229,7 +229,7 @@ test.describe('Jarvis product shell', () => {
       .poll(() =>
         app.evaluate(({ BrowserWindow }) =>
           BrowserWindow.getAllWindows()
-            .find((window: import('electron').BrowserWindow) => !window.webContents.getURL().includes('win=overlay'))!
+            .find((window: ElectronWindow) => !window.webContents.getURL().includes('win=overlay'))!
             .isMinimized()
         )
       )
@@ -239,7 +239,7 @@ test.describe('Jarvis product shell', () => {
       .poll(() =>
         app.evaluate(({ BrowserWindow }) => {
           const main = BrowserWindow.getAllWindows().find(
-            (window: import('electron').BrowserWindow) => !window.webContents.getURL().includes('win=overlay')
+            (window: ElectronWindow) => !window.webContents.getURL().includes('win=overlay')
           )!
 
           return main.isMinimized() || !main.isVisible()
@@ -257,7 +257,7 @@ test.describe('Jarvis product shell', () => {
     await reopened.getByRole('button', { name: 'Schowaj kulę' }).click()
     await app.evaluate(({ BrowserWindow }) => {
       const main = BrowserWindow.getAllWindows().find(
-        (window: import('electron').BrowserWindow) => !window.webContents.getURL().includes('win=overlay')
+        (window: ElectronWindow) => !window.webContents.getURL().includes('win=overlay')
       )
 
       main?.restore()
@@ -488,6 +488,7 @@ test.describe('Jarvis product shell', () => {
 
     await page.locator('[data-jarvis-nav-view="connections"]').click()
     await expect(page.locator('[data-connection-card="github"]')).toBeVisible()
+    await expectVisualSnapshot(page, { name: 'czesiek-integrations', app: fixture!.app })
 
     // First button on an agent-driven card starts the guided setup. (Google has its own
     // in-app wizard instead of a prompt, so GitHub is the card that exercises this path.)
@@ -507,15 +508,42 @@ test.describe('Jarvis product shell', () => {
     await page.locator('[data-jarvis-nav-view="jarvis"]').click()
     await page.getByRole('radio', { name: 'PL', exact: true }).click()
     const history = page.getByRole('button', { name: 'Pokaż lub ukryj lewy panel' })
-    if (await history.getAttribute('aria-pressed') === 'true') { await history.click() }
+
+    if ((await history.getAttribute('aria-pressed')) === 'true') {
+      await history.click()
+    }
+
     const rail = page.getByRole('button', { name: 'Pokaż lub ukryj prawy panel' })
-    if (await rail.getAttribute('aria-pressed') !== 'true') { await rail.click() }
+
+    if ((await rail.getAttribute('aria-pressed')) !== 'true') {
+      await rail.click()
+    }
+
     await page.locator('textarea, [contenteditable="true"]').first().fill('')
     await expectVisualSnapshot(page, { name: 'jarvis-shell', app: fixture!.app })
     await page.getByRole('radio', { name: 'Ciemny', exact: true }).click()
     await expect(page.locator('html')).toHaveClass(/dark/)
     await expectVisualSnapshot(page, { name: 'jarvis-shell-dark', app: fixture!.app })
     await page.getByRole('radio', { name: 'Jasny', exact: true }).click()
+  })
+
+  test('Polish product identity stays visible and panels respect reduced motion', async () => {
+    const page = fixture!.page
+    await page.getByRole('radio', { name: 'PL', exact: true }).click()
+    await expect(page.locator('[data-jarvis-nav-rail]').getByText('AI Evolution Polska', { exact: true })).toBeVisible()
+    await page.emulateMedia({ reducedMotion: 'reduce' })
+
+    try {
+      await page.locator('[data-jarvis-nav-view="settings"]').click()
+      await page.locator('[data-tour="nav-about"]').click()
+      await expect(page.getByRole('heading', { name: 'Agent Czesiek', exact: true })).toBeVisible()
+      const card = page.locator('.czesiek-overlay-card')
+      await expect(card).toHaveCSS('animation-name', 'none')
+      await expectVisualSnapshot(page, { name: 'czesiek-about', app: fixture!.app })
+    } finally {
+      await page.emulateMedia({ reducedMotion: 'no-preference' })
+      await page.locator('[data-jarvis-nav-view="jarvis"]').click()
+    }
   })
 
   test('memory saves through the real backend and survives reopening', async () => {
@@ -527,7 +555,10 @@ test.describe('Jarvis product shell', () => {
     await vault.getByRole('textbox', { name: 'Tytuł notatki' }).press('Enter')
     const editor = vault.locator('textarea')
     await expect(editor).toBeVisible()
-    const content = '# Plan tygodnia\n\nW poniedziałek zapytaj o trzy najważniejsze zadania.\n\nPowiązanie: [[02_PAMIEC_TRWALA]]\n'
+
+    const content =
+      '# Plan tygodnia\n\nW poniedziałek zapytaj o trzy najważniejsze zadania.\n\nPowiązanie: [[02_PAMIEC_TRWALA]]\n'
+
     await editor.fill(content)
     const id = await vault.locator('aside > p').first().textContent()
     await vault.getByRole('button', { name: 'Zapisz', exact: true }).click()

@@ -135,6 +135,12 @@ Pulpit i pamięć pokazują uruchomioną aplikację Electron po aktualizacji z p
 
 ![Ciemny pulpit Agent Czesiek ze szklaną kulą i czytelnymi przyciskami rozmowy](docs/assets/czesiek/pulpit-dark.png)
 
+### Integracje
+
+![Integracje Agent Czesiek: usługi, uprawnienia oraz stan zapisanej konfiguracji](docs/assets/czesiek/integracje.png)
+
+Połącz usługi w jednym miejscu. Status „Skonfigurowano” potwierdza zapis danych; działanie konta należy sprawdzić w kreatorze połączenia. Synchronizacja Dysku pozostaje przypisana do wybranego profilu.
+
 ### Notatki i mapa pamięci
 
 ![Mapa wiedzy i edytor zapisanej notatki Plan tygodnia z powiązaniem do pamięci trwałej](docs/assets/czesiek/pamiec.png)
@@ -461,7 +467,7 @@ Lista celowo uczciwa — to, czego nie należy zakładać:
 
 ## Co nowego
 
-Najnowszy [przegląd stabilizacji produktu](docs/product/PRODUCT_POLISH_2026_10.md) opisuje poprawiony zapis pamięci, izolację połączeń, konfigurację vaultu i większy orb. Poniżej wcześniejsze zmiany do PR #93. Pełna historia: [git log](https://github.com/aievolutionpl/AGENT_CZESIEK/commits/main) i [Releases](https://github.com/aievolutionpl/AGENT_CZESIEK/releases).
+Najnowszy [przegląd interfejsu i integracji](docs/product/POLISH_BRAND_EXPERIENCE.md) opisuje nowe tła jasne i ciemne, branding AI Evolution Polska, czytelniejsze ustawienia, wyszukiwanie modeli pracy i izolację synchronizacji Dysku. Polecane modele pojawiają się tylko wtedy, gdy udostępnia je podłączony dostawca. Wcześniej poprawiliśmy [zapis pamięci i orb](docs/product/PRODUCT_POLISH_2026_10.md). Pełna historia: [git log](https://github.com/aievolutionpl/AGENT_CZESIEK/commits/main) i [Releases](https://github.com/aievolutionpl/AGENT_CZESIEK/releases).
 
 | PR | Co obejmuje |
 | --- | --- |
