@@ -114,7 +114,7 @@ export function PresetList({ owner, presets, skills, onEdit }: PresetListProps) 
                 }}
               >
                 <Input
-                  aria-label={`${preset.name} task`}
+                  aria-label={`Zadanie dla ${preset.name}`}
                   onChange={event => setTasks(current => ({ ...current, [preset.id]: event.target.value }))}
                   placeholder="Co chcesz zlecić?"
                   value={tasks[preset.id] ?? ''}

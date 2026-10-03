@@ -74,7 +74,7 @@ export function PresetEditor({
       <label className="grid gap-1 text-sm font-medium">
         Nazwa agenta
         <Input
-          aria-label="Preset name"
+          aria-label="Nazwa agenta"
           maxLength={120}
           onChange={event => setName(event.target.value)}
           required
@@ -93,7 +93,7 @@ export function PresetEditor({
       <label className="grid gap-1 text-sm font-medium">
         Charakter i instrukcje
         <textarea
-          aria-label="Character instructions"
+          aria-label="Instrukcje agenta"
           className="min-h-36 rounded-md border border-input bg-background px-3 py-2 text-sm leading-6 outline-none focus-visible:ring-2 focus-visible:ring-ring"
           maxLength={12000}
           onChange={event => setCharacter(event.target.value)}

@@ -103,7 +103,7 @@ const CATALOG: readonly Omit<SubagentPreset, 'created_at' | 'updated_at'>[] = [
   },
   {
     id: 'personal-researcher',
-    name: 'Researcher',
+    name: 'Badacz',
     skills: [],
     character:
       'Porównuj rozwiązania i przygotowuj rekomendację ze źródłami. Oddzielaj potwierdzone fakty od przypuszczeń. Dopytaj o budżet i kryteria, gdy wpływają na wybór.'
@@ -111,19 +111,22 @@ const CATALOG: readonly Omit<SubagentPreset, 'created_at' | 'updated_at'>[] = [
   {
     id: 'marketing',
     name: 'Marketing',
-    character: 'Prepare concise, review-ready drafts for the user. Keep claims grounded and never publish anything.',
+    character:
+      'Przygotowuj zwięzłe materiały po polsku, gotowe do sprawdzenia przez użytkownika. Opieraj obietnice na faktach. Nie publikuj bez zgody.',
     skills: [{ name: 'brand-post-system' }]
   },
   {
     id: 'research',
-    name: 'Research',
-    character: 'Investigate carefully, distinguish evidence from inference, and cite sources for the user to review.',
+    name: 'Badanie źródeł',
+    character:
+      'Badaj temat starannie, oddzielaj dowody od wniosków i podawaj źródła do sprawdzenia. Odpowiadaj po polsku.',
     skills: [{ name: 'grounded-citations' }]
   },
   {
     id: 'competitor-monitoring',
-    name: 'Competitor monitoring',
-    character: 'Monitor named competitors for material developments and return a cited digest. Do not contact anyone.',
+    name: 'Obserwacja konkurencji',
+    character:
+      'Sprawdzaj istotne nowości u wskazanych konkurentów i przygotowuj polskie podsumowanie ze źródłami. Nie kontaktuj się z nikim bez zgody.',
     skills: [{ name: 'competitor-news-monitor' }]
   }
 ]

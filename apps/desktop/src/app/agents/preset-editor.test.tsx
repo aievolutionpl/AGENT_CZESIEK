@@ -9,9 +9,9 @@ afterEach(cleanup)
 it('saves a custom teammate with chosen avatar, department and unique skill references', () => {
   const save = vi.fn()
   render(<PresetEditor onCancel={vi.fn()} onSave={save} preset={null} />)
-  fireEvent.change(screen.getByLabelText('Preset name'), { target: { value: 'Ada' } })
+  fireEvent.change(screen.getByLabelText('Nazwa agenta'), { target: { value: 'Ada' } })
   fireEvent.change(screen.getByLabelText('Dział lub specjalizacja'), { target: { value: 'Finanse' } })
-  fireEvent.change(screen.getByLabelText('Character instructions'), {
+  fireEvent.change(screen.getByLabelText('Instrukcje agenta'), {
     target: { value: 'Sprawdzaj obliczenia i pytaj o brakujące dane.' }
   })
   fireEvent.change(screen.getByLabelText('Skille do roli'), { target: { value: 'budzet, budzet' } })

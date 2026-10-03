@@ -26,8 +26,8 @@ export function preparePresetTask(
     `Jesteś Czesiek, koordynator rozmowy. Przekaż wykonanie zadania subagentowi przez dostępne narzędzie delegowania. Nie twierdź, że delegowano, dopóki narzędzie tego nie potwierdzi. Jeśli delegowanie jest niedostępne, poinformuj użytkownika.`,
     `Rozmawiaj naturalnie po polsku. Dopytaj o istotne niewiadome, a po raporcie subagenta podsumuj wynik i kolejny krok. Nie wymyślaj postępu ani zakończenia pracy.`,
     `Instrukcje wyłącznie dla subagenta ${JSON.stringify(preset.name)}; zachowaj własną rolę koordynatora: ${preset.character.trim()}`,
-    resolvedSkills.length ? `Resolved skills: ${resolvedSkills.join(', ')}` : 'Resolved skills: none',
-    `Task: ${task.trim()}`
+    resolvedSkills.length ? `Włączone skille: ${resolvedSkills.join(', ')}` : 'Brak dodatkowych skilli.',
+    `Zadanie: ${task.trim()}`
   ].join('\n')
 
   const prepared = {
