@@ -123,6 +123,14 @@
   border-color: color-mix(in srgb, var(--ui-accent) 25%, var(--glass-border));
 }
 
+:root[data-czesiek-material='liquid'] [data-jarvis-shell] button[role='radio'][aria-checked='true'] {
+  border-color: color-mix(in srgb, var(--ui-accent) 55%, var(--glass-border));
+  background-color: color-mix(in srgb, var(--ui-accent) 14%, var(--liquid-control));
+  box-shadow:
+    inset 0 1px 0 var(--glass-highlight),
+    inset 0 0 0 1px color-mix(in srgb, var(--ui-accent) 18%, transparent);
+}
+
 :root[data-czesiek-material='liquid'] [data-jarvis-shell] [data-slot='button'][data-variant='default'] {
   border: 1px solid rgb(255 255 255 / 0.42);
   border-radius: 12px;
