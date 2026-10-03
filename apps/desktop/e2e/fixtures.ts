@@ -26,8 +26,9 @@ import * as path from 'node:path'
 
 import { _electron, type ElectronApplication, type Page } from '@playwright/test'
 
+import { type MockServerOptions, startMockServer } from '../../../tests-js/scripts/mock-server'
+
 import { resolveElectronBinary } from './electron-binary'
-import { startMockServer, type MockServerOptions } from '../../../tests-js/scripts/mock-server'
 import { installErrorBannerGuard } from './test'
 
 const DESKTOP_ROOT = path.resolve(import.meta.dirname, '..')
@@ -99,8 +100,10 @@ export interface Sandbox {
 
 export function createSandbox(prefix: string): Sandbox {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), `hermes-e2e-${prefix}-${Math.random()}`))
-  const hermesHome = path.join(root, 'hermes-home')
   const userDataDir = path.join(root, 'electron-user-data')
+  // Electron deliberately isolates Czesiek from the CLI's HERMES_HOME.
+  // Seed the managed home selected by HERMES_DESKTOP_USER_DATA_DIR.
+  const hermesHome = path.join(userDataDir, 'hermes-home')
 
   fs.mkdirSync(hermesHome, { recursive: true })
   fs.mkdirSync(userDataDir, { recursive: true })
@@ -154,13 +157,14 @@ export function writeMockProviderConfig(
   mockUrl: string,
   extraDisplayConfig?: string,
   extraConfig?: string,
-  modelContextLength?: number
+  modelContextLength?: number,
+  language = 'en'
 ): void {
   const configPath = path.join(hermesHome, 'config.yaml')
 
   // Existing E2E assertions use English copy; request it explicitly so a
   // product default change does not silently change unrelated scenarios.
-  const displaySection = `\ndisplay:\n  language: en\n${extraDisplayConfig ?? ''}\n`
+  const displaySection = `\ndisplay:\n  language: ${language}\n${extraDisplayConfig ?? ''}\n`
 
   // Title generation rides the MAIN model since 87af576e60 (#83636), so every
   // completed turn fires an extra background /v1/chat/completions at the mock.
@@ -364,6 +368,8 @@ export interface MockBackendOptions {
   extraConfig?: string
   /** Override the mock model's context window for compression scenarios. */
   modelContextLength?: number
+  mockServer?: MockServerOptions
+  language?: string
 }
 
 /**
@@ -373,10 +379,6 @@ export interface MockBackendOptions {
  *   3. Launch the desktop app
  *   4. Return handles for test interaction
  */
-export interface MockBackendOptions {
-  mockServer?: MockServerOptions
-}
-
 export async function setupMockBackend(options: MockBackendOptions = {}): Promise<MockBackendFixture> {
   // 1. Start mock server
   const mock = await startMockServer(options.mockServer)
@@ -388,7 +390,8 @@ export async function setupMockBackend(options: MockBackendOptions = {}): Promis
     mock.url,
     options.extraDisplayConfig,
     options.extraConfig,
-    options.modelContextLength
+    options.modelContextLength,
+    options.language
   )
   writeEnvFile(sandbox.hermesHome)
 
@@ -492,6 +495,7 @@ providers:
       ? { HERMES_DESKTOP_BOOT_FAKE_ERROR: 'Failed to connect to Hermes backend: connection refused' }
       : {}
   )
+
   const { app, page } = await launchDesktop(env)
 
   return {
@@ -609,17 +613,40 @@ export async function setupPackagedApp(): Promise<PackagedAppFixture> {
  *     so checking the composer alone catches the app mid-boot at ~92%
  *     with the loading bar still showing.
  */
+/** Legacy feature tests start after the product welcome; office-learning covers it explicitly. */
+async function dismissProductWelcome(page: Page): Promise<void> {
+  const logo = page.getByRole('button', { name: /Kliknij logo, aby rozpocząć|Click the logo to begin/ })
+  const finishLater = page.getByRole('button', { name: /Dokończę później|Finish later/ })
+
+  if (await logo.isVisible()) {
+    await logo.click()
+    await finishLater.waitFor({ state: 'visible', timeout: 15_000 })
+  }
+
+  if (await finishLater.isVisible()) {
+    await finishLater.click()
+    // Deferring setup opens API settings; feature tests start in Workspace.
+    await page.getByRole('button', { name: 'Workspace', exact: true }).click()
+  }
+}
+
 export async function waitForAppReady(
   fixture: MockBackendFixture | NoProviderFixture | DeadBackendFixture,
   timeoutMs = 60_000
 ): Promise<void> {
   const { page, app } = fixture
+  await page.waitForSelector('[data-jarvis-shell], textarea, [contenteditable="true"]', {
+    state: 'attached',
+    timeout: timeoutMs
+  })
+  await dismissProductWelcome(page)
 
   // Wait for the composer to exist in the DOM (not necessarily interactive yet).
   await page.waitForSelector('textarea, [contenteditable="true"]', {
     state: 'attached',
     timeout: timeoutMs
   })
+  await dismissProductWelcome(page)
 
   // Now poll until no full-screen overlay covers the viewport center.
   // elementFromPoint returns the topmost element at a point — if it's part
@@ -637,6 +664,7 @@ export async function waitForAppReady(
       // `position: fixed; inset: 0`. If the hit element or an ancestor
       // is a full-viewport fixed overlay, we're still covered.
       let node: Element | null = el
+
       while (node) {
         const cs = window.getComputedStyle(node)
 
@@ -678,6 +706,7 @@ export async function waitForAppReady(
       if (visible) {
         break
       }
+
       await page.waitForTimeout(500)
     }
   }
@@ -687,6 +716,11 @@ export async function waitForAppReady(
  * Wait for the onboarding overlay to appear (no provider configured).
  */
 export async function waitForOnboarding(page: Page, timeoutMs = 60_000): Promise<void> {
+  await page.waitForSelector('[data-jarvis-shell], textarea, [contenteditable="true"]', {
+    state: 'attached',
+    timeout: timeoutMs
+  })
+  await dismissProductWelcome(page)
   // The onboarding overlay contains a heading with "Choose your provider"
   // or similar text. We look for any text that indicates the picker.
   await page.waitForFunction(

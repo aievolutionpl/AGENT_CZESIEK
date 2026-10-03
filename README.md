@@ -27,7 +27,7 @@
 - [Jak to działa](#jak-to-działa)
 - [Tak wygląda aplikacja](#tak-wygląda-aplikacja)
 - [Pierwsze uruchomienie](#pierwsze-uruchomienie)
-- [Pulpit i nawigacja](#pulpit-i-nawigacja)
+- [Workspace i nawigacja](#workspace-i-nawigacja)
 - [Rozmowa głosowa i orb](#rozmowa-głosowa-i-orb)
 - [Agenci, subagenci i tablica pracy](#agenci-subagenci-i-tablica-pracy)
 - [Własne skille](#własne-skille)
@@ -117,35 +117,88 @@ Dwa osobne wybory modeli: **model zadaniowy** (Hermes — myślenie i narzędzia
 
 ## Tak wygląda aplikacja
 
-Pulpit i pamięć pokazują uruchomioną aplikację Electron po aktualizacji z października 2026. To rzeczywiste zrzuty z testowym backendem i tymczasowymi notatkami. Na pulpicie nie ma wybranego modelu, ponieważ test nie używa prywatnego klucza API. Zrzut powitania pochodzi z PR #61.
+Poniżej są rzeczywiste zrzuty aplikacji Electron z tej aktualizacji, wykonane na odizolowanym profilu testowym. Dane są demonstracyjne. Zrzuty nie zawierają prywatnych kluczy i nie potwierdzają połączenia z płatnymi usługami AI.
 
-### Powitanie i konfiguracja
+### Workspace: rozmowa i orb
 
-![Ekran startowy onboardingu: logo Agent Czesiek, które można kliknąć, aby rozpocząć konfigurację](docs/assets/czesiek/onboarding-start.png)
+![Workspace Agenta Cześka z orbem i pogrupowanym menu](docs/assets/czesiek/workspace-office.png)
 
-[Otwórz screenshot onboardingu w pełnym rozmiarze](docs/assets/czesiek/onboarding-start.png).
+**Workspace** to główne miejsce rozmowy. Menu rozdziela pracę, połączenia i wiedzę; profil oraz ustawienia są na dole. Orb pokazuje stan rozmowy i pracy. Panele po bokach można chować, żeby zostawić więcej miejsca na rozmowę.
 
-### Pulpit z orbem
+### Onboarding: od logo do własnego asystenta
 
-![Jasny pulpit Agent Czesiek: orb, uproszczone menu i jeden pasek rozmowy](docs/assets/czesiek/pulpit.png)
+![Klikane logo otwierające konfigurację](docs/assets/czesiek/onboarding-start.png)
 
-[Otwórz screenshot pulpitu w pełnym rozmiarze](docs/assets/czesiek/pulpit.png). Obrazy leżą w repozytorium, więc są dostępne także po sklonowaniu. Jeśli GitHub chwilowo nie ładuje podglądu, użyj linku do pliku.
+![Powitanie, wyjaśnienie działania i firmowy zespół agentów](docs/assets/czesiek/onboarding-office.png)
 
-### Tryb ciemny
+![Opcjonalne pytania o użytkownika i gotowe style współpracy](docs/assets/czesiek/onboarding-profile.png)
 
-![Ciemny pulpit Agent Czesiek ze szklaną kulą i czytelnymi przyciskami rozmowy](docs/assets/czesiek/pulpit-dark.png)
+Przy każdym kroku widzisz, czy to **informacja**, **opcjonalny wybór**, czy **wymagane działanie**. W „Poznajmy się” możesz zacząć od „Na co dzień”, „Moja firma” lub „Tworzę i uczę się”. Potem dopasujesz imię, priorytety, ton oraz długość odpowiedzi. Te preferencje zostają w wybranym profilu.
 
-### Integracje
+### Biuro agentów
 
-![Integracje Agent Czesiek: usługi, uprawnienia oraz stan zapisanej konfiguracji](docs/assets/czesiek/integracje.png)
+![Katalog współpracowników, działy, avatary i przygotowanie zadania](docs/assets/czesiek/agents-office.png)
 
-Połącz usługi w jednym miejscu. Status „Skonfigurowano” potwierdza zapis danych; działanie konta należy sprawdzić w kreatorze połączenia. Synchronizacja Dysku pozostaje przypisana do wybranego profilu.
+![Tworzenie własnego agenta z wyborem avatara i instrukcji](docs/assets/czesiek/agent-editor.png)
 
-### Notatki i mapa pamięci
+Wybierz dział, znajdź specjalistę i wstaw przykładowe zadanie albo własne polecenie. Przycisk **Przygotuj zadanie** przenosi jego treść do nowej rozmowy, gdzie możesz ją sprawdzić przed wysłaniem. **Utwórz własnego agenta** pozwala zapisać nazwę, dział, avatar, instrukcje oraz skille. Ilustracje mają lekką animację przy interakcji, wyłączaną przez preferencję ograniczenia ruchu.
 
-![Mapa wiedzy i edytor zapisanej notatki Plan tygodnia z powiązaniem do pamięci trwałej](docs/assets/czesiek/pamiec.png)
+### Ustawienia: co i gdzie podłączyć
 
-Notatki można tworzyć, edytować i łączyć odnośnikami. Zapis pozostaje dostępny po ponownym otwarciu. Błąd zapisu zachowuje szkic, a statusy i dane integracji są przypisane do wybranego połączenia i profilu. Szczegóły aktualizacji, wyniki testów i granice weryfikacji: [raport stabilizacji produktu](docs/product/PRODUCT_POLISH_2026_10.md).
+| Ekran | Co ustawiasz |
+| --- | --- |
+| **Model** | Model pracy: analiza, narzędzia i zadania subagentów. |
+| **Dostawcy** | Logowanie obsługiwanym kontem lub własny klucz API, np. OpenRouter. |
+| **Głos** | Głosy Gemini, osobna zakładka ElevenLabs i ustawienia rozmowy Live. |
+| **Wygląd** | Profil współpracy, język, motyw, skala i opcje przejrzystości. |
+| **Czy wszystko działa?** | Diagnostyka modelu, głosu, mikrofonu i narzędzi. |
+| **Integracje** | Połączenia z usługami oraz ich zakresy dostępu. |
+
+<details>
+<summary><strong>Profil i wygląd — imię, cele i sposób rozmowy</strong></summary>
+
+![Personalizacja użytkownika w ustawieniach wyglądu](docs/assets/czesiek/settings-profile.png)
+
+W **Ustawienia → Wygląd** zapisz swój profil współpracy. Zmiany instrukcji stosują się od nowej rozmowy, aby nie przebudowywać kontekstu trwającej sesji. Motyw, skalę i przejrzystość zmienisz dalej na tym ekranie.
+
+</details>
+
+<details>
+<summary><strong>Dostawcy — model do pracy i Twoje konto API</strong></summary>
+
+![Ekran dostawców modeli AI](docs/assets/czesiek/settings-providers.png)
+
+Najpierw połącz dostawcę w **Ustawienia → Dostawcy**, potem wybierz model w **Model**. OpenRouter to wygodna opcja do zadań; obsługiwane logowanie ChatGPT jest alternatywą. Dostępne modele, limity i rozliczenia zależą od Twojego konta. Klucz zapisuj wyłącznie w formularzu aplikacji.
+
+</details>
+
+<details>
+<summary><strong>Głos — Gemini Live, wybór głosu i ElevenLabs</strong></summary>
+
+![Wybór głosu Gemini z odsłuchem](docs/assets/czesiek/settings-voice.png)
+
+![Zaawansowana konfiguracja dostawcy i modelu rozmowy Live](docs/assets/czesiek/settings-live-model.png)
+
+W **Głos** wybierz głos i odsłuchaj próbkę. W **Więcej ustawień głosu** skonfigurujesz silnik **Realtime**, dostawcę **Gemini**, identyfikator modelu Live oraz język. Gemini wymaga własnego klucza Google AI Studio. W repo ustawieniem domyślnym jest `gemini-3.8-live`; użyj identyfikatora rzeczywiście dostępnego na swoim koncie — samo domyślne ustawienie nie potwierdza jego dostępności u Google.
+
+**ElevenLabs** ma własną zakładkę i własny klucz. Służy do wyboru głosów, podglądu i odczytu tekstu; nie zastępuje natywnego audio sesji Gemini Live. Klucz OpenRouter nie uwierzytelnia Gemini ani ElevenLabs.
+
+</details>
+
+<details>
+<summary><strong>Integracje — Google, uprawnienia i test połączenia</strong></summary>
+
+![Ekran integracji Agenta Cześka](docs/assets/czesiek/integrations-office.png)
+
+Gmail, Kalendarz i Dysk sprawdzaj osobno w kreatorze Google. Stan zapisanej konfiguracji nie oznacza jeszcze potwierdzonego połączenia. Wysyłka wiadomości i zmiana danych zależą od ustawionych zgód.
+
+</details>
+
+### Nauka AI
+
+![Polska sekcja edukacyjna z lekcjami i słownikiem](docs/assets/czesiek/learn-ai.png)
+
+**Nauka AI** zawiera sześć mini-lekcji i wyszukiwalny słownik: modele, API, tokeny, prompty, pamięć, skille, MCP, OAuth oraz bezpieczna praca. Każda lekcja ma przykład i pytanie z odpowiedzią. Dalszą naukę znajdziesz na [aievolutionpolska.pl](https://aievolutionpolska.pl).
 
 ## Pierwsze uruchomienie
 
@@ -163,24 +216,24 @@ Szczegóły i granice działania bez internetu: [instalacja na nowym komputerze]
 
 ### Pierwsze minuty
 
-Onboarding to dziewięć krótkich kroków: jak działa Czesiek, dostępy, zgody, komputer, integracje i API, silnik, model, profil i głos. W praktyce:
+Onboarding to dziewięć kroków: powitanie, „Poznajmy się”, własne API i współpracownik, model pracy, głos, dostępy, komputer, integracje oraz zgody. W praktyce:
 
 1. **Kliknij logo Cześka.** Krótka animacja i cichy dźwięk otworzą onboarding (dźwięk startuje dopiero po kliknięciu).
 2. **Wybierz współpracownika** (silnik): nowy z pakietu albo wykrytą instalację Hermesa (możesz też wskazać folder). Czesiek zapamiętuje wybór i zawsze używa własnego profilu — nie kopiuje kluczy ani historii innego Hermesa.
 3. **Wybierz rolę** (np. asystent dnia). Zaznaczy to polecane narzędzia; każdy wybór możesz zmienić.
 4. **Podłącz model:** wklej własny klucz API (np. OpenRouter) albo zaloguj się kontem ChatGPT. Głos Live wymaga zgodnego dostawcy i osobnego klucza.
 5. **Zdecyduj o dostępie** do komputera, integracjach i trybie zgód. Wrócisz do tego w Ustawieniach.
-6. Na **Pulpicie** napisz polecenie lub rozpocznij rozmowę głosową. Przyciski **Zadania** i **Pamięć** otwierają panel; integracje skonfigurujesz w menu **Integracje**.
+6. Na **Workspace** napisz polecenie lub rozpocznij rozmowę głosową. Przyciski **Zadania** i **Pamięć** otwierają panel; integracje skonfigurujesz w menu **Integracje**.
 
 Kluczy API nie wpisuj w czacie ani w plikach repozytorium. Instrukcje uruchomienia ze źródeł: [Dla deweloperów](#dla-deweloperów).
 
-## Pulpit i nawigacja
+## Workspace i nawigacja
 
 ### Menu główne
 
 | Pozycja | Do czego służy |
 | --- | --- |
-| **Pulpit** | Rozmowa i duży orb pokazujący rzeczywisty stan Cześka. |
+| **Workspace** | Rozmowa i duży orb pokazujący rzeczywisty stan Cześka. |
 | **Zadania** | Zaplanowane działania i ich statusy. |
 | **Agenci** | Gotowe role i współpracownicy wykonujący zadania. |
 | **Rozmowy** | Historia i powrót do poprzedniej rozmowy. |
@@ -234,15 +287,20 @@ Nie zakładamy dostępności modelu na podstawie jego nazwy marketingowej: dosta
 
 Czesiek jest rozmówcą i koordynatorem: ustala cel, dopytuje o braki i przekazuje wykonanie współpracownikowi. Narzędzie delegowania musi być dostępne na wybranym backendzie.
 
-W **Agentach** są trzy role startowe:
+W **Agentach** znajdziesz gotowych współpracowników biurowych:
 
-| Rola | Przykładowe zadanie |
-| --- | --- |
-| **Asystent dnia** | Uporządkuj moje priorytety i przygotuj plan na dzisiaj. |
-| **Koordynator projektu** | Rozbij wdrożenie strony na kroki, zależności i pytania do decyzji. |
-| **Researcher** | Porównaj trzy rozwiązania, podaj źródła i wskaż ograniczenia. |
+| Współpracownik | Charakter | Przykładowa praca |
+| --- | --- | --- |
+| **Maja · Marketing** | Pogodna, kreatywna, konkretna | Pomysły na posty, teksty i plan publikacji do akceptacji. |
+| **Kuba · Sprzedaż** | Komunikatywny, rzeczowy | Szkic oferty, pytania do klienta i follow-up. |
+| **Iga · Analiza** | Dociekliwa, spokojna | Porównania, źródła i rekomendacje bez zmyślonych statystyk. |
+| **Ola · Obsługa klienta** | Empatyczna, cierpliwa | Odpowiedzi na reklamacje i instrukcje pomocy. |
+| **Bartek · Organizacja** | Uporządkowany, praktyczny | Priorytety, checklisty i procedury zespołu. |
+| **Lena · Produkt i kod** | Pomysłowa, techniczna | Prototypy, analiza problemów i sprawdzalne zmiany w kodzie. |
 
-Wybierz rolę, wpisz cel i kliknij **Przygotuj zadanie**. Aplikacja otworzy nową rozmowę z instrukcją do wysłania — możesz ją przeczytać i poprawić przed startem. W edytorze roli zmienisz charakter asystenta i przypiszesz nazwy własnych skilli.
+Pozostają też role ogólne: asystent dnia, koordynator projektu i researcher. Zapisane wcześniej własne role nie są nadpisywane nowymi szablonami.
+
+Wybierz rolę, wpisz cel i kliknij **Przygotuj zadanie**. Aplikacja otworzy nową rozmowę z instrukcją do wysłania — możesz ją przeczytać i poprawić przed startem. Edytor pozwala zmieniać charakter, dział, avatar i przypisane skille. Czesiek przekazuje instrukcje wybranemu subagentowi i zachowuje rolę koordynatora. Sama rola nie instaluje integracji ani nie nadaje nowych uprawnień.
 
 **Tablica pracy w rozmowie głosowej.** Zlecenia z głosu trafiają na tablicę (kanban) jako zadania z oznaczeniem pochodzenia. Aplikacja co kilka sekund sprawdza ich stan i sama wraca z raportem dla zadań z tej rozmowy. Możesz w dowolnym momencie zapytać o status, poprosić o zatrzymanie albo zmienić polecenie aktywnym współpracownikom. Karty pokazują stan z backendu, raport i zapisane pliki, jeśli współpracownik je zgłosił. Raporty głosowe dotyczą bieżącej rozmowy; wyniki pozostałych zadań znajdziesz w historii.
 
@@ -479,6 +537,12 @@ Lista celowo uczciwa — to, czego nie należy zakładać:
 - **Strona produktu** (`sales-site/`): merge nie potwierdza publikacji hostingu; nie ma jeszcze cennika ani płatności.
 
 ## Co nowego
+
+### Wersja testowa 0.17.6-rc.1
+
+Workspace z czytelniejszym menu, biuro sześciu firmowych specjalistów, edytor własnych agentów i animowane avatary. Nowa sekcja Nauka AI, szybkie style współpracy w onboardingu oraz ustawienia profilu zapisane dla konkretnego połączenia i profilu. README zawiera nowe screenshoty i przewodnik po modelach pracy, głosie oraz integracjach.
+
+To wydanie do testów. Bez firmowego certyfikatu instalator Windows może wyświetlić ostrzeżenie SmartScreen. Nie traktujemy go jako podpisanego wydania produkcyjnego; stan podpisu i pakietów sprawdzaj w notatkach wydania.
 
 Najnowszy [przegląd interfejsu i integracji](docs/product/POLISH_BRAND_EXPERIENCE.md) opisuje nowe tła jasne i ciemne, branding AI Evolution Polska, czytelniejsze ustawienia, wyszukiwanie modeli pracy i izolację synchronizacji Dysku. Polecane modele pojawiają się tylko wtedy, gdy udostępnia je podłączony dostawca. Wcześniej poprawiliśmy [zapis pamięci i orb](docs/product/PRODUCT_POLISH_2026_10.md). Pełna historia: [git log](https://github.com/aievolutionpl/AGENT_CZESIEK/commits/main) i [Releases](https://github.com/aievolutionpl/AGENT_CZESIEK/releases).
 

@@ -19,6 +19,7 @@ import {
   Plus,
   Search,
   Settings2,
+  Sparkles,
   Starmap,
   Users,
   Wrench
@@ -147,12 +148,21 @@ export function JarvisNavigation({ activeView, copy, onSelect }: JarvisNavigatio
         className="col-span-2 flex min-h-0 min-w-0 gap-1 overflow-x-auto [&>button]:max-md:w-auto md:flex-1 md:flex-col md:overflow-x-hidden md:overflow-y-auto"
         data-jarvis-nav=""
       >
+        <p className="hidden px-3 pt-2 text-xs font-semibold text-(--ui-text-secondary) md:block">
+          {pl ? 'PRACA' : 'WORK'}
+        </p>
         {PRIMARY.filter(view => view !== 'settings' && view !== 'connections').map(destination)}
         <button className={ROW} data-jarvis-nav-history="" onClick={() => setSessionPickerOpen(true)} type="button">
           <Clock className="size-5" />
           {pl ? 'Rozmowy' : 'Conversations'}
         </button>
+        <p className="hidden px-3 pt-3 text-xs font-semibold text-(--ui-text-secondary) md:block">
+          {pl ? 'POŁĄCZENIA' : 'CONNECTIONS'}
+        </p>
         {destination('connections')}
+        <p className="hidden px-3 pt-3 text-xs font-semibold text-(--ui-text-secondary) md:block">
+          {pl ? 'WIEDZA' : 'KNOWLEDGE'}
+        </p>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
@@ -191,6 +201,15 @@ export function JarvisNavigation({ activeView, copy, onSelect }: JarvisNavigatio
             })}
           </DropdownMenuContent>
         </DropdownMenu>
+        <button
+          aria-current={activeView === 'education' ? 'page' : undefined}
+          className={cn(ROW, activeView === 'education' && 'jarvis-nav-active')}
+          onClick={() => onSelect('education')}
+          type="button"
+        >
+          <Sparkles className="size-5" />
+          <span>{pl ? 'Nauka AI' : 'Learn AI'}</span>
+        </button>
       </nav>
       <div className="col-span-2 flex min-w-0 shrink-0 gap-1 border-t border-(--glass-border) pt-2 md:flex-col">
         {destination('settings')}

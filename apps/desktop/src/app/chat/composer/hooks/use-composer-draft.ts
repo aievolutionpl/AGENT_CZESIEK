@@ -10,6 +10,7 @@ import { useAui, useAuiState, useComposerRuntime } from '@assistant-ui/react'
 import { useStore } from '@nanostores/react'
 import { type RefObject, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 
+import { $preparedPresetTaskRevision, takePreparedPresetTask } from '@/app/agents/launch-preset'
 import { usePaneVisible } from '@/components/pane-shell/pane-visibility'
 import { SLASH_COMMAND_RE } from '@/lib/chat-runtime'
 import { sanitizeComposerInput } from '@/lib/composer-input-sanitize'
@@ -25,6 +26,8 @@ import {
 } from '@/store/composer'
 import { isBrowsingHistory } from '@/store/composer-input-history'
 import { clearDraftSuggestions, sampleComposerDraft } from '@/store/composer-suggestions'
+import { activeGatewayConnectionId } from '@/store/gateway'
+import { $activeGatewayProfile } from '@/store/profile'
 
 import {
   cloneAttachments,
@@ -260,6 +263,24 @@ export function useComposerDraft({
       appendExternalText(request.text, 'block')
     }
   }, [appendExternalText, inputDisabled, prefillRequest, target])
+
+  const preparedTaskRevision = useStore($preparedPresetTaskRevision)
+  const activeProfile = useStore($activeGatewayProfile)
+
+  useEffect(() => {
+    if (target !== 'main' || inputDisabled) {
+      return
+    }
+
+    const prepared = takePreparedPresetTask({
+      connectionId: activeGatewayConnectionId() ?? 'local',
+      profile: activeProfile
+    })
+
+    if (prepared) {
+      appendExternalText(prepared.text, 'block')
+    }
+  }, [activeProfile, appendExternalText, inputDisabled, preparedTaskRevision, target])
 
   const stashAt = (scope: string | null, text = draftRef.current, attachments = attachmentScope.$attachments.get()) =>
     stashSessionDraft(scope, text, attachments)

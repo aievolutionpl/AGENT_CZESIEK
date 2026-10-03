@@ -13,7 +13,7 @@ import { Pill, SectionHeading, SettingsContent } from './primitives'
 // tablets and phones, where a 16px radio is not a target.
 const ROW_CLASS = 'flex w-full items-start gap-3 rounded-xl border p-3 text-left transition-colors'
 const ROW_ACTIVE = 'border-primary/60 bg-primary/10'
-const ROW_IDLE = 'border-white/10 bg-white/[0.02] hover:bg-white/[0.06]'
+const ROW_IDLE = 'border-(--ui-stroke-tertiary) bg-(--ui-bg-secondary) hover:bg-(--chrome-action-hover)'
 
 function RowMark({ active }: { active: boolean }) {
   return (

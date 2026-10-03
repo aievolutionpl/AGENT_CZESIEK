@@ -14,7 +14,7 @@ export const JARVIS_NAV_GROUPS = [
 ] as const
 
 export const JARVIS_MAIN_VIEWS = JARVIS_NAV_GROUPS.flatMap(group => group.views)
-export const JARVIS_AUXILIARY_VIEWS = ['profile', 'messaging'] as const
+export const JARVIS_AUXILIARY_VIEWS = ['profile', 'messaging', 'education'] as const
 
 export type JarvisNavGroup = (typeof JARVIS_NAV_GROUPS)[number]['id']
 export type JarvisMainView = (typeof JARVIS_NAV_GROUPS)[number]['views'][number]

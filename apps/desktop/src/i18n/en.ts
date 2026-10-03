@@ -594,7 +594,7 @@ export const en: Translations = {
     },
     views: {
       prompts: 'My prompts',
-      jarvis: 'Dashboard',
+      jarvis: 'Workspace',
       tasks: 'Tasks',
       agents: 'Agents',
       messaging: 'Messaging',

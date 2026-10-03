@@ -61,6 +61,7 @@ import { setHermesConfigCache, useHermesConfigRecord } from '../hooks/use-config
 
 import { MODE_OPTIONS } from './constants'
 import { setNested } from './helpers'
+import { PersonalProfileSettings } from './personal-profile'
 import { PetSettings } from './pet-settings'
 import { ListRow, SectionHeading, SettingsContent, ToggleRow } from './primitives'
 import { APPEARANCE_SETTING_IDS } from './settings-search'
@@ -526,6 +527,7 @@ export function AppearanceSettings() {
     <SettingsContent>
       <div>
         <SectionHeading icon={Palette} title={a.title} />
+        <PersonalProfileSettings />
         <p className="max-w-2xl text-[length:var(--conversation-caption-font-size)] leading-(--conversation-caption-line-height) text-(--ui-text-tertiary)">
           {a.intro}
         </p>

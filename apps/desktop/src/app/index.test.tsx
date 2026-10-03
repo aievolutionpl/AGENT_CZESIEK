@@ -175,7 +175,7 @@ describe('desktop app root Agent Czesiek integration', () => {
     ['Umiejętności', '/skills'],
     ['Ustawienia', '/settings'],
     ['Profil', '/profiles'],
-    ['Pulpit', '/']
+    ['Workspace', '/']
   ])('delegates %s to an existing production route', (label, route) => {
     renderRoot('/settings')
 

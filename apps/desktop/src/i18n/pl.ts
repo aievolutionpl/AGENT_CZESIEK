@@ -610,7 +610,7 @@ export const pl = defineLocale({
     },
     views: {
       prompts: 'Moje prompty',
-      jarvis: 'Pulpit',
+      jarvis: 'Workspace',
       tasks: 'Zadania',
       agents: 'Agenci',
       messaging: 'Komunikatory',
@@ -4485,7 +4485,7 @@ export const pl = defineLocale({
     applyRemote: 'Zastosuj i połącz ponownie',
     backToSetup: 'Wstecz',
     failedTitle: 'Instalacja nie powiodła się',
-    settingUpTitle: 'Konfigurowanie Agent Czesiek Agent',
+    settingUpTitle: 'Konfiguracja Agenta Cześka',
     finishingTitle: 'Kończenie',
     failedDesc:
       'Jeden z kroków instalacji zawiódł. Na Windowsie może się to zdarzyć, gdy działa inna instancja CLI lub aplikacji Agenta Cześka. Zatrzymaj wszystkie działające instancje Agenta Cześka i spróbuj ponownie. Pełny zapis znajdziesz w szczegółach poniżej albo w logu aplikacji.',
@@ -4508,7 +4508,7 @@ export const pl = defineLocale({
   },
 
   onboarding: {
-    headerTitle: 'Skonfigurujmy Twojego agenta Agent Czesiek',
+    headerTitle: 'Skonfigurujmy Cześka',
     headerDesc: 'Podłącz dostawcę modeli, aby zacząć rozmawiać. Większość opcji wymaga jednego kliknięcia.',
     preparingInstall:
       'Agent Czesiek kończy instalację. Przy pierwszym uruchomieniu zwykle zajmuje to mniej niż minutę.',

@@ -2,7 +2,7 @@
   "name": "hermes",
   "productName": "Agent Czesiek",
   "private": true,
-  "version": "0.17.5",
+  "version": "0.17.6-rc.1",
   "description": "Agent Czesiek by AI Evolution Polska, powered by Hermes Agent.",
   "author": "AI Evolution",
   "repository": {

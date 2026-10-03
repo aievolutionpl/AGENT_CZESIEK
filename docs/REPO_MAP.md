@@ -1,5 +1,13 @@
 # Mapa repozytorium Agent Czesiek
 
+## Workspace, biuro agentów i nauka AI
+
+- Nawigacja: `apps/desktop/src/app/jarvis/navigation.tsx`; nazwa Workspace zachowuje dotychczasową trasę `/`.
+- Biuro: `app/agents/presets.ts` (gotowe role), `preset-list.tsx` (działy i zadania), `preset-editor.tsx` (własne role), `character-avatar.tsx` + `office-team.css` (atlas i ruch). Zapis nadal przez `preset-store.ts` z CAS; uruchomienie przez `launch-preset.ts` w nowej rozmowie.
+- Edukacja: `apps/desktop/src/app/learn/lessons.ts` (treść), `index.tsx` (lekcje i słownik), trasa `/learn` w `app/routes.ts` i `app/contrib/surfaces.tsx`.
+- Profil współpracy: `app/settings/personal-profile.tsx`; zapis `display.czesiek_profile` i bloku osobowości w `custom_prompt` do przypiętego połączenia/profilu. Onboarding zapisuje ten sam obiekt. Nowe instrukcje obowiązują od nowej rozmowy.
+- Screenshoty README: `apps/desktop/e2e/office-learning.spec.ts`; opcjonalne `CZESIEK_CAPTURE_README=1` zapisuje prawdziwe zrzuty Electron do `docs/assets/czesiek/`. Test używa izolowanego profilu i backendu testowego, bez prywatnych kluczy.
+
 Zacznij od tej strony. Wybierz obszar z tabeli, przeczytaj jego `AGENTS.md` i
 dopiero wtedy szukaj symbolu w tym katalogu (`rg -n 'nazwa' <katalog>`). Nie
 ładuj całego repo, całej dokumentacji ani wszystkich testów na starcie.

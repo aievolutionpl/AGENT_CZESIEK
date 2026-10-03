@@ -6,6 +6,7 @@ import { useElapsedSeconds } from '@/components/chat/activity-timer'
 import { ActivityTimerText } from '@/components/chat/activity-timer-text'
 import { usePaneVisible } from '@/components/pane-shell/pane-visibility'
 import { revealTreePane } from '@/components/pane-shell/tree/store'
+import { Button } from '@/components/ui/button'
 import { Codicon } from '@/components/ui/codicon'
 import { FadeText } from '@/components/ui/fade-text'
 import { GlyphSpinner } from '@/components/ui/glyph-spinner'
@@ -25,11 +26,17 @@ import {
   type SubagentStreamEntry
 } from '@/store/subagents'
 
-import { Panel, PanelEmpty, PanelHeader } from '../overlays/panel'
+import { Panel, PanelHeader } from '../overlays/panel'
 
 import { PresetEditor } from './preset-editor'
 import { PresetList } from './preset-list'
-import { loadPresetSnapshot, type PresetOwner, type PresetSnapshot, PresetStoreError, savePresetMetadata } from './preset-store'
+import {
+  loadPresetSnapshot,
+  type PresetOwner,
+  type PresetSnapshot,
+  PresetStoreError,
+  savePresetMetadata
+} from './preset-store'
 import { availablePresets, type SubagentPreset } from './presets'
 
 // Mirrors statusGlyph() in tool-fallback.tsx so subagent rows speak the
@@ -99,23 +106,45 @@ export function AgentsView({ onClose }: AgentsViewProps) {
   const [skills, setSkills] = useState<{ name: string; enabled: boolean }[]>([])
   const [editing, setEditing] = useState<SubagentPreset | null | undefined>(undefined)
   const [presetError, setPresetError] = useState<string | null>(null)
-  const owner = useMemo<PresetOwner>(() => ({ connectionId: activeGatewayConnectionId() ?? 'local', profile: normalizeProfileKey($activeGatewayProfile.get()) }), [])
+
+  const owner = useMemo<PresetOwner>(
+    () => ({
+      connectionId: activeGatewayConnectionId() ?? 'local',
+      profile: normalizeProfileKey($activeGatewayProfile.get())
+    }),
+    []
+  )
 
   useEffect(() => {
     let alive = true
-    void Promise.all([loadPresetSnapshot(owner), getSkills({ connectionId: owner.connectionId, profile: owner.profile })]).then(([snapshot, installed]) => {
-      if (!alive) {return}
-      setPresetSnapshot(snapshot)
-      setSkills(installed.map(skill => ({ name: skill.name, enabled: skill.enabled })))
-    }).catch(error => {
-      if (alive) {setPresetError(error instanceof Error ? error.message : 'Could not load presets.')}
-    })
+    void Promise.all([
+      loadPresetSnapshot(owner),
+      getSkills({ connectionId: owner.connectionId, profile: owner.profile })
+    ])
+      .then(([snapshot, installed]) => {
+        if (!alive) {
+          return
+        }
 
-    return () => { alive = false }
+        setPresetSnapshot(snapshot)
+        setSkills(installed.map(skill => ({ name: skill.name, enabled: skill.enabled })))
+      })
+      .catch(error => {
+        if (alive) {
+          setPresetError(error instanceof Error ? error.message : 'Could not load presets.')
+        }
+      })
+
+    return () => {
+      alive = false
+    }
   }, [owner])
 
   const persistPreset = async (preset: SubagentPreset) => {
-    if (!presetSnapshot || !presetSnapshot.supports_cas) {return}
+    if (!presetSnapshot || !presetSnapshot.supports_cas) {
+      return
+    }
+
     const base = availablePresets(presetSnapshot.metadata.presets)
     const metadata = { schema_version: 1 as const, presets: [...base.filter(item => item.id !== preset.id), preset] }
 
@@ -125,21 +154,99 @@ export function AgentsView({ onClose }: AgentsViewProps) {
       setEditing(undefined)
       setPresetError(null)
     } catch (error) {
-      setPresetError(error instanceof PresetStoreError && error.code === 'conflict' ? 'Presets changed elsewhere. Reload this panel before saving.' : error instanceof Error ? error.message : 'Could not save preset.')
+      setPresetError(
+        error instanceof PresetStoreError && error.code === 'conflict'
+          ? 'Presets changed elsewhere. Reload this panel before saving.'
+          : error instanceof Error
+            ? error.message
+            : 'Could not save preset.'
+      )
     }
   }
 
   return (
     <Panel closeLabel={t.agents.close} onClose={onClose}>
-      <div className="grid min-h-0 gap-6 overflow-y-auto">
-        <button className="justify-self-start rounded-xl border border-border bg-background px-4 py-3 text-sm font-medium" onClick={() => { onClose(); revealTreePane('bots') }} type="button">Podłącz bota lub wybierz agenta</button>
-          <section className="grid gap-2"><h2 className="text-sm font-semibold">Praca agentów</h2>{tree.length === 0 ? <PanelEmpty description={t.agents.emptyDesc} icon="hubot" title={t.agents.emptyTitle} /> : <><PanelHeader subtitle={t.agents.subtitle} title={t.agents.title} /><SubagentTree tree={tree} /></>}</section>
+      <div className="@container grid min-h-0 gap-6 overflow-y-auto">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="jarvis-brand-signature">AI Evolution Polska</p>
+            <h1 className="mt-2 text-xl font-semibold">Twoje biuro agentów</h1>
+          </div>
+          <Button
+            onClick={() => {
+              onClose()
+              revealTreePane('bots')
+            }}
+            size="sm"
+            variant="secondary"
+          >
+            Podłącz bota
+          </Button>
+        </div>
+        <section className="grid gap-2">
+          <h2 className="text-sm font-semibold">Praca agentów</h2>
+          {tree.length === 0 ? (
+            <div className="grid gap-1 text-sm">
+              <p className="font-medium">{t.agents.emptyTitle}</p>
+              <p className="text-muted-foreground">{t.agents.emptyDesc}</p>
+            </div>
+          ) : (
+            <>
+              <PanelHeader subtitle={t.agents.subtitle} title={t.agents.title} />
+              <SubagentTree tree={tree} />
+            </>
+          )}
+        </section>
         <section className="grid gap-3 border-t border-border/60 pt-4">
-          <div><h1 className="text-base font-semibold">Gotowe role asystenta</h1><p className="text-xs text-muted-foreground">Wybierz rolę i wpisz zadanie. Czesiek koordynuje, subagent wykonuje. Zmiany dotyczą nowego zadania.</p></div>
-          {presetError ? <p className="text-xs text-destructive" role="alert">{presetError}</p> : null}
-          {presetSnapshot && !presetSnapshot.supports_cas ? <p className="text-xs text-muted-foreground">This backend cannot safely persist presets yet.</p> : null}
-          {editing !== undefined ? <PresetEditor onCancel={() => setEditing(undefined)} onSave={preset => void persistPreset(preset)} preset={editing} /> : presetSnapshot ? <PresetList onEdit={preset => setEditing(preset)} owner={owner} presets={availablePresets(presetSnapshot.metadata.presets)} skills={skills} /> : <p className="text-xs text-muted-foreground">Wczytywanie ról…</p>}
-          {presetSnapshot && presetSnapshot.supports_cas && editing === undefined ? <button className="justify-self-start text-xs text-muted-foreground underline underline-offset-4" onClick={() => setEditing(null)} type="button">Utwórz własną rolę</button> : null}
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-semibold">Gotowe role asystenta</h2>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+                Wybierz współpracownika, dopasuj jego charakter i zleć zadanie. Czesiek pozostaje koordynatorem rozmowy.
+                Role korzystają z dostępnych narzędzi silnika; nie nadają nowych uprawnień.
+              </p>
+            </div>
+            {presetSnapshot?.supports_cas && editing === undefined ? (
+              <Button onClick={() => setEditing(null)} size="sm">
+                Utwórz własnego agenta
+              </Button>
+            ) : null}
+          </div>
+          {presetError ? (
+            <p className="text-xs text-destructive" role="alert">
+              {presetError}
+            </p>
+          ) : null}
+          {presetSnapshot && !presetSnapshot.supports_cas ? (
+            <p className="text-sm text-muted-foreground">
+              Ten silnik nie obsługuje jeszcze bezpiecznego zapisu ról. Zaktualizuj go, aby zapisywać własnych agentów.
+            </p>
+          ) : null}
+          {editing !== undefined ? (
+            <PresetEditor
+              onCancel={() => setEditing(undefined)}
+              onSave={preset => void persistPreset(preset)}
+              preset={editing}
+            />
+          ) : presetSnapshot ? (
+            <PresetList
+              onEdit={preset => setEditing(preset)}
+              owner={owner}
+              presets={availablePresets(presetSnapshot.metadata.presets)}
+              skills={skills}
+            />
+          ) : (
+            <p className="text-xs text-muted-foreground">Wczytywanie ról…</p>
+          )}
+          {presetSnapshot && presetSnapshot.supports_cas && editing === undefined ? (
+            <button
+              className="justify-self-start text-xs text-muted-foreground underline underline-offset-4"
+              onClick={() => setEditing(null)}
+              type="button"
+            >
+              Utwórz własną rolę
+            </button>
+          ) : null}
         </section>
       </div>
     </Panel>
@@ -436,9 +543,7 @@ export function SubagentRow({ node, depth = 0, nowMs }: { node: SubagentNode; de
 
       {open && fileLines.length > 0 ? (
         <div className="grid min-w-0 gap-0.5 pl-6" data-selectable-text="true">
-          <p className="text-[0.58rem] font-medium tracking-wider text-muted-foreground uppercase">
-            {t.agents.files}
-          </p>
+          <p className="text-[0.58rem] font-medium tracking-wider text-muted-foreground uppercase">{t.agents.files}</p>
           {fileLines.slice(0, 8).map(line => (
             <p className="wrap-break-word font-mono text-[0.67rem] leading-relaxed text-muted-foreground" key={line}>
               {line}

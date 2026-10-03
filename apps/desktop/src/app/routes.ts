@@ -20,6 +20,7 @@ export const CONNECTIONS_ROUTE = '/connections'
 export const CRON_ROUTE = '/cron'
 export const PROFILES_ROUTE = '/profiles'
 export const AGENTS_ROUTE = '/agents'
+export const LEARN_ROUTE = '/learn'
 export const STARMAP_ROUTE = '/starmap'
 
 export type AppView =
@@ -44,6 +45,7 @@ export type AppView =
   | 'webhooks'
 
 export type AppRouteId =
+  | 'education'
   | 'session-import'
   | 'agents'
   | 'prompts'
@@ -66,6 +68,7 @@ export interface AppRoute {
 }
 
 export const APP_ROUTES = [
+  { id: 'education', path: LEARN_ROUTE, view: 'extension' },
   { id: 'prompts', path: PROMPTS_ROUTE, view: 'prompts' },
   { id: 'session-import', path: SESSION_IMPORT_ROUTE, view: 'session-import' },
   { id: 'new', path: NEW_CHAT_ROUTE, view: 'chat' },

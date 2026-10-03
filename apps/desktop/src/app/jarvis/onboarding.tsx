@@ -253,11 +253,14 @@ export function JarvisOnboarding({
   const [splashLeaving, setSplashLeaving] = useState(false)
   const splashTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  useEffect(() => () => {
-    if (splashTimer.current) {
-      clearTimeout(splashTimer.current)
-    }
-  }, [])
+  useEffect(
+    () => () => {
+      if (splashTimer.current) {
+        clearTimeout(splashTimer.current)
+      }
+    },
+    []
+  )
 
   const openWizard = () => {
     if (splashLeaving) {
@@ -876,6 +879,11 @@ export function JarvisOnboarding({
       }
 
       let nextConfig = setNested(snapshotConfig, 'voice.auto_tts', voiceMode !== 'quiet')
+
+      if (stateRef.current.selections?.personality) {
+        nextConfig = setNested(nextConfig, 'display.czesiek_profile', stateRef.current.selections.personality)
+      }
+
       const liveProvider = LIVE_VOICE_PROVIDERS[voiceMode]
 
       nextConfig = setNested(nextConfig, 'voice.engine', liveProvider ? 'realtime' : 'classic')
@@ -1047,11 +1055,12 @@ export function JarvisOnboarding({
     (currentStep === 'approvals' && !approvalsMode)
 
   if (showSplash) {
-    const splashCopy = locale === 'pl'
-      ? { title: 'Poznaj Cześka', action: 'Kliknij logo, aby rozpocząć' }
-      : locale === 'zh'
-        ? { title: '认识 Czesiek', action: '点击标志开始' }
-        : { title: 'Meet Czesiek', action: 'Click the logo to begin' }
+    const splashCopy =
+      locale === 'pl'
+        ? { title: 'Poznaj Cześka', action: 'Kliknij logo, aby rozpocząć' }
+        : locale === 'zh'
+          ? { title: '认识 Czesiek', action: '点击标志开始' }
+          : { title: 'Meet Czesiek', action: 'Click the logo to begin' }
 
     return (
       <Dialog
@@ -1072,13 +1081,22 @@ export function JarvisOnboarding({
           <div className="flex min-h-[26rem] flex-col items-center justify-center gap-5 text-center">
             <button
               aria-label={splashCopy.action}
-              className={cn('rounded-full p-3 transition-all duration-400 hover:scale-105 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-(--ui-accent)', splashLeaving && 'scale-125 opacity-0')}
+              className={cn(
+                'rounded-full p-3 transition-all duration-400 hover:scale-105 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-(--ui-accent)',
+                splashLeaving && 'scale-125 opacity-0'
+              )}
               onClick={openWizard}
               type="button"
             >
-              <img alt="" className="size-44 object-contain drop-shadow-[0_0_30px_rgba(67,108,255,0.36)] sm:size-56" src={logoUrl} />
+              <img
+                alt=""
+                className="size-44 object-contain drop-shadow-[0_0_30px_rgba(67,108,255,0.36)] sm:size-56"
+                src={logoUrl}
+              />
             </button>
-            <h1 className="text-2xl font-semibold" id="czesiek-splash-title">{splashCopy.title}</h1>
+            <h1 className="text-2xl font-semibold" id="czesiek-splash-title">
+              {splashCopy.title}
+            </h1>
             <p className="text-sm text-(--ui-text-secondary)">{splashCopy.action}</p>
           </div>
         </DialogContent>
@@ -1132,7 +1150,11 @@ export function JarvisOnboarding({
                     <span
                       className={cn(
                         'flex size-6 shrink-0 items-center justify-center rounded-full text-xs',
-                        done ? 'bg-emerald-500/20 text-emerald-500' : active ? 'jarvis-segment-on' : 'bg-(--ui-bg-tertiary)'
+                        done
+                          ? 'bg-emerald-500/20 text-emerald-500'
+                          : active
+                            ? 'jarvis-segment-on'
+                            : 'bg-(--ui-bg-tertiary)'
                       )}
                     >
                       {done ? <Check className="size-3.5" /> : index + 1}
@@ -1151,10 +1173,7 @@ export function JarvisOnboarding({
               <p className="text-xs text-(--ui-text-tertiary)">
                 {copy.progress(currentIndex + 1, JARVIS_ONBOARDING_STEPS.length)}
               </p>
-              <div
-                aria-hidden="true"
-                className="jarvis-progress mt-2 h-1.5 w-40 overflow-hidden rounded-full"
-              >
+              <div aria-hidden="true" className="jarvis-progress mt-2 h-1.5 w-40 overflow-hidden rounded-full">
                 <span
                   className="jarvis-progress-fill block h-full rounded-full"
                   style={{ width: `${((currentIndex + 1) / JARVIS_ONBOARDING_STEPS.length) * 100}%` }}
@@ -1196,7 +1215,9 @@ export function JarvisOnboarding({
                 providers={providers}
                 quickConnect={
                   <>
-                    {providers.some(item => item.slug === CHATGPT_PROVIDER_SLUG && item.authenticated !== false) ? null : (
+                    {providers.some(
+                      item => item.slug === CHATGPT_PROVIDER_SLUG && item.authenticated !== false
+                    ) ? null : (
                       <div className="grid gap-2 rounded-md border border-[#10A37F]/40 bg-[#10A37F]/8 p-4">
                         <ChatGptQuickConnect
                           loadOptions={() => loadModelOptions(scope)}
@@ -1206,7 +1227,9 @@ export function JarvisOnboarding({
                         />
                       </div>
                     )}
-                    {providers.some(item => item.slug === OPENROUTER_PROVIDER_SLUG && item.authenticated !== false) ? null : (
+                    {providers.some(
+                      item => item.slug === OPENROUTER_PROVIDER_SLUG && item.authenticated !== false
+                    ) ? null : (
                       <div className="grid gap-2 rounded-md border border-[#00B7FF]/40 bg-[#00B7FF]/8 p-4">
                         <p className="text-sm font-semibold">{copy.engine.quickStartTitle}</p>
                         <OpenRouterQuickConnect
@@ -1277,7 +1300,9 @@ export function JarvisOnboarding({
                 onSelectRole={next => {
                   persistState(
                     updatedState(state, {
-                      selections: { connections: selectionForRole(state.selections?.connections ?? [], next, connectionRole) }
+                      selections: {
+                        connections: selectionForRole(state.selections?.connections ?? [], next, connectionRole)
+                      }
                     })
                   )
                   setConnectionRole(next)
@@ -1460,7 +1485,9 @@ function quickModels(providerSlug: string, models: string[]): string[] {
   if (providerSlug === CHATGPT_PROVIDER_SLUG) {
     const best = chatGptWorkModel(listed)
 
-    return [best, ...models.filter(model => model !== best)].filter((model): model is string => Boolean(model)).slice(0, 4)
+    return [best, ...models.filter(model => model !== best)]
+      .filter((model): model is string => Boolean(model))
+      .slice(0, 4)
   }
 
   return models.slice(0, 4)
@@ -1516,7 +1543,9 @@ function ModelStep({
             <ModelBrandIcon hints={[providerSlug]} model={model} />
             <span className="min-w-0 flex-1">
               <span className="block truncate text-sm font-medium">{shortModelName(model)}</span>
-              <span className="block truncate text-xs text-(--ui-text-tertiary)">{model.includes('/') ? model.slice(0, model.indexOf('/')) : providerSlug}</span>
+              <span className="block truncate text-xs text-(--ui-text-tertiary)">
+                {model.includes('/') ? model.slice(0, model.indexOf('/')) : providerSlug}
+              </span>
             </span>
             {selected === model ? <Check className="size-4 shrink-0 text-(--ui-accent)" /> : null}
           </button>
