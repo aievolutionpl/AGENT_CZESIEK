@@ -647,7 +647,11 @@ async function dismissProductWelcome(page: Page): Promise<void> {
 
 /** Configured test bots reuse a real user deferral, not invented completion. */
 export async function deferConfiguredProfileWelcome(page: Page, profiles: string[]): Promise<void> {
-  await page.evaluate(names => {
+  if (!profiles.length) {
+    return
+  }
+  const seeded = await page.evaluate(names => {
+    let writes = 0
     const roots = Object.keys(localStorage).filter(
       key => key.startsWith('ai-evolution-jarvis-onboarding-v1:') && key.endsWith('::default')
     )
@@ -659,9 +663,17 @@ export async function deferConfiguredProfileWelcome(page: Page, profiles: string
       const prefix = rootKey.slice(0, -'default'.length)
       for (const name of names) {
         localStorage.setItem(`${prefix}${encodeURIComponent(name)}`, state)
+        writes += 1
       }
     }
+    return writes > 0
   }, profiles)
+  if (seeded) {
+    // Same-window storage writes do not notify the onboarding atom. Reload
+    // cancels earlier setup reads and initializes each scope from the fixture.
+    await page.reload()
+    await page.waitForSelector('[data-jarvis-shell]', { state: 'attached', timeout: 60_000 })
+  }
 }
 
 export async function waitForAppReady(
