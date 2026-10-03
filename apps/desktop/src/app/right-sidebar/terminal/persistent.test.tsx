@@ -153,11 +153,11 @@ describe('PersistentTerminal rect tracking', () => {
       return this.hasAttribute('data-persistent-terminal') ? containingBlock : null
     })
     mount.render(<Harness />)
-    const host = mount.container.querySelector<HTMLElement>('[data-persistent-terminal]')!
-    expect(host.style.top).toBe('20px')
-    expect(host.style.left).toBe('20px')
-    expect(host.style.width).toBe('200px')
-    expect(host.style.height).toBe('100px')
+    const host = mount.container?.querySelector<HTMLElement>('[data-persistent-terminal]')
+    expect(host?.style.top).toBe('20px')
+    expect(host?.style.left).toBe('20px')
+    expect(host?.style.width).toBe('200px')
+    expect(host?.style.height).toBe('100px')
   })
 
   it('settles after rect changes instead of polling forever', () => {
