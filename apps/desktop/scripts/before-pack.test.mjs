@@ -2,7 +2,16 @@ import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-import { test } from 'vitest'
+import { test, vi } from 'vitest'
+
+// Test the hook's cleanup/runtime contract independently of host-only binaries.
+// Native staging itself is exercised by stage-native-deps.test.mjs.
+vi.mock('../scripts/stage-native-deps.mjs', () => ({
+  stageNodePty: vi.fn(),
+  stageGetWindows: vi.fn()
+}))
+
+import { stageNodePty, stageGetWindows } from '../scripts/stage-native-deps.mjs'
 
 import beforePack, { cleanStaleAppOutDir, preserveRollbackBackup } from '../scripts/before-pack.mjs'
 
@@ -128,6 +137,9 @@ test('beforePack on win32 preserves the previous build instead of wiping it', as
     )
     fs.writeFileSync(path.join(tempRoot, 'build', 'install-stamp.json'), JSON.stringify({ commit: 'fixture' }))
     await beforePack({ appOutDir, electronPlatformName: 'win32', arch: 1, packager: { projectDir: tempRoot } })
+
+    assert.deepEqual(stageNodePty.mock.lastCall, [{ platform: 'win32', arch: 'x64' }])
+    assert.deepEqual(stageGetWindows.mock.lastCall, [{ platform: 'win32', arch: 'x64' }])
 
     assert.equal(fs.existsSync(appOutDir), false)
     assert.equal(fs.readFileSync(path.join(`${appOutDir}.bak`, 'Hermes.exe'), 'utf8'), 'MZ-working')
