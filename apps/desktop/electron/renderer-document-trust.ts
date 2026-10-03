@@ -17,7 +17,10 @@ export function isTrustedRendererUrl(candidate: string, rendererUrl: string): bo
 }
 
 export function assertTrustedRendererSender(event: IpcMainEvent | IpcMainInvokeEvent, rendererUrl: string): void {
-  if (event.senderFrame !== event.sender.mainFrame || !isTrustedRendererUrl(event.senderFrame?.url || '', rendererUrl)) {
+  if (
+    event.senderFrame !== event.sender.mainFrame ||
+    !isTrustedRendererUrl(event.senderFrame?.url || '', rendererUrl)
+  ) {
     throw new Error('IPC is only available to the desktop renderer')
   }
 }

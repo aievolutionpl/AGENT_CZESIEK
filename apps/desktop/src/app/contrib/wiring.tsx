@@ -200,7 +200,6 @@ export function ContribWiring({ children }: { children: ReactNode }) {
   const cronReviewRequest = useStore($cronReviewRequest)
   const currentCwd = useStore($currentCwd)
 
-   
   useEffect(() => playJarvisIntroOnStartup(), [])
 
   // eslint-disable-next-line no-restricted-syntax -- one-shot request-seen sentinel, not an atom mirror
@@ -778,8 +777,7 @@ export function ContribWiring({ children }: { children: ReactNode }) {
 
       if (event.type === 'wake.detected') {
         const payload = event.payload as
-          | { phrase?: null | string; profile?: null | string; start_new_session?: boolean }
-          | undefined
+          { phrase?: null | string; profile?: null | string; start_new_session?: boolean } | undefined
 
         // A wake phrase that is also a briefing phrase ("wake up, tatuś wrócił")
         // starts the daily briefing in a fresh chat instead of a listening turn.

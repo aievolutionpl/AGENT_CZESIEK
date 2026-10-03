@@ -73,19 +73,23 @@ export async function discoverCollaborators(roots: string[]): Promise<ExistingCo
           }
 
           try {
-            await run(python, ['-c', 'import hermes_cli.main, hermes_cli.web_routers.voice_realtime, fastapi, uvicorn'], {
-              cwd: root,
-              windowsHide: true,
-              timeout: 30000,
-              env: {
-                ...process.env,
-                HERMES_HOME: probeHome,
-                PYTHONPATH: root,
-                PYTHONNOUSERSITE: '1',
-                PYTHONDONTWRITEBYTECODE: '1',
-                PYTHONHOME: ''
+            await run(
+              python,
+              ['-c', 'import hermes_cli.main, hermes_cli.web_routers.voice_realtime, fastapi, uvicorn'],
+              {
+                cwd: root,
+                windowsHide: true,
+                timeout: 30000,
+                env: {
+                  ...process.env,
+                  HERMES_HOME: probeHome,
+                  PYTHONPATH: root,
+                  PYTHONNOUSERSITE: '1',
+                  PYTHONDONTWRITEBYTECODE: '1',
+                  PYTHONHOME: ''
+                }
               }
-            })
+            )
 
             return { root, python }
           } catch {

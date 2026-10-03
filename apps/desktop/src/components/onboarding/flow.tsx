@@ -226,8 +226,10 @@ function ConfirmingModelPanel({
   profile?: OnboardingContext['profile']
 }) {
   const { t } = useI18n()
-  const pickerConnectionId = profile && typeof profile === 'object' ? profile.connectionId?.trim() || undefined : undefined
-  const pickerProfile = profile && typeof profile === 'object' ? profile.profile?.trim() || 'default' : profile ?? undefined
+  const pickerConnectionId =
+    profile && typeof profile === 'object' ? profile.connectionId?.trim() || undefined : undefined
+  const pickerProfile =
+    profile && typeof profile === 'object' ? profile.profile?.trim() || 'default' : (profile ?? undefined)
   const scrambledModel = useScramble(flow.currentModel, leaving)
   const scrambledBegin = useScramble(t.onboarding.startChatting, leaving)
   // Local state controls whether the model picker dialog is open.

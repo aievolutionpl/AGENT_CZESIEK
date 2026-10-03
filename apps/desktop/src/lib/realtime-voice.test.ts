@@ -1,6 +1,11 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import { canInjectReport, createRealtimeEventHandler, NOTIFY_GRACE_MS, type RealtimeVoiceHandlers } from './realtime-voice'
+import {
+  canInjectReport,
+  createRealtimeEventHandler,
+  NOTIFY_GRACE_MS,
+  type RealtimeVoiceHandlers
+} from './realtime-voice'
 
 function setup(onAsk: RealtimeVoiceHandlers['onAsk'] = async request => `answer to ${request}`) {
   const sent: Record<string, unknown>[] = []

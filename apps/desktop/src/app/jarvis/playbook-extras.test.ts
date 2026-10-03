@@ -12,7 +12,9 @@ it('offers only what is connected: mail tips need Google, file tips need the vau
   const full = selectExtraTips({ browserSignedIn: true, googleConnected: true, vaultExists: true })
 
   expect(full).toHaveLength(EXTRA_TIPS.length)
-  expect(selectExtraTips({ ...none, googleConnected: true }).every(tip => !tip.needs || tip.needs === 'google')).toBe(true)
+  expect(selectExtraTips({ ...none, googleConnected: true }).every(tip => !tip.needs || tip.needs === 'google')).toBe(
+    true
+  )
 })
 
 it('every tip has words in both languages, and any prompt it carries is non-empty text to send', () => {

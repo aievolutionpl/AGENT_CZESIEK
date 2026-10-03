@@ -15,14 +15,22 @@ export interface OnboardingFirstAnswerProps {
 }
 
 function answerText(payload: unknown): string {
-  if (!payload || typeof payload !== 'object') {return ''}
+  if (!payload || typeof payload !== 'object') {
+    return ''
+  }
   const value = payload as Record<string, unknown>
 
-  if (typeof value.text === 'string') {return value.text.trim()}
+  if (typeof value.text === 'string') {
+    return value.text.trim()
+  }
 
-  if (typeof value.content === 'string') {return value.content.trim()}
+  if (typeof value.content === 'string') {
+    return value.content.trim()
+  }
 
-  if (typeof value.assistant === 'string') {return value.assistant.trim()}
+  if (typeof value.assistant === 'string') {
+    return value.assistant.trim()
+  }
 
   return ''
 }
@@ -48,24 +56,45 @@ export function OnboardingFirstAnswer({
   idsRef.current = { runtime: runtimeSessionId, stored: storedSessionId }
 
   useEffect(() => {
-    if (!gateway) {return}
+    if (!gateway) {
+      return
+    }
 
     return gateway.on('message.complete', event => {
-      if (!pending || event.profile && event.profile !== ownerRef.current.profile) {return}
+      if (!pending || (event.profile && event.profile !== ownerRef.current.profile)) {
+        return
+      }
 
-      if (event.connectionId && event.connectionId !== ownerRef.current.connectionId) {return}
+      if (event.connectionId && event.connectionId !== ownerRef.current.connectionId) {
+        return
+      }
 
-      if (event.payload && typeof event.payload === 'object' && (event.payload as Record<string, unknown>).status === 'error') {return}
+      if (
+        event.payload &&
+        typeof event.payload === 'object' &&
+        (event.payload as Record<string, unknown>).status === 'error'
+      ) {
+        return
+      }
 
       const runtime = String(event.session_id || idsRef.current.runtime || '')
-      const payload = (event.payload && typeof event.payload === 'object' ? event.payload : {}) as Record<string, unknown>
+      const payload = (event.payload && typeof event.payload === 'object' ? event.payload : {}) as Record<
+        string,
+        unknown
+      >
       const stored = String(payload.stored_session_id || idsRef.current.stored || '')
 
-      if (!runtime || !stored || !answerText(event.payload)) {return}
+      if (!runtime || !stored || !answerText(event.payload)) {
+        return
+      }
 
-      if (idsRef.current.runtime && runtime !== idsRef.current.runtime) {return}
+      if (idsRef.current.runtime && runtime !== idsRef.current.runtime) {
+        return
+      }
 
-      if (idsRef.current.stored && stored !== idsRef.current.stored) {return}
+      if (idsRef.current.stored && stored !== idsRef.current.stored) {
+        return
+      }
 
       setPending(false)
       onVerified({ runtimeSessionId: runtime, storedSessionId: stored })
@@ -76,13 +105,17 @@ export function OnboardingFirstAnswer({
     event.preventDefault()
     const prompt = value.trim()
 
-    if (!prompt || pending) {return}
+    if (!prompt || pending) {
+      return
+    }
     setPending(true)
 
     try {
       const accepted = await onSubmit(prompt)
 
-      if (accepted === false) {setPending(false)}
+      if (accepted === false) {
+        setPending(false)
+      }
     } catch {
       setPending(false)
     }

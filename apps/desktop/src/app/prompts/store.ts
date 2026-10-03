@@ -12,10 +12,14 @@ const keyFor = (scope: string) => `agent-czesiek.prompts.v1:${scope}`
 export function readPrompts(scope: string, storage: Pick<Storage, 'getItem'> = localStorage): SavedPrompt[] {
   const raw = storage.getItem(keyFor(scope))
 
-  if (!raw) {return []}
+  if (!raw) {
+    return []
+  }
   const parsed: unknown = JSON.parse(raw)
 
-  if (!Array.isArray(parsed)) {throw new Error('Invalid prompt library')}
+  if (!Array.isArray(parsed)) {
+    throw new Error('Invalid prompt library')
+  }
 
   return parsed.filter(
     (item): item is SavedPrompt =>
@@ -44,7 +48,9 @@ function commit(scope: string, items: SavedPrompt[]): void {
 }
 
 export function savePrompt(scope: string, draft: Pick<SavedPrompt, 'title' | 'body'> & { id?: string }): SavedPrompt {
-  if (!draft.title.trim() || !draft.body.trim()) {throw new Error('A prompt needs a title and content')}
+  if (!draft.title.trim() || !draft.body.trim()) {
+    throw new Error('A prompt needs a title and content')
+  }
 
   const prompt = {
     id: draft.id || crypto.randomUUID(),

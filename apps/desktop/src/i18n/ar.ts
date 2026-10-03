@@ -177,7 +177,8 @@ export const ar = defineLocale({
     copyDetail: 'نسخ التفاصيل',
     copyDetailFailed: 'تعذر نسخ تفاصيل الإشعار',
     backendOutOfDateTitle: 'الخلفية قديمة',
-    backendOutOfDateMessage: 'خلفية Agent Czesiek أقدم من إصدار سطح المكتب الحالي وقد لا تعمل كما يجب. حدثهما ليتوافقا.',
+    backendOutOfDateMessage:
+      'خلفية Agent Czesiek أقدم من إصدار سطح المكتب الحالي وقد لا تعمل كما يجب. حدثهما ليتوافقا.',
     updateHermes: 'تحديث Agent Czesiek',
     updateReadyTitle: 'التحديث جاهز',
     updateReadyMessage: count => `${count} تغيير جديد متاح.`,
@@ -195,7 +196,8 @@ export const ar = defineLocale({
       elevenLabsNeedsKey: 'يتطلب ElevenLabs STT المفتاح ELEVENLABS_API_KEY.',
       elevenLabsRejectedKey: 'رفض ElevenLabs مفتاح API (401).',
       diskFull: 'القرص ممتلئ — حرّر مساحة ثم أعد المحاولة.',
-      methodNotAllowed: 'رفضت خلفية سطح المكتب هذا الطلب (405 Method Not Allowed). جرب إعادة تشغيل Agent Czesiek Desktop.',
+      methodNotAllowed:
+        'رفضت خلفية سطح المكتب هذا الطلب (405 Method Not Allowed). جرب إعادة تشغيل Agent Czesiek Desktop.',
       microphonePermission: 'تم رفض إذن الميكروفون.',
       openaiRejectedApiKey: 'رفض OpenAI مفتاح API.',
       openaiRejectedApiKeyWithStatus: status => `رفض OpenAI مفتاح API (${status} invalid_api_key).`,
@@ -442,7 +444,8 @@ export const ar = defineLocale({
         blurb:
           'تُكتشف مديري كلمات المرور المثبّتة تلقائيًا. يطلب منك الوكيل فتح أحدها في أول مرة يحتاج فيها إلى بيانات دخول منه (مرة واحدة لكل جلسة)؛ يبقى في الذاكرة رمز الجلسة فقط، ولا يرى الوكيل كلمة المرور الرئيسية أو أي بيانات دخول.',
         toggleFailed: 'تعذر تحديث مدير كلمات المرور',
-        notInstalled: name => `غير مكتشف. ثبّت أداة سطر الأوامر ${name} وسجّل الدخول إليها؛ سيكتشفها Agent Czesiek تلقائيًا.`,
+        notInstalled: name =>
+          `غير مكتشف. ثبّت أداة سطر الأوامر ${name} وسجّل الدخول إليها؛ سيكتشفها Agent Czesiek تلقائيًا.`,
         disabledDesc: 'مكتشف لكنه معطّل لـ Agent Czesiek.',
         lockedDesc: 'مكتشف. سيطلب منك الوكيل فتحه عند الحاجة إلى بيانات دخول، أو افتحه الآن.',
         unlockedDesc: 'مفتوح لهذه الجلسة. يُقفل تلقائيًا بعد 30 دقيقة من الخمول أو عند إغلاق Agent Czesiek.',
@@ -1383,7 +1386,8 @@ export const ar = defineLocale({
       subtitle: 'كلا الخيارين يربط بوتًا تتحكم به ويحفظ بياناته في هذا التثبيت من Agent Czesiek فقط.',
       quickSetup: 'إعداد سريع',
       recommended: 'موصى به',
-      quickHelp: 'امسح رمز QR وأكّد في Telegram. سينشئ Agent Czesiek البوت ويكتشف معرّف مستخدم Telegram الخاص بك تلقائيًا.',
+      quickHelp:
+        'امسح رمز QR وأكّد في Telegram. سينشئ Agent Czesiek البوت ويكتشف معرّف مستخدم Telegram الخاص بك تلقائيًا.',
       createWithQr: 'إنشاء عبر QR',
       starting: 'جارٍ البدء…',
       replaceWarning: 'بيانات Telegram مُعدّة بالفعل. سيحل إعداد QR الجديد أو رمز البوت محل البوت الحالي عند الحفظ.',
@@ -2015,7 +2019,11 @@ export const ar = defineLocale({
     placeholderStarting: 'جار بدء Agent Czesiek...',
     placeholderReconnecting: 'جار إعادة الاتصال...',
     placeholderFollowUp: 'اكتب متابعة...',
-    newSessionPlaceholders: ['اسأل Agent Czesiek عن شيء...', 'اطلب من Agent Czesiek تنفيذ مهمة...', 'ابدأ محادثة جديدة...'],
+    newSessionPlaceholders: [
+      'اسأل Agent Czesiek عن شيء...',
+      'اطلب من Agent Czesiek تنفيذ مهمة...',
+      'ابدأ محادثة جديدة...'
+    ],
     followUpPlaceholders: ['اكتب متابعة...', 'أضف توجيها...', 'اسأل سؤالا آخر...'],
     startVoice: 'بدء الصوت',
     openDirective: 'فتح',
@@ -2321,7 +2329,8 @@ export const ar = defineLocale({
     errorTitle: 'لم يكتمل التحديث',
     errorBody: 'لا داعي للقلق — لم يُفقد شيء. يمكنك إعادة المحاولة الآن.',
     blockerTitle: 'إغلاق المعاينات المحلية لتحديث Agent Czesiek؟',
-    blockerBody: 'يحتاج Agent Czesiek إلى إيقاف هذه المعاينات المحلية قبل التحديث. لن يؤدي ذلك إلى تعديل ملفاتك أو حذفها.',
+    blockerBody:
+      'يحتاج Agent Czesiek إلى إيقاف هذه المعاينات المحلية قبل التحديث. لن يؤدي ذلك إلى تعديل ملفاتك أو حذفها.',
     foreignBlockerTitle: 'أغلق العمليات الأخرى لتحديث Agent Czesiek',
     foreignBlockerBody:
       'لا يمكن لـ Agent Czesiek إغلاق هذه العمليات تلقائيًا بأمان. أغلق التطبيق أو الطرفية أو الخدمة التي تشغّل كل عملية، ثم حاول التحديث مرة أخرى.',
@@ -2455,7 +2464,8 @@ export const ar = defineLocale({
     copyAuthCode: 'انسخ رمز التفويض وألصقه أدناه.',
     pasteAuthCode: 'ألصق رمز التفويض',
     reopenAuthPage: 'إعادة فتح صفحة التفويض',
-    autoBrowser: provider => `فتحنا ${provider} في المتصفح. صرّح لـ Agent Czesiek هناك وسيتم الاتصال تلقائياً دون نسخ أو لصق.`,
+    autoBrowser: provider =>
+      `فتحنا ${provider} في المتصفح. صرّح لـ Agent Czesiek هناك وسيتم الاتصال تلقائياً دون نسخ أو لصق.`,
     reopenSignInPage: 'إعادة فتح صفحة تسجيل الدخول',
     waitingAuthorize: 'بانتظار التفويض...',
     externalPending: provider =>
@@ -3070,7 +3080,8 @@ export const ar = defineLocale({
     vaultCodeDesc: site =>
       `يطلب ${site} رمزًا لمرة واحدة (رسالة نصية أو بريد إلكتروني أو تطبيق مصادقة). أدخله هنا وسيكتبه Agent Czesiek في الصفحة؛ لا يراه النموذج أبدًا.`,
     vaultCodeLabel: 'الرمز',
-    vaultCodeFootnote: 'تلميح: احفظ مفتاح المصادقة مع بيانات الدخول هذه في الإعدادات ← كلمات المرور وتسجيلات الدخول وسيُدخل Agent Czesiek الرموز نيابةً عنك.',
+    vaultCodeFootnote:
+      'تلميح: احفظ مفتاح المصادقة مع بيانات الدخول هذه في الإعدادات ← كلمات المرور وتسجيلات الدخول وسيُدخل Agent Czesiek الرموز نيابةً عنك.',
     vaultCodeSkip: 'تخطٍ',
     vaultCodeConfirm: 'إدخال الرمز'
   },

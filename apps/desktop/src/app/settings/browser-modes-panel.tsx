@@ -25,8 +25,7 @@ const COPY = {
       'Czesiek starts already signed in, using a copy of your default browser’s logins. Your real browser is never driven and never changed. The copy stays on this computer.',
     copyImport: 'Copy logins now',
     copyTitle: 'Use my logins from Chrome',
-    live:
-      'Driving your open browser as-is is not offered: Chrome 136+ blocks remote control of the default profile, so a copy is the safe way to reuse your sign-ins.',
+    live: 'Driving your open browser as-is is not offered: Chrome 136+ blocks remote control of the default profile, so a copy is the safe way to reuse your sign-ins.',
     managed: 'Standard (no logins)',
     managedBody: 'A clean background browser. Nothing signed in.',
     ownBody: 'A separate, visible browser window for Czesiek. Sign in to Gmail there once — it stays signed in.',
@@ -47,12 +46,10 @@ const COPY = {
       'Czesiek startuje już zalogowany, korzystając z kopii logowań Twojej domyślnej przeglądarki. Twoja prawdziwa przeglądarka nie jest sterowana ani zmieniana. Kopia zostaje na tym komputerze.',
     copyImport: 'Skopiuj logowania teraz',
     copyTitle: 'Użyj moich logowań z Chrome',
-    live:
-      'Sterowanie Twoją otwartą przeglądarką „na żywo” nie jest dostępne: Chrome 136+ blokuje zdalne sterowanie domyślnym profilem, więc kopia to bezpieczny sposób na użycie Twoich logowań.',
+    live: 'Sterowanie Twoją otwartą przeglądarką „na żywo” nie jest dostępne: Chrome 136+ blokuje zdalne sterowanie domyślnym profilem, więc kopia to bezpieczny sposób na użycie Twoich logowań.',
     managed: 'Standardowa (bez logowań)',
     managedBody: 'Czysta przeglądarka w tle. Nic nie jest zalogowane.',
-    ownBody:
-      'Osobne, widoczne okno przeglądarki dla Cześka. Zaloguj się tam raz do Gmaila — logowanie zostaje.',
+    ownBody: 'Osobne, widoczne okno przeglądarki dla Cześka. Zaloguj się tam raz do Gmaila — logowanie zostaje.',
     ownOpen: 'Otwórz okno i zaloguj się do Google',
     ownTitle: 'Własny profil Cześka',
     signedIn: 'Google: zalogowano',
@@ -171,13 +168,26 @@ export function BrowserModesPanel({ profile }: { profile?: ProfileScope }) {
             {copy.copyImport}
           </Button>
           {data.copy.has_copy ? (
-            <Button disabled={busy} onClick={() => void run(() => clearBrowserCopy(profile))} size="sm" type="button" variant="ghost">
+            <Button
+              disabled={busy}
+              onClick={() => void run(() => clearBrowserCopy(profile))}
+              size="sm"
+              type="button"
+              variant="ghost"
+            >
               {copy.clear}
             </Button>
           ) : null}
         </Option>
       ) : null}
-      <Option active={mode === 'managed'} body={copy.managedBody} busy={busy} copy={copy} onUse={use('managed')} title={copy.managed} />
+      <Option
+        active={mode === 'managed'}
+        body={copy.managedBody}
+        busy={busy}
+        copy={copy}
+        onUse={use('managed')}
+        title={copy.managed}
+      />
       <p className="text-xs text-(--ui-text-tertiary)">{copy.live}</p>
     </div>
   )

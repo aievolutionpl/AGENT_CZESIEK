@@ -74,7 +74,9 @@ describe('buildBriefingPrompt', () => {
   })
 
   it('shows up in a reloaded transcript as what the user said, not as the data', () => {
-    expect(briefingInvocationText(buildBriefingPrompt(DATA, 'pl', 'Wake up, tatuś wrócił!'))).toBe('Wake up, tatuś wrócił!')
+    expect(briefingInvocationText(buildBriefingPrompt(DATA, 'pl', 'Wake up, tatuś wrócił!'))).toBe(
+      'Wake up, tatuś wrócił!'
+    )
     expect(briefingInvocationText('Zwykła wiadomość')).toBeNull()
     expect(briefingInvocationText('<!-- jarvis:briefing not-json -->')).toBeNull()
   })
@@ -116,9 +118,21 @@ describe('buildBriefingPrompt with open tasks', () => {
 
   it('lists open kanban tasks as data, and leaves the section out when none are open', () => {
     const workspace = { jobs: null, model: null, provider: null, sessions: null }
-    const withTasks = { ...base, workspace: { ...workspace, tasks: { blocked: 1, items: [{ status: 'blocked', title: 'Faktura dla X' }], open: 1 } } }
+    const withTasks = {
+      ...base,
+      workspace: {
+        ...workspace,
+        tasks: { blocked: 1, items: [{ status: 'blocked', title: 'Faktura dla X' }], open: 1 }
+      }
+    }
 
     expect(buildBriefingPrompt(withTasks, 'pl', 'raport')).toContain('- blocked: Faktura dla X')
-    expect(buildBriefingPrompt({ ...base, workspace: { ...workspace, tasks: { blocked: 0, items: [], open: 0 } } }, 'pl', 'raport')).not.toContain('Otwarte zadania')
+    expect(
+      buildBriefingPrompt(
+        { ...base, workspace: { ...workspace, tasks: { blocked: 0, items: [], open: 0 } } },
+        'pl',
+        'raport'
+      )
+    ).not.toContain('Otwarte zadania')
   })
 })

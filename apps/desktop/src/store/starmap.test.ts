@@ -18,7 +18,24 @@ import {
   resetStarmapGraph
 } from './starmap'
 
-const graph = (id: string) => ({ nodes: [{ id, label: id, kind: 'memory' as const, category: 'memory', useCount: 0, state: 'active', createdBy: null, pinned: false }], edges: [], clusters: [], memory: [], stats: {} })
+const graph = (id: string) => ({
+  nodes: [
+    {
+      id,
+      label: id,
+      kind: 'memory' as const,
+      category: 'memory',
+      useCount: 0,
+      state: 'active',
+      createdBy: null,
+      pinned: false
+    }
+  ],
+  edges: [],
+  clusters: [],
+  memory: [],
+  stats: {}
+})
 
 describe('scoped starmap cache', () => {
   beforeEach(() => {
@@ -30,7 +47,9 @@ describe('scoped starmap cache', () => {
 
   it('does not let a late response from the previous owner populate the new profile', async () => {
     let resolveA!: (value: ReturnType<typeof graph>) => void
-    const pendingA = new Promise<ReturnType<typeof graph>>(resolve => { resolveA = resolve })
+    const pendingA = new Promise<ReturnType<typeof graph>>(resolve => {
+      resolveA = resolve
+    })
     requests.getStarmapGraph.mockReturnValueOnce(pendingA).mockResolvedValueOnce(graph('b'))
 
     const first = loadStarmapGraph()

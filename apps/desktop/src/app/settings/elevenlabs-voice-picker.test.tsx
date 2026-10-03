@@ -15,6 +15,7 @@ afterEach(() => {
 })
 
 const scope = { connectionId: 'local', profile: 'work' }
+
 function mount(onChange = vi.fn()) {
   render(
     <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
@@ -25,6 +26,7 @@ function mount(onChange = vi.fn()) {
       </MemoryRouter>
     </QueryClientProvider>
   )
+
   return onChange
 }
 

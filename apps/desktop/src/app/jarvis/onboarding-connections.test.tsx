@@ -34,7 +34,12 @@ describe('ConnectionsStep roles', () => {
   it('shows no role picker where the step is used without one', () => {
     render(
       <I18nProvider configClient={null} initialLocale="pl">
-        <ConnectionsStep catalog={pl.jarvisConnections} copy={pl.jarvisOnboarding.connections} onToggle={vi.fn()} selected={[]} />
+        <ConnectionsStep
+          catalog={pl.jarvisConnections}
+          copy={pl.jarvisOnboarding.connections}
+          onToggle={vi.fn()}
+          selected={[]}
+        />
       </I18nProvider>
     )
 

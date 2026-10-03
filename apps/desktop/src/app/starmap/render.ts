@@ -264,7 +264,9 @@ export function drawScene(scene: Scene): DrawResult {
   const screenPoint = (node: SimNode): { x: number; y: number; visible: boolean } => {
     const projected = projectedById.get(node.id)
 
-    return projected ? { x: projected.x, y: projected.y, visible: projected.visible } : { x: projX(node.x), y: projY(node.y), visible: true }
+    return projected
+      ? { x: projected.x, y: projected.y, visible: projected.visible }
+      : { x: projX(node.x), y: projY(node.y), visible: true }
   }
 
   // Two composable layers: node highlight (selected ?? hovered) in full ink, and
@@ -426,7 +428,9 @@ export function drawScene(scene: Scene): DrawResult {
     const sp = screenPoint(s)
     const tp = screenPoint(t)
 
-    if (!sp.visible || !tp.visible) {continue}
+    if (!sp.visible || !tp.visible) {
+      continue
+    }
     let x1 = sp.x
     let y1 = sp.y
     let x2 = tp.x
@@ -520,7 +524,9 @@ export function drawScene(scene: Scene): DrawResult {
     const posScale = WARP_FROM + (1 - WARP_FROM) * warpIn(rawBorn)
     const projected = screenPoint(n)
 
-    if (!projected.visible) {continue}
+    if (!projected.visible) {
+      continue
+    }
     const sx = w / 2 + (projected.x - w / 2) * posScale
     const sy = h / 2 + (projected.y - h / 2) * posScale
 
@@ -715,7 +721,9 @@ export function drawScene(scene: Scene): DrawResult {
     const bw = ctx.measureText(label).width + 8
     const nodePoint = screenPoint(n)
 
-    if (!nodePoint.visible) {continue}
+    if (!nodePoint.visible) {
+      continue
+    }
     const x = clamp(nodePoint.x - bw / 2, LBL_M, Math.max(LBL_M, w - bw - LBL_M))
     const top = nodePoint.y - (nodeRadius(n) * nodeK + 7) - LBL_H + 4
     const clampY = (v: number) => clamp(v, LBL_M, Math.max(LBL_M, h - LBL_H - LBL_M))

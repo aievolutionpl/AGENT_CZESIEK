@@ -34,7 +34,9 @@ export function ChoiceCard({
       aria-label={label}
       className={cn(
         'min-h-24 rounded-md border p-4 text-left focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-[#00B7FF]/50',
-        active ? 'border-[#00B7FF] bg-[#00B7FF]/12' : 'border-(--ui-stroke-tertiary) bg-(--ui-bg-tertiary) hover:border-(--ui-stroke-secondary)'
+        active
+          ? 'border-[#00B7FF] bg-[#00B7FF]/12'
+          : 'border-(--ui-stroke-tertiary) bg-(--ui-bg-tertiary) hover:border-(--ui-stroke-secondary)'
       )}
       onClick={onClick}
       role={role}

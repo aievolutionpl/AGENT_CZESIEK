@@ -5,7 +5,10 @@ import type { ModelOptionsResponse } from '@/types/hermes'
 import { connectOpenRouter, type OpenRouterConnectDeps } from './openrouter-connect'
 import { checkOpenRouterConnection } from './openrouter-connection-check'
 
-function deps(models: string[], probe = { ok: true, reachable: true }): OpenRouterConnectDeps & {
+function deps(
+  models: string[],
+  probe = { ok: true, reachable: true }
+): OpenRouterConnectDeps & {
   saveKey: ReturnType<typeof vi.fn>
   setDefaultModel: ReturnType<typeof vi.fn>
 } {
@@ -58,10 +61,13 @@ describe('checkOpenRouterConnection', () => {
     [{ ok: false, reachable: true, status: 401 }, 'invalid_credentials'],
     [{ ok: false, reachable: true, status: 402 }, 'insufficient_credit']
   ] as const)('keeps provider failures distinct', async (probe, reason) => {
-    const result = await checkOpenRouterConnection({
-      loadOptions: vi.fn(),
-      validate: vi.fn(async () => probe)
-    }, { connectionId: 'local', profile: 'default' })
+    const result = await checkOpenRouterConnection(
+      {
+        loadOptions: vi.fn(),
+        validate: vi.fn(async () => probe)
+      },
+      { connectionId: 'local', profile: 'default' }
+    )
 
     expect(result).toMatchObject({ ok: false, reason })
   })
@@ -71,7 +77,9 @@ describe('checkOpenRouterConnection', () => {
 
     const result = await checkOpenRouterConnection({
       loadOptions,
-      validate: vi.fn(async () => { throw new Error('request timed out') })
+      validate: vi.fn(async () => {
+        throw new Error('request timed out')
+      })
     })
 
     expect(result).toMatchObject({ ok: false, reason: 'timeout' })
@@ -80,7 +88,7 @@ describe('checkOpenRouterConnection', () => {
 
   it('reports an unavailable model separately', async () => {
     const result = await checkOpenRouterConnection({
-      loadOptions: vi.fn(async () => ({ providers: [] } as unknown as ModelOptionsResponse)),
+      loadOptions: vi.fn(async () => ({ providers: [] }) as unknown as ModelOptionsResponse),
       validate: vi.fn(async () => ({ ok: true, reachable: true }))
     })
 

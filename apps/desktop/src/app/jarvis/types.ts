@@ -1,13 +1,6 @@
 export type JarvisVoiceState = 'idle' | 'listening' | 'speaking' | 'error'
 export type JarvisTaskPhase =
-  | 'idle'
-  | 'planning'
-  | 'running'
-  | 'approval'
-  | 'cancelling'
-  | 'cancelled'
-  | 'failed'
-  | 'verified'
+  'idle' | 'planning' | 'running' | 'approval' | 'cancelling' | 'cancelled' | 'failed' | 'verified'
 
 export interface JarvisStreamEvent {
   type: string
