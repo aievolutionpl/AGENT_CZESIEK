@@ -676,41 +676,6 @@ export async function deferConfiguredProfileWelcome(page: Page, profiles: string
   }
 }
 
-/** Names and completion flags only; never print config or credential values. */
-export async function reportWelcomeScope(page: Page): Promise<void> {
-  const states = await page.evaluate(() =>
-    Object.keys(localStorage)
-      .filter(key => key.startsWith('ai-evolution-jarvis-onboarding-v1:'))
-      .map(key => {
-        const state = JSON.parse(localStorage.getItem(key) || '{}')
-        return { key, skipped: state.skipped, version: state.version, step: state.currentStep }
-      })
-  )
-  console.info('[welcome scopes]', JSON.stringify(states))
-  const scope = await page.evaluate(() => {
-    interface DebugFiber {
-      memoizedProps?: { scope?: { connectionId?: string | null; profile?: string | null }; onDismiss?: unknown }
-      return?: DebugFiber
-    }
-    const dialog = [...document.querySelectorAll<HTMLElement>('[role="dialog"]')].find(
-      node => node.getBoundingClientRect().width > 0
-    )
-    if (!dialog) {
-      return null
-    }
-    const key = Object.keys(dialog).find(name => name.startsWith('__reactFiber$'))
-    let fiber = key ? (dialog as unknown as Record<string, DebugFiber>)[key] : undefined
-    for (let count = 0; fiber && count < 100; count += 1, fiber = fiber.return) {
-      const props = fiber.memoizedProps
-      if (props?.scope && typeof props.onDismiss === 'function') {
-        return { connectionId: props.scope.connectionId, profile: props.scope.profile }
-      }
-    }
-    return null
-  })
-  console.info('[visible welcome scope]', JSON.stringify(scope))
-}
-
 export async function waitForAppReady(
   fixture: MockBackendFixture | NoProviderFixture | DeadBackendFixture,
   timeoutMs = 60_000,
