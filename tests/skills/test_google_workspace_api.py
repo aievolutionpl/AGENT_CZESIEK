@@ -68,6 +68,30 @@ def _write_token(path: Path, *, token="ya29.test", expiry=None, **extra):
     path.write_text(json.dumps(data))
 
 
+def test_connection_probes_only_read_metadata_and_return_no_private_content(api_module, monkeypatch, capsys):
+    services = {}
+    def build(api, _version):
+        services[api] = MagicMock()
+        return services[api]
+    monkeypatch.setattr(api_module, "build_service", build)
+    for service in ("gmail", "calendar", "drive"):
+        api_module.connection_probe(types.SimpleNamespace(service=service))
+        assert json.loads(capsys.readouterr().out) == {"state": "connected"}
+    services["gmail"].users().getProfile.assert_called_once_with(userId="me")
+    services["calendar"].calendarList().list.assert_called_once_with(maxResults=1, fields="items(id)")
+    services["drive"].files().list.assert_called_once_with(pageSize=1, fields="files(id)")
+
+
+def test_connection_probe_distinguishes_auth_from_temporary_failure(api_module, monkeypatch, capsys):
+    class Rejected(Exception):
+        resp = types.SimpleNamespace(status=401)
+    def fail(*_args):
+        raise Rejected("must not echo credentials")
+    monkeypatch.setattr(api_module, "build_service", fail)
+    api_module.connection_probe(types.SimpleNamespace(service="gmail"))
+    assert json.loads(capsys.readouterr().out) == {"state": "reauthorize"}
+
+
 def test_bridge_returns_valid_token(bridge_module, tmp_path):
     """Non-expired token is returned without refresh."""
     future = (datetime.now(timezone.utc) + timedelta(hours=1)).isoformat()

@@ -62,7 +62,10 @@ describe('GoogleConnectDialog', () => {
 
     await waitFor(() =>
       expect(api).toHaveBeenCalledWith(
-        expect.objectContaining({ body: { code: 'http://localhost:1/?code=abc&state=s' }, path: '/api/google/auth-code' })
+        expect.objectContaining({
+          body: { code: 'http://localhost:1/?code=abc&state=s' },
+          path: '/api/google/auth-code'
+        })
       )
     )
     await waitFor(() => expect(screen.getByText('3 · Sprawdzenie')).toBeTruthy())
@@ -75,7 +78,7 @@ describe('GoogleConnectDialog', () => {
         calendar_ok: true,
         events: [{ start: '2026-10-01T09:00:00+02:00', summary: 'Spotkanie z Anną' }],
         gmail_ok: false,
-        ok: true,
+        ok: false,
         unread: []
       }
     })
@@ -83,9 +86,9 @@ describe('GoogleConnectDialog', () => {
     await waitFor(() => expect(screen.getByText('3 · Sprawdzenie')).toBeTruthy())
     fireEvent.click(screen.getByRole('button', { name: 'Sprawdź połączenie' }))
 
-    await waitFor(() => expect(screen.getByText('Google jest połączony i odpowiada.')).toBeTruthy())
-    expect(screen.getByText('Spotkanie z Anną')).toBeTruthy()
-    expect(screen.getByText('Poczta nie odpowiedziała (brakuje uprawnienia?).')).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Pokaż mój dzień' })).toBeTruthy()
+    await waitFor(() => expect(screen.getByText('Połączenie potwierdzone')).toBeTruthy())
+    expect(screen.queryByText('Spotkanie z Anną')).toBeNull()
+    expect(screen.getByText('Usługa nie odpowiedziała — ponów test')).toBeTruthy()
+    expect(screen.getByText('Jeszcze nie sprawdzono')).toBeTruthy()
   })
 })

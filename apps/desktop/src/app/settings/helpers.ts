@@ -191,6 +191,10 @@ function liveVoiceFieldVisible(key: string, config: HermesConfigRecord): boolean
 }
 
 export function voiceFieldVisible(key: string, config: HermesConfigRecord): boolean {
+  if (key === 'tts.elevenlabs.voice_id') {
+    return false
+  }
+
   const live = liveVoiceFieldVisible(key, config)
 
   if (live !== null) {

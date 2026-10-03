@@ -1,8 +1,10 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import type { RenderOptions } from '@testing-library/react'
+import { act, cleanup, fireEvent, render as renderBase, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { I18nProvider } from '@/i18n'
 import { pl } from '@/i18n/pl'
 
 // Radix Select calls scrollIntoView on its items when the content opens; jsdom
@@ -666,3 +668,13 @@ describe('ModelSettings code-skew 503', () => {
     await waitFor(() => expect(getGlobalModelOptions.mock.calls.length).toBeGreaterThan(1))
   })
 })
+
+const render = (ui: React.ReactNode, options?: RenderOptions) =>
+  renderBase(ui, {
+    ...options,
+    wrapper: ({ children }) => (
+      <I18nProvider configClient={null} initialLocale="pl">
+        {children}
+      </I18nProvider>
+    )
+  })

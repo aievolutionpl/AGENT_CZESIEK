@@ -9,6 +9,14 @@ export interface GoogleStatus {
 }
 
 export interface GoogleVerifyResult {
+  checked_at?: string
+  drive_ok?: boolean
+  services?: Partial<
+    Record<
+      'gmail' | 'calendar' | 'drive',
+      { state: 'connected' | 'reauthorize' | 'permission' | 'rate_limit' | 'unavailable' | 'unconfigured' }
+    >
+  >
   calendar_ok?: boolean
   events?: { start: string; summary: string }[]
   gmail_ok?: boolean
@@ -18,7 +26,12 @@ export interface GoogleVerifyResult {
 }
 
 const call = <T>(profile: ProfileScope | undefined, path: string, body?: unknown) =>
-  window.hermesDesktop.api<T>({ ...capabilityScoped(profile), body, method: body === undefined ? undefined : 'POST', path })
+  window.hermesDesktop.api<T>({
+    ...capabilityScoped(profile),
+    body,
+    method: body === undefined ? undefined : 'POST',
+    path
+  })
 
 export const getGoogleStatus = (profile?: ProfileScope) => call<GoogleStatus>(profile, '/api/google/status')
 
@@ -30,6 +43,13 @@ export const getGoogleAuthUrl = (profile?: ProfileScope) => call<{ url: string }
 export const submitGoogleAuthCode = (code: string, profile?: ProfileScope) =>
   call<{ ok: boolean; warning: null | string }>(profile, '/api/google/auth-code', { code })
 
-export const verifyGoogle = (profile?: ProfileScope) => call<GoogleVerifyResult>(profile, '/api/google/verify', {})
+export const verifyGoogle = (profile?: ProfileScope) =>
+  window.hermesDesktop.api<GoogleVerifyResult>({
+    ...capabilityScoped(profile),
+    path: '/api/google/verify',
+    method: 'POST',
+    body: {},
+    timeoutMs: 90_000
+  })
 
 export const revokeGoogle = (profile?: ProfileScope) => call<{ ok: boolean }>(profile, '/api/google/revoke', {})

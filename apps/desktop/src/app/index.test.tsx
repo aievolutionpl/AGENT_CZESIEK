@@ -168,20 +168,25 @@ describe('desktop app root Agent Czesiek integration', () => {
     ['Zadania', '/cron'],
     ['Agenci', '/agents'],
     ['Integracje', '/connections'],
-    ['Komunikatory', '/messaging'],
     ['Automatyzacje', '/webhooks'],
-    ['Mapa wiedzy', '/starmap'],
+    ['Pamięć i mapa wiedzy', '/starmap'],
     ['Monitor systemu', '/command-center'],
     ['Pliki i wyniki', '/artifacts'],
-    ['Wspomnienia', '/starmap?view=list'],
-    ['Narzędzia', '/skills'],
+    ['Umiejętności', '/skills'],
     ['Ustawienia', '/settings'],
     ['Profil', '/profiles'],
     ['Pulpit', '/']
   ])('delegates %s to an existing production route', (label, route) => {
     renderRoot('/settings')
 
-    fireEvent.click(screen.getByRole('button', { name: label }))
+    if (
+      ['Automatyzacje', 'Pamięć i mapa wiedzy', 'Monitor systemu', 'Pliki i wyniki', 'Umiejętności'].includes(label)
+    ) {
+      fireEvent.pointerDown(screen.getByRole('button', { name: 'Więcej funkcji' }), { button: 0, ctrlKey: false })
+      fireEvent.click(screen.getByRole('menuitem', { name: label }))
+    } else {
+      fireEvent.click(screen.getByRole('button', { name: label }))
+    }
 
     expect(screen.getByTestId('contrib-runtime').getAttribute('data-path')).toBe(route)
   })
@@ -275,6 +280,7 @@ describe('desktop app root Agent Czesiek integration', () => {
       </MemoryRouter>
     )
 
+    fireEvent.click(await screen.findByRole('button', { name: 'Kliknij logo, aby rozpocząć' }))
     expect(await screen.findByTestId('jarvis-onboarding')).toBeTruthy()
   })
 
@@ -317,6 +323,7 @@ describe('desktop app root Agent Czesiek integration', () => {
       </MemoryRouter>
     )
 
+    fireEvent.click(await screen.findByRole('button', { name: 'Kliknij logo, aby rozpocząć' }))
     expect(await screen.findByTestId('jarvis-onboarding')).toBeTruthy()
 
     act(() => {

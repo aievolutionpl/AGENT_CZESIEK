@@ -23,7 +23,9 @@ import {
   $selectedStoredSessionId,
   $sessions
 } from '@/store/session'
+import { $speakerMuted } from '@/store/voice-output'
 import { setVoicePlaybackState } from '@/store/voice-playback'
+import { $voiceEngine } from '@/store/voice-prefs'
 
 const stopVoicePlayback = vi.hoisted(() => vi.fn())
 
@@ -53,8 +55,7 @@ vi.mock('@assistant-ui/react', async () => {
 
   const pass = ({ children }: { children?: React.ReactNode }) => React.createElement(React.Fragment, null, children)
 
-  const Root = ({ children, ...props }: React.ComponentProps<'form'>) =>
-    React.createElement('form', props, children)
+  const Root = ({ children, ...props }: React.ComponentProps<'form'>) => React.createElement('form', props, children)
 
   const Input = ({ children }: { children?: React.ReactElement }) => children ?? null
 
@@ -72,7 +73,9 @@ vi.mock('@assistant-ui/react', async () => {
 })
 
 vi.mock('@/app/chat/tour-marker', () => ({ useTourMarker: () => undefined }))
-vi.mock('@/app/hud/composer-drag', () => ({ useHudComposerDrag: () => ({ grabbing: false, onPointerDown: undefined }) }))
+vi.mock('@/app/hud/composer-drag', () => ({
+  useHudComposerDrag: () => ({ grabbing: false, onPointerDown: undefined })
+}))
 vi.mock('@/components/assistant-ui/thread', async () => {
   const React = await import('react')
 
@@ -149,12 +152,16 @@ vi.mock('./composer/hooks/use-composer-popout', () => ({
     poppedOut: false
   })
 }))
-vi.mock('./composer/hooks/use-emoji-completions', () => ({ useEmojiCompletions: () => ({ items: [], loading: false }) }))
+vi.mock('./composer/hooks/use-emoji-completions', () => ({
+  useEmojiCompletions: () => ({ items: [], loading: false })
+}))
 vi.mock('./composer/hooks/use-mic-recorder', () => ({
   useMicRecorder: () => ({ handle: micHandle, level: 0, recording: false })
 }))
 vi.mock('./composer/hooks/use-micro-actions', () => ({ useComposerMicroActions: vi.fn() }))
-vi.mock('./composer/hooks/use-slash-completions', () => ({ useSlashCompletions: () => ({ items: [], loading: false }) }))
+vi.mock('./composer/hooks/use-slash-completions', () => ({
+  useSlashCompletions: () => ({ items: [], loading: false })
+}))
 vi.mock('./composer/hooks/use-status-presence', () => ({ useSessionStatusPresence: () => false }))
 vi.mock('./composer/micro-actions', () => ({ ActionBadges: () => null, SuggestionPills: () => null }))
 vi.mock('./composer/queue-panel', () => ({ QueuePanel: () => null }))
@@ -267,11 +274,11 @@ async function startDashboardVoice() {
   const controls = within(screen.getByTestId('jarvis-voice-controls'))
 
   await act(async () => {
-    fireEvent.click(controls.getByRole('button', { name: 'Zacznij słuchać' }))
+    fireEvent.click(controls.getByRole('button', { name: 'Zacznij rozmowę' }))
   })
 
   await waitFor(() => expect(micHandle.start).toHaveBeenCalled())
-  expect(await controls.findByRole('button', { name: 'Przestań słuchać' })).toBeTruthy()
+  expect(await controls.findByRole('button', { name: 'Zakończ rozmowę' })).toBeTruthy()
 }
 
 function mockViewport() {
@@ -293,6 +300,8 @@ function mockViewport() {
 describe('ChatView Agent Czesiek dashboard seam', () => {
   beforeEach(() => {
     mockViewport()
+    $speakerMuted.set(false)
+    $voiceEngine.set('classic')
     $gatewayState.set('open')
     $awaitingResponse.set(false)
     $busy.set(false)
@@ -337,22 +346,22 @@ describe('ChatView Agent Czesiek dashboard seam', () => {
     renderChatView()
 
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Zacznij słuchać' }))
+      fireEvent.click(screen.getByRole('button', { name: 'Zacznij rozmowę' }))
     })
 
     await waitFor(() => expect(micHandle.start).toHaveBeenCalledTimes(1))
-    expect(await screen.findByRole('button', { name: 'Przestań słuchać' })).toBeTruthy()
+    expect(await screen.findByRole('button', { name: 'Zakończ rozmowę' })).toBeTruthy()
     expect(screen.getByTestId('jarvis-core').getAttribute('data-voice')).toBe('listening')
 
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Przestań słuchać' }))
+      fireEvent.click(screen.getByRole('button', { name: 'Zakończ rozmowę' }))
     })
 
     await waitFor(() => expect(micHandle.cancel).toHaveBeenCalledTimes(1))
-    expect(await screen.findByRole('button', { name: 'Zacznij słuchać' })).toBeTruthy()
+    expect(await screen.findByRole('button', { name: 'Zacznij rozmowę' })).toBeTruthy()
   })
 
-  it('routes stop speaking to voice playback and stop task to ChatView onCancel', async () => {
+  it('mutes playback without cancelling the task', async () => {
     const props = renderChatView()
 
     act(() =>
@@ -366,20 +375,15 @@ describe('ChatView Agent Czesiek dashboard seam', () => {
     )
 
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Przestań mówić' }))
+      fireEvent.click(screen.getByRole('button', { name: 'Wycisz głos' }))
     })
 
     expect(stopVoicePlayback).toHaveBeenCalledTimes(1)
     expect(props.onCancel).not.toHaveBeenCalled()
 
     publishTaskPhase('task.running', 1)
-    await waitFor(() => expect(screen.getByRole<HTMLButtonElement>('button', { name: 'Zatrzymaj zadanie' }).disabled).toBe(false))
-
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Zatrzymaj zadanie' }))
-    })
-
-    expect(props.onCancel).toHaveBeenCalledTimes(1)
+    expect(screen.getByTestId('jarvis-core').getAttribute('data-task')).toBe('running')
+    expect(props.onCancel).not.toHaveBeenCalled()
   })
 
   it('routes stop speaking to voice playback while audio is preparing', async () => {
@@ -395,54 +399,37 @@ describe('ChatView Agent Czesiek dashboard seam', () => {
       })
     )
 
-    await waitFor(() => expect(screen.getByRole<HTMLButtonElement>('button', { name: 'Przestań mówić' }).disabled).toBe(false))
+    await waitFor(() =>
+      expect(screen.getByRole<HTMLButtonElement>('button', { name: 'Wycisz głos' }).disabled).toBe(false)
+    )
 
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Przestań mówić' }))
+      fireEvent.click(screen.getByRole('button', { name: 'Wycisz głos' }))
     })
 
     expect(stopVoicePlayback).toHaveBeenCalledTimes(1)
     expect(props.onCancel).not.toHaveBeenCalled()
   })
 
-  it('enables cancel only for active Agent Czesiek task phases in the mounted dashboard', () => {
+  it('reflects actual task phases in the orb', () => {
     renderChatView()
-    const button = () => screen.getByRole<HTMLButtonElement>('button', { name: 'Zatrzymaj zadanie' })
 
-    expect(button().disabled).toBe(true)
-
-    publishTaskPhase('task.planning', 1)
-    expect(button().disabled).toBe(false)
-
-    publishTaskPhase('task.running', 2)
-    expect(button().disabled).toBe(false)
-
-    publishTaskPhase('task.approval', 3)
-    expect(button().disabled).toBe(false)
-
-    publishTaskPhase('task.cancelling', 4)
-    expect(button().disabled).toBe(true)
-
-    publishTaskPhase('task.cancelled', 5)
-    expect(button().disabled).toBe(true)
-
-    publishTaskPhase('task.failed', 6)
-    expect(button().disabled).toBe(true)
-
-    publishTaskPhase('task.verified', 7)
-    expect(button().disabled).toBe(true)
+    for (const phase of ['planning', 'running', 'approval', 'cancelling', 'cancelled', 'failed', 'verified'] as const) {
+      publishTaskPhase('task.' + phase, Date.now())
+      expect(screen.getByTestId('jarvis-core').getAttribute('data-task')).toBe(phase)
+    }
   })
 
   it('resets stale Agent Czesiek UI when the foreground session changes', async () => {
     renderChatView()
 
     publishTaskPhase('task.running', 1)
-    expect(screen.getByRole<HTMLButtonElement>('button', { name: 'Zatrzymaj zadanie' }).disabled).toBe(false)
+    expect(screen.getByTestId('jarvis-core').getAttribute('data-task')).toBe('running')
 
     act(() => setOpenSession('runtime-2', 'stored-2'))
 
     await waitFor(() => expect($jarvisUi.get()).toMatchObject({ sessionId: 'runtime-2', task: { phase: 'idle' } }))
-    expect(screen.getByRole<HTMLButtonElement>('button', { name: 'Zatrzymaj zadanie' }).disabled).toBe(true)
+    expect(screen.getByTestId('jarvis-core').getAttribute('data-task')).toBe('idle')
   })
 
   it('stops the active main voice conversation exactly once on a foreground session switch', async () => {
@@ -463,12 +450,12 @@ describe('ChatView Agent Czesiek dashboard seam', () => {
     })
 
     expect(micHandle.cancel).not.toHaveBeenCalled()
-    expect(controls().getByRole('button', { name: 'Przestań słuchać' })).toBeTruthy()
+    expect(controls().getByRole('button', { name: 'Zakończ rozmowę' })).toBeTruthy()
 
     act(() => setOpenSession('runtime-2', 'stored-2'))
 
     await waitFor(() => expect(micHandle.cancel).toHaveBeenCalledTimes(1))
-    expect(await controls().findByRole('button', { name: 'Zacznij słuchać' })).toBeTruthy()
+    expect(await controls().findByRole('button', { name: 'Zacznij rozmowę' })).toBeTruthy()
 
     act(() => setOpenSession('runtime-2', 'stored-2'))
     expect(micHandle.cancel).toHaveBeenCalledTimes(1)
@@ -489,7 +476,7 @@ describe('ChatView Agent Czesiek dashboard seam', () => {
     })
 
     await waitFor(() => expect(micHandle.cancel).toHaveBeenCalledTimes(1))
-    expect(await controls().findByRole('button', { name: 'Zacznij słuchać' })).toBeTruthy()
+    expect(await controls().findByRole('button', { name: 'Zacznij rozmowę' })).toBeTruthy()
 
     act(() => $activeGatewayProfile.set('research'))
     expect(micHandle.cancel).toHaveBeenCalledTimes(1)
@@ -499,7 +486,7 @@ describe('ChatView Agent Czesiek dashboard seam', () => {
     renderChatView()
 
     publishTaskPhase('task.running', 1)
-    expect(screen.getByRole<HTMLButtonElement>('button', { name: 'Zatrzymaj zadanie' }).disabled).toBe(false)
+    expect(screen.getByTestId('jarvis-core').getAttribute('data-task')).toBe('running')
 
     act(() => {
       $profiles.set([
@@ -510,7 +497,7 @@ describe('ChatView Agent Czesiek dashboard seam', () => {
     })
 
     await waitFor(() => expect($jarvisUi.get()).toMatchObject({ sessionId: 'runtime-1', task: { phase: 'idle' } }))
-    expect(screen.getByRole<HTMLButtonElement>('button', { name: 'Zatrzymaj zadanie' }).disabled).toBe(true)
+    expect(screen.getByTestId('jarvis-core').getAttribute('data-task')).toBe('idle')
   })
 
   it('ignores background Agent Czesiek events after the foreground session is scoped', () => {
@@ -519,7 +506,7 @@ describe('ChatView Agent Czesiek dashboard seam', () => {
     publishTaskPhase('task.running', 1, 'background-session')
 
     expect($jarvisUi.get()).toMatchObject({ sessionId: 'runtime-1', task: { phase: 'idle' } })
-    expect(screen.getByRole<HTMLButtonElement>('button', { name: 'Zatrzymaj zadanie' }).disabled).toBe(true)
+    expect(screen.getByTestId('jarvis-core').getAttribute('data-task')).toBe('idle')
   })
 
   it('marks the transcript frame empty while the home hero owns the surface', () => {

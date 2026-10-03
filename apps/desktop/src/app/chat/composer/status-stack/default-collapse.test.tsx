@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { afterEach, expect, it } from 'vitest'
 
@@ -53,21 +53,21 @@ it('auto-expands only todos and keeps other groups closed as activity arrives', 
 
   expect(screen.getByText('Visible todo')).toBeTruthy()
 
-  for (const text of ['Hidden legacy goal', 'Background process', 'Worker task', 'Queued request']) {
+  for (const text of ['Hidden legacy goal', 'Background process', 'Queued request']) {
     expect(screen.queryByText(text)).toBeNull()
   }
 
   act(() => upsertSubagent('owner', { subagent_id: 'worker', text: 'Progress arrived' }, false, 'subagent.progress'))
   view.rerender(stack(true))
-  expect(screen.queryByText('Worker task')).toBeNull()
+  expect(section().queryByText('Worker task')).toBeNull()
   expect(screen.queryByText('Queued request')).toBeNull()
 
   const header = screen.getByRole('button', { name: /1 Subagent/ })
   fireEvent.click(header)
-  expect(screen.getByText('Worker task')).toBeTruthy()
+  expect(section().getByText('Worker task')).toBeTruthy()
   expect(screen.getByText('Progress arrived')).toBeTruthy()
   view.rerender(stack(false))
-  expect(screen.getByText('Worker task')).toBeTruthy()
+  expect(section().getByText('Worker task')).toBeTruthy()
 })
 
 it('starts structured goals collapsed and preserves manual queue expansion when parked', () => {
@@ -107,3 +107,5 @@ it('starts structured goals collapsed and preserves manual queue expansion when 
   view.rerender(stack(true))
   expect(screen.getByText('Queued request')).toBeTruthy()
 })
+
+const section = () => within(document.querySelector('[data-slot="composer-subagents"]') as HTMLElement)

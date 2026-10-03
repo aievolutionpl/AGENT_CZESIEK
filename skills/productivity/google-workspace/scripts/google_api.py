@@ -1051,6 +1051,32 @@ def _docs_insert_text(doc_id: str, text: str, index: int) -> None:
 # =========================================================================
 
 
+def connection_probe(args):
+    """Exercise a minimal read without returning mail, events or file contents."""
+    probes = {
+        "gmail": lambda: build_service("gmail", "v1").users().getProfile(userId="me").execute(),
+        "calendar": lambda: build_service("calendar", "v3").calendarList().list(
+            maxResults=1, fields="items(id)").execute(),
+        "drive": lambda: build_service("drive", "v3").files().list(
+            pageSize=1, fields="files(id)").execute(),
+    }
+    try:
+        probes[args.service]()
+        result = {"state": "connected"}
+    except Exception as exc:
+        code = getattr(getattr(exc, "resp", None), "status", None)
+        if code == 401 or "invalid_grant" in str(exc):
+            state = "reauthorize"
+        elif code == 403:
+            state = "permission"
+        elif code == 429:
+            state = "rate_limit"
+        else:
+            state = "unavailable"
+        result = {"state": state}
+    print(json.dumps(result))
+
+
 def main():
     parser = argparse.ArgumentParser(description="Google Workspace API for Hermes Agent")
     sub = parser.add_subparsers(dest="service", required=True)
@@ -1216,6 +1242,10 @@ def main():
     p.add_argument("doc_id")
     p.add_argument("--text", required=True, help="Text to append to the end of the document")
     p.set_defaults(func=docs_append)
+
+    probe = sub.add_parser("check", help="Minimal read-only connection check")
+    probe.add_argument("service", choices=["gmail", "calendar", "drive"])
+    probe.set_defaults(func=connection_probe)
 
     args = parser.parse_args()
     args.func(args)

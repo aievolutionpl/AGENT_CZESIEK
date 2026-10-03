@@ -859,3 +859,35 @@ class TestProfileScopedAudio:
         assert resp.status_code == 404
         resp = client.post("/api/audio/speak?profile=ghost", json={"text": "x"})
         assert resp.status_code == 404
+
+    def test_elevenlabs_preview_uses_target_secret_without_changing_configuration(
+        self, client, isolated_profiles, monkeypatch
+    ):
+        import base64
+        import io
+        from hermes_cli.web_routers import audio
+        (isolated_profiles["worker_beta"] / ".env").write_text(
+            "ELEVENLABS_API_KEY=test-worker-secret\n", encoding="utf-8")
+        seen = []
+        def fetch(request, timeout):
+            seen.append(request)
+            return io.BytesIO(b"fake-mp3")
+        monkeypatch.setattr(audio.urllib.request, "urlopen", fetch)
+        before = (isolated_profiles["worker_beta"] / "config.yaml").read_bytes()
+        response = client.post("/api/audio/elevenlabs/preview?profile=worker_beta",
+                               json={"voice": "voice-one", "language": "pl"})
+        assert response.status_code == 200
+        assert base64.b64decode(response.json()["audio"]) == b"fake-mp3"
+        assert seen[0].get_header("Xi-api-key") == "test-worker-secret"
+        assert "test-worker-secret" not in response.text
+        assert (isolated_profiles["worker_beta"] / "config.yaml").read_bytes() == before
+
+    def test_elevenlabs_preview_does_not_borrow_global_key_for_an_unconfigured_profile(
+        self, client, isolated_profiles, monkeypatch
+    ):
+        from hermes_cli.web_routers import audio
+        monkeypatch.setenv("ELEVENLABS_API_KEY", "global-secret")
+        monkeypatch.setattr(audio.urllib.request, "urlopen", lambda *_a, **_k: pytest.fail("must not request audio"))
+        response = client.post("/api/audio/elevenlabs/preview?profile=worker_beta",
+                               json={"voice": "voice-one", "language": "pl"})
+        assert response.status_code == 400

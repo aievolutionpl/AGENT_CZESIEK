@@ -8,6 +8,7 @@ import { triggerHaptic } from '@/lib/haptics'
 import { AudioLines, Ear, EarOff, iconSize, Layers3, Loader2, Square, Volume2, VolumeX } from '@/lib/icons'
 import { cn } from '@/lib/utils'
 import { $hudMode, closeHud } from '@/store/hud'
+import { $productShellNav } from '@/store/product-shell'
 import { $wakeWord, toggleWakeWord } from '@/store/wake-word'
 
 import { ACTIVE_ICON_BTN, GHOST_ICON_BTN, PRIMARY_ICON_BTN } from './control-classes'
@@ -67,6 +68,7 @@ export function ComposerControls({
   const { t } = useI18n()
   const c = t.composer
   const hudMode = useStore($hudMode)
+  const productShell = useStore($productShellNav)
 
   if (conversation.active) {
     return <ConversationPill {...conversation} disabled={disabled} />
@@ -83,7 +85,7 @@ export function ComposerControls({
   // same reason — same controls, same state, different budget. Below that
   // even the menu goes: at `minimal` the row is the send button and nothing
   // else, which is the one thing that must survive every width.
-  const foldedVoice = hudMode || foldVoice
+  const foldedVoice = hudMode || foldVoice || productShell
 
   const voiceControls = foldedVoice ? (
     <VoiceMenu
@@ -107,7 +109,7 @@ export function ComposerControls({
     <div className="ml-auto flex min-w-0 shrink items-center gap-(--composer-control-gap)">
       {minimal || hudMode ? null : (
         <>
-          <ModelPill compact={compactModelPill} disabled={disabled} model={state.model} />
+          {productShell ? null : <ModelPill compact={compactModelPill} disabled={disabled} model={state.model} />}
           {voiceControls}
         </>
       )}

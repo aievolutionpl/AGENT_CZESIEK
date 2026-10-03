@@ -16,13 +16,13 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { useActiveCapabilityScope } from '@/hooks/use-active-capability-scope'
 import { useI18n } from '@/i18n'
-import { CheckCircle2, ExternalLink, Loader2 } from '@/lib/icons'
-import { cn } from '@/lib/utils'
+import { ExternalLink, Loader2 } from '@/lib/icons'
 import { requestBriefing, requestComposerPrefill } from '@/store/composer'
 import { notifyError } from '@/store/notifications'
 
 import { NEW_CHAT_ROUTE } from '../routes'
 
+import { GoogleServiceResults } from './google-service-status'
 import { type GoogleWizardStep, googleWizardStep } from './google-wizard-step'
 
 const CONSOLE_URL = 'https://console.cloud.google.com/apis/credentials'
@@ -60,7 +60,7 @@ const COPY = {
     title: 'Connect Google',
     unread: 'Unread mail',
     upload: 'Choose the JSON file',
-    verifyBody: 'A real check: Czesiek reads your next events and newest unread mail.',
+    verifyBody: 'A minimal read-only check of Gmail, Calendar and Drive. No mail is sent and no files are changed.',
     verifyRun: 'Check the connection',
     verifyTitle: '3 · Check',
     working: 'Working…'
@@ -96,7 +96,7 @@ const COPY = {
     title: 'Połącz Google',
     unread: 'Nieprzeczytane maile',
     upload: 'Wybierz plik JSON',
-    verifyBody: 'Prawdziwy test: Czesiek odczyta Twoje najbliższe wydarzenia i najnowsze nieprzeczytane maile.',
+    verifyBody: 'Mały test odczytu Gmaila, Kalendarza i Dysku. Bez wysyłania poczty i zmieniania plików.',
     verifyRun: 'Sprawdź połączenie',
     verifyTitle: '3 · Sprawdzenie',
     working: 'Pracuję…'
@@ -335,48 +335,7 @@ function ScopedGoogleConnectDialog({
           <section aria-label={copy.verifyTitle} className="grid gap-3">
             <h3 className="text-sm font-semibold">{copy.verifyTitle}</h3>
             <p className="text-sm text-(--ui-text-secondary)">{copy.verifyBody}</p>
-            {result?.ok ? (
-              <div className="jarvis-well grid gap-3 p-3 text-sm" role="status">
-                <p className="flex items-center gap-2 font-medium">
-                  <CheckCircle2 className="size-4 text-emerald-500" />
-                  {copy.done}
-                </p>
-                <div>
-                  <p className="text-xs font-medium text-(--ui-text-secondary)">{copy.calendar}</p>
-                  {result.calendar_ok === false ? (
-                    <p className="text-xs text-destructive">{copy.noCalendar}</p>
-                  ) : (
-                    <ul className="mt-1 grid gap-0.5">
-                      {(result.events?.length ? result.events : [{ start: '', summary: copy.empty }]).map(
-                        (event, i) => (
-                          <li className="truncate" key={`${event.start}${i}`}>
-                            {event.summary}
-                          </li>
-                        )
-                      )}
-                    </ul>
-                  )}
-                </div>
-                <div>
-                  <p className="text-xs font-medium text-(--ui-text-secondary)">{copy.unread}</p>
-                  {result.gmail_ok === false ? (
-                    <p className="text-xs text-destructive">{copy.noGmail}</p>
-                  ) : (
-                    <ul className="mt-1 grid gap-0.5">
-                      {(result.unread?.length ? result.unread : [{ from: '', subject: copy.empty }]).map((mail, i) => (
-                        <li className="truncate" key={`${mail.subject}${i}`}>
-                          {mail.subject}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              </div>
-            ) : result ? (
-              <p className={cn('rounded-lg bg-destructive/10 p-3 text-xs text-destructive')} role="alert">
-                {result.reason}
-              </p>
-            ) : null}
+            {result ? <GoogleServiceResults result={result} /> : null}
             {result?.ok ? (
               <div className="flex flex-wrap gap-2">
                 <Button

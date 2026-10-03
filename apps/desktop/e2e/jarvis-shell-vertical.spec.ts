@@ -31,6 +31,39 @@ import { expectVisualSnapshot } from './visual-snapshot'
 let fixture: MockBackendFixture | null = null
 let cdp: CDPSession | null = null
 
+async function selectDestination(view: string) {
+  const page = fixture!.page
+  const target = page.locator(`[data-jarvis-nav-view="${view}"]`)
+
+  if ((await target.count()) === 0) {
+    await page.getByRole('button', { name: /Więcej funkcji|More features/ }).click()
+  }
+
+  await target.click()
+}
+
+async function appearance() {
+  await selectDestination('settings')
+  await fixture!.page.locator('[data-tour="nav-config:appearance"]').click()
+}
+
+async function language(code: 'pl' | 'en') {
+  const page = fixture!.page
+  await appearance()
+  await page.getByRole('button', { name: /Zmień język|Switch language/ }).click()
+  await page.locator('[cmdk-input]').fill(code === 'pl' ? 'Polski' : 'English')
+  await page.locator('[cmdk-input]').press('ArrowDown')
+  await page.locator('[cmdk-input]').press('Enter')
+  await expect(page.locator('html')).toHaveAttribute('lang', code)
+  await selectDestination('jarvis')
+}
+
+async function theme(mode: 'light' | 'dark') {
+  await appearance()
+  await fixture!.page.getByRole('button', { name: mode === 'dark' ? 'Ciemny' : 'Jasny', exact: true }).click()
+  await selectDestination('jarvis')
+}
+
 /** Must match JARVIS_ONBOARDING_STATE_KEY / _VERSION in src/app/jarvis/onboarding-state.ts. */
 const ONBOARDING_KEY_PREFIX = 'ai-evolution-jarvis-onboarding-v1'
 
@@ -53,7 +86,7 @@ const TIPS_KEY_PREFIX = 'ai-evolution-jarvis-tips-v1'
  * The widths §14.11 names. 390 is a phone-width window a user can genuinely
  * drag the desktop app down to, and it is where a row-first layout breaks first.
  */
-const RESPONSIVE_WIDTHS = [390, 768, 1150, 1440, 2560] as const
+const RESPONSIVE_WIDTHS = [390, 768, 1280, 1440, 1920] as const
 
 /**
  * The main views on the nav rail, in render order, and the route each one
@@ -66,7 +99,7 @@ const MAIN_VIEWS = [
   { view: 'agents', hash: '#/agents' },
   { view: 'prompts', hash: '#/prompts' },
   { view: 'artifacts', hash: '#/artifacts' },
-  { view: 'memory', hash: '#/starmap?view=list' },
+
   { view: 'starmap', hash: '#/starmap' },
   { view: 'connections', hash: '#/connections' },
   { view: 'webhooks', hash: '#/webhooks' },
@@ -260,8 +293,10 @@ test.describe('Jarvis product shell', () => {
         (window: ElectronWindow) => !window.webContents.getURL().includes('win=overlay')
       )
 
-      main?.restore()
-      main?.show()
+      if (main && !main.isDestroyed()) {
+        main.restore()
+        main.show()
+      }
     })
   })
 
@@ -283,13 +318,13 @@ test.describe('Jarvis product shell', () => {
 
   test('saved prompts survive reopening and can be inserted into chat', async () => {
     const page = fixture!.page
-    await page.locator('[data-jarvis-nav-view="prompts"]').click()
+    await selectDestination('prompts')
     const form = page.locator('section[aria-label="Moje prompty"]')
     await form.locator('form input').fill('Plan E2E')
     await form.locator('textarea').fill('Zaplanuj tydzien i zapytaj o priorytety.')
     await form.locator('button[type="submit"]').click()
     await page.locator('[data-jarvis-nav-view="jarvis"]').click()
-    await page.locator('[data-jarvis-nav-view="prompts"]').click()
+    await selectDestination('prompts')
     await page.getByRole('button', { name: 'Plan E2E', exact: true }).click()
     await expect(form.locator('textarea')).toHaveValue('Zaplanuj tydzien i zapytaj o priorytety.')
     await form.locator('form button').nth(1).click()
@@ -298,7 +333,7 @@ test.describe('Jarvis product shell', () => {
     await expect
       .poll(async () => await composer.inputValue().catch(() => composer.textContent()))
       .toContain('Zaplanuj tydzien')
-    await page.locator('[data-jarvis-nav-view="prompts"]').click()
+    await selectDestination('prompts')
     await page.getByRole('button', { name: 'Plan E2E', exact: true }).click()
     await form.locator('form button').last().click()
     await expect(page.getByRole('button', { name: 'Plan E2E', exact: true })).toHaveCount(0)
@@ -309,24 +344,27 @@ test.describe('Jarvis product shell', () => {
     const page = fixture!.page
 
     const buttons = page.locator('nav[data-jarvis-nav] [data-jarvis-nav-view]')
-    await expect(buttons).toHaveCount(MAIN_VIEWS.length)
+    await expect(buttons).toHaveCount(4)
 
     for (const { view, hash } of MAIN_VIEWS) {
       const button = page.locator(`[data-jarvis-nav-view="${view}"]`)
-      await button.click()
+      await selectDestination(view)
 
       // The view attribute is the shell's own state; the hash is the runtime's.
       // Asserting both is what proves the shell drives real navigation rather
       // than swapping a local tab and leaving the runtime where it was.
       await expect(page.locator(`[data-jarvis-view="${view}"]`)).toBeVisible()
-      await expect(button).toHaveAttribute('aria-current', 'page')
+
+      if (['jarvis', 'tasks', 'agents', 'connections', 'settings'].includes(view)) {
+        await expect(button).toHaveAttribute('aria-current', 'page')
+      }
 
       if (hash) {
         await expect.poll(() => page.evaluate(() => window.location.hash)).toContain(hash)
       }
     }
 
-    await page.getByRole('button', { name: 'Historia' }).click()
+    await page.getByRole('button', { name: 'Rozmowy' }).click()
     await expect(page.getByRole('dialog')).toBeVisible()
     await page.keyboard.press('Escape')
 
@@ -369,18 +407,10 @@ test.describe('Jarvis product shell', () => {
     await page.locator('[data-jarvis-nav-view="jarvis"]').click()
   })
 
-  test('the language rail switches the whole shell to Polish and back', async () => {
-    const page = fixture!.page
-    const language = page.locator('[data-jarvis-nav-rail] [role="radiogroup"]')
-
-    await language.getByRole('radio', { name: 'PL' }).click()
-    await expect(language.getByRole('radio', { name: 'PL' })).toHaveAttribute('aria-checked', 'true')
-    await expect(page.locator('html')).toHaveAttribute('lang', 'pl')
-    await expect(page.locator('nav[data-jarvis-nav]').getByRole('button', { name: 'Pulpit' })).toBeVisible()
-
-    await language.getByRole('radio', { name: 'EN' }).click()
-    await expect(language.getByRole('radio', { name: 'EN' })).toHaveAttribute('aria-checked', 'true')
-    await expect(page.locator('html')).toHaveAttribute('lang', 'en')
+  test('settings switches the whole shell between Polish and English', async () => {
+    await language('pl')
+    await language('en')
+    await language('pl')
   })
 
   test('keyboard focus reaches the nav and stays visible', async () => {
@@ -427,7 +457,7 @@ test.describe('Jarvis product shell', () => {
       .locator('nav[data-jarvis-nav] button')
       .evaluateAll(elements => elements.map(element => element.getBoundingClientRect().height))
 
-    expect(heights.length).toBeGreaterThanOrEqual(MAIN_VIEWS.length)
+    expect(heights.length).toBeGreaterThanOrEqual(6)
 
     for (const height of heights) {
       expect(height).toBeGreaterThanOrEqual(44)
@@ -443,6 +473,48 @@ test.describe('Jarvis product shell', () => {
 
     for (const width of RESPONSIVE_WIDTHS) {
       test(`no horizontal overflow at ${width} px`, async () => {
+        for (const mode of ['light', 'dark'] as const) {
+          await setViewportWidth(1440)
+          await theme(mode)
+          await setViewportWidth(width)
+          const page = fixture!.page
+          const hero = page.getByTestId('jarvis-home-hero')
+          const orb = page.getByTestId('jarvis-core')
+          await expect(hero).toBeVisible()
+
+          await expect
+            .poll(() =>
+              page.evaluate(() => {
+                const orb = document.querySelector('[data-testid="jarvis-core"]')!.getBoundingClientRect()
+                const composer = document.querySelector('textarea')!.getBoundingClientRect()
+
+                return orb.bottom - composer.top
+              })
+            )
+            .toBeLessThanOrEqual(1)
+
+          const geometry = await page.evaluate(() => {
+            const orb = document.querySelector('[data-testid="jarvis-core"]')!.getBoundingClientRect()
+            const composer = document.querySelector('textarea')!.getBoundingClientRect()
+
+            return {
+              orbBottom: orb.bottom,
+              composerTop: composer.top,
+              composerBottom: composer.bottom,
+              height: innerHeight
+            }
+          })
+
+          expect(geometry.orbBottom).toBeLessThanOrEqual(geometry.composerTop + 1)
+          expect(geometry.composerBottom).toBeLessThanOrEqual(geometry.height)
+          await orb.scrollIntoViewIfNeeded()
+          const folder = path.resolve('../../docs/assets/czesiek/acceptance')
+          fs.mkdirSync(folder, { recursive: true })
+          await page.screenshot({ path: path.join(folder, 'pulpit-' + mode + '-' + width + '.png') })
+        }
+
+        await setViewportWidth(1440)
+        await theme('light')
         await setViewportWidth(width)
 
         const overflow = await fixture!.page.evaluate(() => ({
@@ -459,11 +531,16 @@ test.describe('Jarvis product shell', () => {
 
   test('the home screen raises real pulse suggestions and remembers a dismissal', async () => {
     const page = fixture!.page
-    await page.getByRole('radio', { name: 'PL', exact: true }).click()
+    await language('pl')
     await page.locator('[data-jarvis-nav-view="jarvis"]').click()
     // The rail owns suggestions while it is visible; hiding it brings the
     // same suggestions onto the home hero without a duplicate list.
-    await page.getByRole('button', { name: 'Pokaż lub ukryj prawy panel' }).click()
+    const tasksPanel = page.getByRole('button', { name: 'Pokaż lub ukryj prawy panel' })
+
+    if ((await tasksPanel.getAttribute('aria-pressed')) !== 'true') {
+      await tasksPanel.click()
+    }
+
     // A fresh sandbox home has an empty USER.md and no cron jobs: the real
     // /api/pulse must turn both into suggestions.
     const knowOwner = page.locator('[data-pulse-kind="know_owner"]')
@@ -506,7 +583,7 @@ test.describe('Jarvis product shell', () => {
   test('shell screenshot', async () => {
     const page = fixture!.page
     await page.locator('[data-jarvis-nav-view="jarvis"]').click()
-    await page.getByRole('radio', { name: 'PL', exact: true }).click()
+    await language('pl')
     const history = page.getByRole('button', { name: 'Pokaż lub ukryj lewy panel' })
 
     if ((await history.getAttribute('aria-pressed')) === 'true') {
@@ -515,21 +592,21 @@ test.describe('Jarvis product shell', () => {
 
     const rail = page.getByRole('button', { name: 'Pokaż lub ukryj prawy panel' })
 
-    if ((await rail.getAttribute('aria-pressed')) !== 'true') {
+    if ((await rail.getAttribute('aria-pressed')) === 'true') {
       await rail.click()
     }
 
     await page.locator('textarea, [contenteditable="true"]').first().fill('')
     await expectVisualSnapshot(page, { name: 'jarvis-shell', app: fixture!.app })
-    await page.getByRole('radio', { name: 'Ciemny', exact: true }).click()
+    await theme('dark')
     await expect(page.locator('html')).toHaveClass(/dark/)
     await expectVisualSnapshot(page, { name: 'jarvis-shell-dark', app: fixture!.app })
-    await page.getByRole('radio', { name: 'Jasny', exact: true }).click()
+    await theme('light')
   })
 
   test('Polish product identity stays visible and panels respect reduced motion', async () => {
     const page = fixture!.page
-    await page.getByRole('radio', { name: 'PL', exact: true }).click()
+    await language('pl')
     await expect(page.locator('[data-jarvis-nav-rail]').getByText('AI Evolution Polska', { exact: true })).toBeVisible()
     await page.emulateMedia({ reducedMotion: 'reduce' })
 
@@ -548,7 +625,7 @@ test.describe('Jarvis product shell', () => {
 
   test('memory saves through the real backend and survives reopening', async () => {
     const page = fixture!.page
-    await page.locator('[data-jarvis-nav-view="starmap"]').click()
+    await selectDestination('starmap')
     const vault = page.getByTestId('vault-view')
     await vault.getByRole('button', { name: 'Nowa notatka', exact: true }).first().click()
     await vault.getByRole('textbox', { name: 'Tytuł notatki' }).fill('Plan tygodnia')

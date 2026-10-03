@@ -4,12 +4,15 @@ import type { ChangeEvent } from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router'
 
+import { type ProfileScope, profileScopeKey } from '@/api/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { getElevenLabsVoices, getHermesConfigSchema, saveHermesConfig } from '@/hermes'
+import { getHermesConfigSchema, saveHermesConfig } from '@/hermes'
+import { useActiveCapabilityScope } from '@/hooks/use-active-capability-scope'
 import { useI18n } from '@/i18n'
 import { triggerHaptic } from '@/lib/haptics'
 import { confirm } from '@/store/confirm'
+import { $activeConnectionId } from '@/store/connections'
 import {
   $dataUrlReadMaxMb,
   clampDataUrlReadMaxMb,
@@ -22,7 +25,7 @@ import {
 import { $disableF12, setDisableF12 } from '@/store/disable-f12'
 import { $keepAwake, setKeepAwake } from '@/store/keep-awake'
 import { notify, notifyError } from '@/store/notifications'
-import { normalizeProfileKey } from '@/store/profile'
+import { $activeGatewayProfile } from '@/store/profile'
 import { repoDiscoveryPolicyFromConfig, repoDiscoveryPolicySignature, scanAndRecordRepos } from '@/store/projects'
 import { $settingsRequestProfile } from '@/store/settings-scope'
 import type { ConfigFieldSchema, HermesConfigRecord } from '@/types/hermes'
@@ -33,6 +36,7 @@ import { PanelEmpty } from '../overlays/panel'
 
 import { ConfigField } from './config-field'
 import { DesktopShortcutSettings } from './desktop-shortcut-settings'
+import { ElevenLabsVoicePicker } from './elevenlabs-voice-picker'
 import {
   clearsEnabledToolsets,
   diffConfig,
@@ -63,14 +67,21 @@ export function ConfigSettings({
   // when the target profile changes — the same guarantee useOnProfileSwitch
   // provides for app-wide switches, without hand-clearing each piece.
   const scopeProfile = useStore($settingsRequestProfile)
+  const active = useActiveCapabilityScope()
+
+  const requestScope = useMemo(
+    () => ({ ...active.scope, profile: scopeProfile ?? active.scope.profile }),
+    [active.scope, scopeProfile]
+  )
 
   return (
     <ConfigSettingsInner
       activeSectionId={activeSectionId}
       importInputRef={importInputRef}
-      key={scopeProfile ?? '__active__'}
+      key={profileScopeKey(requestScope)}
       onConfigSaved={onConfigSaved}
       onMainModelChanged={onMainModelChanged}
+      requestScope={requestScope}
       scopeProfile={scopeProfile}
     />
   )
@@ -88,9 +99,15 @@ function ConfigSettingsInner({
   onConfigSaved,
   onMainModelChanged,
   importInputRef,
-  scopeProfile
-}: ConfigSettingsProps & { scopeProfile: string | undefined }) {
-  const { t } = useI18n()
+  scopeProfile,
+  requestScope
+}: ConfigSettingsProps & { scopeProfile: string | undefined; requestScope: ProfileScope }) {
+  const { locale, t } = useI18n()
+  const activeScope = useActiveCapabilityScope()
+
+  const voiceScope = requestScope
+
+  const [voiceTab, setVoiceTab] = useState<'live' | 'elevenlabs'>('live')
   const c = t.settings.config
   const keepAwake = useStore($keepAwake)
   const disableF12 = useStore($disableF12)
@@ -98,10 +115,10 @@ function ConfigSettingsInner({
   // from — and saved back through — the shared config cache, so edits are visible
   // in the MCP/model surfaces and reopening the page doesn't reload-flash.
   const [config, setConfig] = useState<HermesConfigRecord | null>(null)
-  const { data: loadedConfig, isError: configLoadFailed, refetch: refetchConfig } = useHermesConfigRecord(scopeProfile)
+  const { data: loadedConfig, isError: configLoadFailed, refetch: refetchConfig } = useHermesConfigRecord(requestScope)
   // Writes land on the same cache key the query above reads (base key when
   // following the active profile, suffixed when a scope override is set).
-  const writeConfigCache = useMemo(() => hermesConfigCacheWriter(scopeProfile), [scopeProfile])
+  const writeConfigCache = useMemo(() => hermesConfigCacheWriter(requestScope), [requestScope])
 
   const {
     data: schemaResponse,
@@ -110,15 +127,12 @@ function ConfigSettingsInner({
   } = useQuery({
     // Base key when following the active profile (matches every pre-existing
     // consumer); suffixed only for an explicit scope override.
-    queryKey:
-      scopeProfile == null ? ['hermes-config-schema'] : ['hermes-config-schema', normalizeProfileKey(scopeProfile)],
-    queryFn: () => getHermesConfigSchema(scopeProfile),
+    queryKey: ['hermes-config-schema', profileScopeKey(requestScope)],
+    queryFn: () => getHermesConfigSchema(requestScope),
     staleTime: 5 * 60 * 1000
   })
 
   const schema = schemaResponse?.fields ?? null
-  const [elevenLabsVoiceOptions, setElevenLabsVoiceOptions] = useState<string[] | null>(null)
-  const [elevenLabsVoiceLabels, setElevenLabsVoiceLabels] = useState<Record<string, string>>({})
   const saveVersionRef = useRef(0)
   const savedDiscoverySignatureRef = useRef<string | undefined>(undefined)
   const [saveVersion, setSaveVersion] = useState(0)
@@ -175,29 +189,6 @@ function ConfigSettingsInner({
     })
   })
 
-  useEffect(() => {
-    let cancelled = false
-
-    getElevenLabsVoices(scopeProfile)
-      .then(result => {
-        if (cancelled || !result.available) {
-          return
-        }
-
-        setElevenLabsVoiceOptions(result.voices.map(voice => voice.voice_id))
-        setElevenLabsVoiceLabels(Object.fromEntries(result.voices.map(voice => [voice.voice_id, voice.label])))
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setElevenLabsVoiceOptions(null)
-          setElevenLabsVoiceLabels({})
-        }
-      })
-
-    return () => void (cancelled = true)
-    // scopeProfile is constant per mount (the inner component is keyed on it).
-  }, [scopeProfile])
-
   // eslint-disable-next-line no-restricted-syntax -- autosave bookkeeping refs, not an atom mirror
   useEffect(() => {
     if (!config || saveVersion === 0) {
@@ -215,7 +206,7 @@ function ConfigSettingsInner({
       saveQueueRef.current = saveQueueRef.current.then(async () => {
         try {
           const patch = diffConfig(configBaselineRef.current ?? {}, snapshot)
-          const result = await saveHermesConfig(patch, scopeProfile)
+          const result = await saveHermesConfig(patch, requestScope)
 
           if (!result.ok) {
             throw new Error(c.autosaveFailed)
@@ -231,7 +222,11 @@ function ConfigSettingsInner({
           // reflect the edit without their own refetch.
           writeConfigCache(snapshot)
 
-          if (saveVersionRef.current === v) {
+          if (
+            saveVersionRef.current === v &&
+            $activeConnectionId.get() === activeScope.scope.connectionId &&
+            $activeGatewayProfile.get() === activeScope.scope.profile
+          ) {
             // The repo-discovery scan reads the ACTIVE profile's workspace
             // policy; skip it when this page is editing another profile.
             if (scopeProfile == null) {
@@ -246,7 +241,11 @@ function ConfigSettingsInner({
             onConfigSaved?.()
           }
         } catch (err) {
-          if (saveVersionRef.current === v) {
+          if (
+            saveVersionRef.current === v &&
+            $activeConnectionId.get() === activeScope.scope.connectionId &&
+            $activeGatewayProfile.get() === activeScope.scope.profile
+          ) {
             notifyError(err, c.autosaveFailed)
           }
         }
@@ -394,6 +393,7 @@ function ConfigSettingsInner({
     return <SettingsSkeleton sections={[{ rows: 6 }]} />
   }
 
+  const FieldsContainer = activeSectionId === 'voice' ? 'details' : 'div'
   const visibleFields = activeSectionId === 'voice' ? fields.filter(([key]) => voiceFieldVisible(key, config)) : fields
 
   return (
@@ -432,13 +432,55 @@ function ConfigSettingsInner({
           where image-attachment behavior already lives, so this sits above the
           schema fields for that section. */}
       {activeSectionId === 'chat' ? <AttachmentSizeSetting /> : null}
-      {activeSectionId === 'voice' && getNested(config, 'voice.engine') === 'realtime' ? (
-        <LiveVoicePicker config={config} onChange={(key, value) => updateConfig(setNested(config, key, value))} />
+      {activeSectionId === 'voice' ? (
+        <div className="jarvis-glass mb-5 grid gap-4 rounded-2xl p-4">
+          <div aria-label={locale === 'pl' ? 'Źródło głosu' : 'Voice source'} className="flex gap-2" role="group">
+            <Button
+              aria-pressed={voiceTab === 'live'}
+              onClick={() => setVoiceTab('live')}
+              size="sm"
+              variant={voiceTab === 'live' ? 'secondary' : 'ghost'}
+            >
+              Gemini Live / Realtime
+            </Button>
+            <Button
+              aria-pressed={voiceTab === 'elevenlabs'}
+              onClick={() => setVoiceTab('elevenlabs')}
+              size="sm"
+              variant={voiceTab === 'elevenlabs' ? 'secondary' : 'ghost'}
+            >
+              ElevenLabs
+            </Button>
+          </div>
+          {voiceTab === 'live' ? (
+            <LiveVoicePicker
+              config={config}
+              onChange={(key, value) => updateConfig(setNested(config, key, value))}
+              scope={voiceScope}
+            />
+          ) : (
+            <ElevenLabsVoicePicker
+              chosen={String(getNested(config, 'tts.elevenlabs.voice_id') ?? '')}
+              key={activeScope.scopeKey + scopeProfile}
+              onChange={voice =>
+                updateConfig(
+                  setNested(setNested(config, 'tts.provider', 'elevenlabs'), 'tts.elevenlabs.voice_id', voice)
+                )
+              }
+              scope={voiceScope}
+            />
+          )}
+        </div>
       ) : null}
       {visibleFields.length === 0 && activeSectionId !== 'chat' ? (
         <EmptyState description={c.emptyDesc} title={c.emptyTitle} />
       ) : visibleFields.length === 0 ? null : (
-        <div className="grid gap-1">
+        <FieldsContainer className="grid gap-1">
+          {activeSectionId === 'voice' ? (
+            <summary className="mb-3 cursor-pointer rounded-xl p-3 text-sm font-medium">
+              {locale === 'pl' ? 'Więcej ustawień głosu' : 'More voice settings'}
+            </summary>
+          ) : null}
           {visibleFields.map(([key, field]) => (
             <div className="scroll-mt-6 rounded-lg" id={`setting-field-${key}`} key={key}>
               <ConfigField
@@ -447,13 +489,8 @@ function ConfigSettingsInner({
                     <MemoryConnect profile={scopeProfile} provider={String(getNested(config, key))} />
                   ) : undefined
                 }
-                enumOptions={
-                  key === 'tts.elevenlabs.voice_id'
-                    ? enumOptionsFor(key, getNested(config, key), config, elevenLabsVoiceOptions ?? undefined)
-                    : enumOptionsFor(key, getNested(config, key), config)
-                }
+                enumOptions={enumOptionsFor(key, getNested(config, key), config)}
                 onChange={value => updateConfig(setNested(config, key, value))}
-                optionLabels={key === 'tts.elevenlabs.voice_id' ? elevenLabsVoiceLabels : undefined}
                 schema={field}
                 schemaKey={key}
                 value={getNested(config, key)}
@@ -467,7 +504,7 @@ function ConfigSettingsInner({
               ) : null}
             </div>
           ))}
-        </div>
+        </FieldsContainer>
       )}
       <input
         accept=".json,application/json"

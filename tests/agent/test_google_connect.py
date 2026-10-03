@@ -58,21 +58,23 @@ def test_a_rejected_code_is_an_error_with_the_reason_not_a_silent_success():
     assert gc.exchange_code("good", lambda s, a, t: (0, "OK: Authenticated. Token saved", "")) == {"ok": True, "warning": None}
 
 
-def test_verify_reads_back_events_and_unread_mail_and_survives_one_service_failing():
+def test_verify_reports_each_service_without_returning_private_content():
+    calls = []
     def run(script, args, timeout):
-        if script == "setup.py":
-            return 0, "LIVE_CHECK_OK: Real API call succeeded.", ""
-        if args[0] == "calendar":
-            return 0, json.dumps([{"summary": "Spotkanie z Anną", "start": "2026-10-01T09:00:00+02:00"}]), ""
-        return 1, "", "gmail scope missing"
+        calls.append((script, args))
+        return 0, json.dumps({"state": "permission" if args[1] == "gmail" else "connected"}), ""
 
     got = gc.verify(run, now=datetime(2026, 9, 30, tzinfo=timezone.utc))
 
-    assert got["ok"] and got["events"] == [{"summary": "Spotkanie z Anną", "start": "2026-10-01T09:00:00+02:00"}]
-    assert got["unread"] == [] and got["calendar_ok"] is True and got["gmail_ok"] is False
+    assert got["ok"] is False
+    assert got["calendar_ok"] and got["drive_ok"] and not got["gmail_ok"]
+    assert got["services"]["gmail"]["state"] == "permission"
+    assert got["events"] == got["unread"] == []
+    assert calls == [("google_api.py", ["check", service]) for service in ("gmail", "calendar", "drive")]
 
 
-def test_verify_fails_closed_when_the_live_check_does():
-    got = gc.verify(lambda s, a, t: (1, "LIVE_CHECK_FAILED: disabled_client", ""))
-
-    assert got["ok"] is False and "disabled_client" in got["reason"]
+def test_verify_rejects_malformed_or_timed_out_probes_without_echoing_errors():
+    got = gc.verify(lambda s, a, t: (124, '{"state":"connected"}', "sensitive upstream error"))
+    assert not got["ok"]
+    assert all(service["state"] == "unavailable" for service in got["services"].values())
+    assert "sensitive" not in json.dumps(got)

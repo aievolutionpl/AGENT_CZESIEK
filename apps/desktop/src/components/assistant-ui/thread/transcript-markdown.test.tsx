@@ -1,6 +1,9 @@
 import type { ThreadMessage } from '@assistant-ui/react'
-import { fireEvent, render, waitFor, within } from '@testing-library/react'
+import type { RenderOptions } from '@testing-library/react'
+import { fireEvent, render as renderBase, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
+
+import { I18nProvider } from '@/i18n'
 
 import { createdAt, stubThreadEnvironment, stubThreadViewportSize, ThreadRuntime, userMessage } from '../test-utils'
 
@@ -122,7 +125,11 @@ describe('assistant answers in the transcript', () => {
 
 describe('reasoning drafts in the transcript', () => {
   it('stays folded to its header — no second full-size answer', async () => {
-    const { container } = renderTranscript([userMessage(), assistant('Odpowiedź gotowa.', false), reasoningMessage(false)])
+    const { container } = renderTranscript([
+      userMessage(),
+      assistant('Odpowiedź gotowa.', false),
+      reasoningMessage(false)
+    ])
 
     const toggle = within(container).getByRole('button', { name: /Przemyślał|Myśli/i })
 
@@ -151,3 +158,13 @@ describe('reasoning drafts in the transcript', () => {
     expect(draft.className).toContain('text-[0.6875rem]')
   })
 })
+
+const render = (ui: React.ReactNode, options?: RenderOptions) =>
+  renderBase(ui, {
+    ...options,
+    wrapper: ({ children }) => (
+      <I18nProvider configClient={null} initialLocale="pl">
+        {children}
+      </I18nProvider>
+    )
+  })

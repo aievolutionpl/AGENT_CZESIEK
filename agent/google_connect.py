@@ -121,18 +121,22 @@ def _json_list(out: str) -> list[dict[str, Any]]:
 
 
 def verify(run: Runner = _run, now: Optional[datetime] = None) -> dict[str, Any]:
-    """A live round trip: authenticate, then read the next events and the newest unread mail."""
-    code, out, err = run("setup.py", ["--check-live"], 60)
-    if code != 0 or "LIVE_CHECK_OK" not in out:
-        return {"ok": False, "reason": (out + err).strip()[-300:] or "Google did not answer."}
+    """Each service must answer its own minimal read. Saved tokens are not proof."""
     now = now or datetime.now(timezone.utc)
-    ecode, eout, _ = run("google_api.py", ["calendar", "list", "--start", now.isoformat(),
-                                           "--end", (now + timedelta(days=2)).isoformat(), "--max", "3"], 60)
-    mcode, mout, _ = run("google_api.py", ["gmail", "search", "is:unread", "--max", "3"], 60)
-    events = [{"summary": e.get("summary", ""), "start": e.get("start", "")} for e in _json_list(eout)] if ecode == 0 else []
-    mail = [{"from": m.get("from", ""), "subject": m.get("subject", "")} for m in _json_list(mout)] if mcode == 0 else []
-    return {"ok": True, "events": events, "unread": mail,
-            "calendar_ok": ecode == 0, "gmail_ok": mcode == 0}
+    services = {}
+    for service in ("gmail", "calendar", "drive"):
+        code, out, err = run("google_api.py", ["check", service], 20)
+        try:
+            payload = json.loads(out)
+        except ValueError:
+            payload = {}
+        state = payload.get("state") if isinstance(payload, dict) else None
+        if code != 0 or state not in {"connected", "reauthorize", "permission", "rate_limit", "unavailable"}:
+            state = "unconfigured" if "Not authenticated" in err else "unavailable"
+        services[service] = {"state": state}
+    flags = {f"{service}_ok": value["state"] == "connected" for service, value in services.items()}
+    return {"ok": all(flags.values()), **flags, "services": services,
+            "checked_at": now.isoformat(), "events": [], "unread": []}
 
 
 def revoke(run: Runner = _run) -> dict[str, Any]:

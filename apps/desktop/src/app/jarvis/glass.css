@@ -8,7 +8,8 @@
   --czesiek-grad: linear-gradient(135deg, #22b8ff 0%, #4f7dff 52%, #8b5cf6 100%);
   --czesiek-glow: 0 0 14px rgb(79 125 255 / 0.55);
   --glass-bg: rgb(255 255 255 / 0.88);
-  --glass-bg-strong: rgb(255 255 255 / 0.8);
+  --glass-bg-strong: rgb(255 255 255 / 0.94);
+  --glass-radius: 20px;
   --glass-border: rgb(15 23 42 / 0.18);
   --glass-highlight: rgb(255 255 255 / 0.95);
   --glass-shadow: 0 12px 32px -18px rgb(30 41 82 / 0.35);
@@ -20,7 +21,7 @@
 :root.dark {
   /* Deeper ink-blue surfaces with a lit top edge: depth from layering, not from borders. */
   --glass-bg: rgb(15 20 44 / 0.9);
-  --glass-bg-strong: rgb(11 16 38 / 0.7);
+  --glass-bg-strong: rgb(11 16 38 / 0.96);
   --glass-border: rgb(150 170 255 / 0.28);
   --glass-highlight: rgb(190 205 255 / 0.1);
   --glass-shadow: 0 22px 48px -22px rgb(0 0 0 / 0.85);
@@ -49,6 +50,43 @@
 
 .jarvis-glass-strong {
   background: var(--glass-bg-strong);
+}
+
+.jarvis-nav-row {
+  color: var(--ui-text-secondary);
+  transition:
+    background-color 180ms ease,
+    color 180ms ease;
+}
+
+.jarvis-nav-row:hover {
+  background: color-mix(in srgb, var(--ui-accent) 7%, var(--glass-bg));
+  color: var(--ui-text-primary);
+}
+
+.jarvis-new-conversation,
+.jarvis-profile-avatar {
+  background: color-mix(in srgb, var(--ui-accent) 11%, var(--glass-bg));
+  color: var(--ui-text-primary);
+  box-shadow: inset 0 0 0 1px var(--glass-border);
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .jarvis-glass,
+  .jarvis-glass-strong,
+  .jarvis-menu,
+  .jarvis-well {
+    background: var(--ui-chat-surface-background);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jarvis-nav-row,
+  .jarvis-glass-hover {
+    transition: none;
+  }
 }
 
 .jarvis-glass-hover {

@@ -1,14 +1,14 @@
-import { useEffect, useRef, useState } from 'react'
-
+import { capabilityScoped, type ProfileScope } from '@/api/client'
 import { type LiveVoiceProviderId, previewRealtimeVoice } from '@/api/voice-realtime'
+import { useActiveCapabilityScope } from '@/hooks/use-active-capability-scope'
 import { useI18n } from '@/i18n'
 import { Check, Loader2, Play, Square } from '@/lib/icons'
 import { cn } from '@/lib/utils'
-import { notifyError } from '@/store/notifications'
 
-import { LIVE_VOICES, type LiveVoice, voiceConfigKey } from '../jarvis/live-voices'
+import { LIVE_VOICES, voiceConfigKey } from '../jarvis/live-voices'
 
 import { getNested } from './helpers'
+import { useVoicePreview } from './use-voice-preview'
 
 const COPY = {
   en: {
@@ -37,10 +37,12 @@ type Config = Record<string, unknown>
  */
 export function LiveVoicePicker({
   config,
-  onChange
+  onChange,
+  scope: requestedScope
 }: {
   config: Config
   onChange: (key: string, value: string) => void
+  scope?: ProfileScope
 }) {
   const { locale } = useI18n()
   const copy = locale === 'pl' ? COPY.pl : COPY.en
@@ -48,70 +50,20 @@ export function LiveVoicePicker({
   const key = voiceConfigKey(provider)
   const voices = LIVE_VOICES[provider]
   const chosen = String(getNested(config, key) || voices[0].id)
-  const [playing, setPlaying] = useState<null | string>(null)
-  const [loading, setLoading] = useState<null | string>(null)
-  const audio = useRef<HTMLAudioElement | null>(null)
-  // A sample is fetched once per voice and kept for the session of this page.
-  const cache = useRef(new Map<string, string>())
+  const active = useActiveCapabilityScope()
+  const scope = requestedScope ?? active.scope
+  const pin = capabilityScoped(scope)
 
-  // Samples are object URLs: playback stops and they are released when the page goes away.
-   
-  useEffect(() => {
-    const samples = cache.current
-
-    return () => {
-      audio.current?.pause()
-      samples.forEach(url => URL.revokeObjectURL(url))
-      samples.clear()
-    }
-  }, [])
-
-  const stop = () => {
-    audio.current?.pause()
-    audio.current = null
-    setPlaying(null)
-  }
-
-  const play = async (voice: LiveVoice) => {
-    const was = playing
-
-    stop()
-
-    if (was === voice.id) {
-      return
-    }
-
-    setLoading(voice.id)
-
-    try {
-      const id = `${provider}:${voice.id}:${locale}`
-      let url = cache.current.get(id)
-
-      if (!url) {
-        const sample = await previewRealtimeVoice(provider, voice.id, locale === 'pl' ? 'pl' : 'en')
-        const bytes = Uint8Array.from(atob(sample.audio), char => char.charCodeAt(0))
-
-        url = URL.createObjectURL(new Blob([bytes], { type: sample.mime }))
-        cache.current.set(id, url)
-      }
-
-      const element = new Audio(url)
-
-      element.onended = () => setPlaying(current => (current === voice.id ? null : current))
-      audio.current = element
-      setPlaying(voice.id)
-      await element.play()
-    } catch (error) {
-      setPlaying(null)
-      notifyError(error, copy.failed)
-    } finally {
-      setLoading(null)
-    }
-  }
+  const { loading, play, playing, stop } = useVoicePreview(
+    `${pin.connectionId}:${pin.profile}:${provider}:${locale}:${chosen}`,
+    copy.failed
+  )
 
   return (
     <section aria-label={copy.title} className="mb-5 grid gap-2" data-testid="live-voice-picker">
-      <h3 className="text-sm font-semibold text-(--ui-text-primary)">{copy.title}</h3>
+      <h3 className="text-base font-semibold text-(--ui-text-primary)">
+        {provider === 'gemini' ? 'Gemini Live' : 'OpenAI Realtime'} · {copy.title}
+      </h3>
       <p className="text-xs text-(--ui-text-tertiary)">{copy.hint}</p>
       <ul className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
         {voices.map(voice => {
@@ -128,7 +80,11 @@ export function LiveVoicePicker({
               <button
                 aria-label={playing === voice.id ? copy.stop : copy.play(voice.id)}
                 className="grid size-9 shrink-0 place-items-center rounded-full bg-(--ui-accent)/12 text-(--ui-accent) outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-(--ui-accent)"
-                onClick={() => void play(voice)}
+                onClick={() =>
+                  void play(voice.id, () =>
+                    previewRealtimeVoice(provider, voice.id, locale === 'pl' ? 'pl' : 'en', scope)
+                  )
+                }
                 type="button"
               >
                 {loading === voice.id ? (
@@ -142,7 +98,10 @@ export function LiveVoicePicker({
               <button
                 aria-pressed={selected}
                 className="flex min-w-0 flex-1 items-center gap-2 rounded-lg py-1 text-left outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-(--ui-accent)"
-                onClick={() => onChange(key, voice.id)}
+                onClick={() => {
+                  stop()
+                  onChange(key, voice.id)
+                }}
                 type="button"
               >
                 <span className="min-w-0 flex-1">

@@ -67,10 +67,7 @@ test('preserveRollbackBackup moves a working build to .bak', () => {
     // Original slot vacated so electron-builder stages into a clean tree...
     assert.equal(fs.existsSync(appOutDir), false)
     // ...and the previous working build is intact under .bak for rollback.
-    assert.equal(
-      fs.readFileSync(path.join(`${appOutDir}.bak`, 'Hermes.exe'), 'utf8'),
-      'MZ-old-build'
-    )
+    assert.equal(fs.readFileSync(path.join(`${appOutDir}.bak`, 'Hermes.exe'), 'utf8'), 'MZ-old-build')
   } finally {
     fs.rmSync(tempRoot, { recursive: true, force: true })
   }
@@ -124,15 +121,16 @@ test('beforePack on win32 preserves the previous build instead of wiping it', as
     fs.mkdirSync(appOutDir, { recursive: true })
     fs.writeFileSync(path.join(appOutDir, 'Hermes.exe'), 'MZ-working', 'utf8')
 
-    // No packager info in the context → default 'Hermes.exe' product name.
-    // node-pty staging is skipped because arch is not a number here.
-    await beforePack({ appOutDir, electronPlatformName: 'win32' })
+    fs.mkdirSync(path.join(tempRoot, 'build', 'runtime'), { recursive: true })
+    fs.writeFileSync(
+      path.join(tempRoot, 'build', 'runtime', 'manifest.json'),
+      JSON.stringify({ platform: 'win32', arch: 'x64', commit: 'fixture' })
+    )
+    fs.writeFileSync(path.join(tempRoot, 'build', 'install-stamp.json'), JSON.stringify({ commit: 'fixture' }))
+    await beforePack({ appOutDir, electronPlatformName: 'win32', arch: 1, packager: { projectDir: tempRoot } })
 
     assert.equal(fs.existsSync(appOutDir), false)
-    assert.equal(
-      fs.readFileSync(path.join(`${appOutDir}.bak`, 'Hermes.exe'), 'utf8'),
-      'MZ-working'
-    )
+    assert.equal(fs.readFileSync(path.join(`${appOutDir}.bak`, 'Hermes.exe'), 'utf8'), 'MZ-working')
   } finally {
     fs.rmSync(tempRoot, { recursive: true, force: true })
   }
@@ -168,7 +166,11 @@ test('beforePack on darwin accepts a missing runtime and refuses a mismatched on
     fs.writeFileSync(path.join(projectDir, 'build/install-stamp.json'), JSON.stringify({ commit: 'abc1234' }))
     // The DMG falls back to the online bootstrap when no runtime was staged.
     // (Native staging is skipped by the catch below; only the runtime gate matters here.)
-    const gate = ctx => beforePack(ctx).then(() => null, error => String(error.message))
+    const gate = ctx =>
+      beforePack(ctx).then(
+        () => null,
+        error => String(error.message)
+      )
     assert.doesNotMatch((await gate(macContext(projectDir, 3))) ?? '', /staged runtime/)
 
     const manifest = path.join(projectDir, 'build/runtime/manifest.json')

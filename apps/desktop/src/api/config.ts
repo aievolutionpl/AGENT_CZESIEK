@@ -83,16 +83,16 @@ export function getHermesConfigDefaults(): Promise<HermesConfigRecord> {
   })
 }
 
-export function getHermesConfigSchema(profile?: null | string): Promise<ConfigSchemaResponse> {
+export function getHermesConfigSchema(profile?: ProfileScope): Promise<ConfigSchemaResponse> {
   return hermesApi<ConfigSchemaResponse>({
-    ...profileScoped(profile),
+    ...capabilityScoped(profile),
     path: '/api/config/schema'
   })
 }
 
-export function saveHermesConfig(config: HermesConfigRecord, profile?: null | string): Promise<{ ok: boolean }> {
+export function saveHermesConfig(config: HermesConfigRecord, profile?: ProfileScope): Promise<{ ok: boolean }> {
   return hermesApi<{ ok: boolean }>({
-    ...profileScoped(profile),
+    ...capabilityScoped(profile),
     path: '/api/config',
     method: 'PUT',
     body: { config }
@@ -166,7 +166,10 @@ export function getCustomEndpoints(profile?: ProfileScope): Promise<CustomEndpoi
   })
 }
 
-export function saveCustomEndpoint(endpoint: CustomEndpointUpdate, profile?: ProfileScope): Promise<CustomEndpointsResponse> {
+export function saveCustomEndpoint(
+  endpoint: CustomEndpointUpdate,
+  profile?: ProfileScope
+): Promise<CustomEndpointsResponse> {
   return hermesApi<CustomEndpointsResponse>({
     ...capabilityScoped(profile),
     path: '/api/providers/custom-endpoints',

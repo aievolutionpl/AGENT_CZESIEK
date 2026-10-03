@@ -1,12 +1,14 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { I18nProvider } from '@/i18n'
 
 import { JarvisDashboard } from './dashboard'
 import type { JarvisNewsItem } from './news'
 import { initialJarvisUiState } from './projector'
+import { $railHidden, $workspacePanelView } from './rail-layout'
 import type { JarvisUiState } from './types'
 
 function fixtureState(
@@ -37,13 +39,28 @@ function fixtureState(
 
 function renderDashboard(ui: React.ReactElement) {
   return render(
-    <MemoryRouter>
-      <I18nProvider configClient={null} initialLocale="pl">
-        {ui}
-      </I18nProvider>
-    </MemoryRouter>
+    <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+      <MemoryRouter>
+        <I18nProvider configClient={null} initialLocale="pl">
+          {ui}
+        </I18nProvider>
+      </MemoryRouter>
+    </QueryClientProvider>
   )
 }
+
+beforeEach(() => {
+  vi.stubGlobal(
+    'ResizeObserver',
+    class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    }
+  )
+  $railHidden.set(true)
+  $workspacePanelView.set('tasks')
+})
 
 afterEach(() => {
   cleanup()
@@ -70,7 +87,8 @@ describe('Agent CzesiekDashboard', () => {
       </JarvisDashboard>
     )
 
-    expect(screen.getByRole('button', { name: 'Podpowiedzi' })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Opcje rozmowy' }))
+    expect(screen.getAllByRole('button', { name: 'Podpowiedzi' }).length).toBeGreaterThan(0)
     expect(screen.queryByTestId('jarvis-tips')).toBeNull()
   })
 
@@ -84,6 +102,7 @@ describe('Agent CzesiekDashboard', () => {
     expect(screen.getByTestId('jarvis-dashboard').getAttribute('data-layout')).toBe('desktop')
     expect(screen.queryByRole('navigation')).toBeNull()
     expect(screen.getByRole('main', { name: 'Rozmowa z Agentem Czeskiem' })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Pokaż lub ukryj prawy panel' }))
     expect(screen.getByRole('complementary', { name: 'Co robi Agent Czesiek' })).toBeTruthy()
     expect(screen.getByTestId('real-chat')).toBeTruthy()
   })
@@ -95,12 +114,13 @@ describe('Agent CzesiekDashboard', () => {
       </JarvisDashboard>
     )
 
-    expect(screen.getByTestId('rail-card')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Pokaż lub ukryj prawy panel' }))
+    expect(screen.getByTestId('jarvis-rail')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Zwiń prawy panel' }))
     expect(screen.queryByTestId('jarvis-rail')).toBeNull()
     expect(screen.getByTestId('real-chat')).toBeTruthy()
-    fireEvent.click(screen.getByRole('button', { name: 'Pokaż prawy panel' }))
-    expect(screen.getByTestId('rail-card')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Pokaż lub ukryj prawy panel' }))
+    expect(screen.getByTestId('jarvis-rail')).toBeTruthy()
   })
 
   it('renders the tablet composition with an activity drawer that does not remount the conversation', () => {
@@ -193,6 +213,16 @@ describe('Agent CzesiekDashboard', () => {
       </JarvisDashboard>
     )
 
+    fireEvent.click(screen.getByRole('button', { name: 'Pokaż lub ukryj prawy panel' }))
+
+    if ($railHidden.get()) {
+      fireEvent.click(screen.getByRole('button', { name: 'Pokaż lub ukryj prawy panel' }))
+    }
+
+    if ($railHidden.get()) {
+      fireEvent.click(screen.getByRole('button', { name: 'Pokaż lub ukryj prawy panel' }))
+    }
+
     const panel = screen.getByRole('complementary', { name: 'Co robi Agent Czesiek' })
 
     fireEvent.click(within(panel).getByRole('button', { name: 'Statystyki' }))
@@ -212,6 +242,10 @@ describe('Agent CzesiekDashboard', () => {
         <div />
       </JarvisDashboard>
     )
+
+    if ($railHidden.get()) {
+      fireEvent.click(screen.getByRole('button', { name: 'Pokaż lub ukryj prawy panel' }))
+    }
 
     const panel = screen.getByRole('complementary', { name: 'Co robi Agent Czesiek' })
 
@@ -248,6 +282,10 @@ describe('Agent CzesiekDashboard', () => {
         <div />
       </JarvisDashboard>
     )
+
+    if ($railHidden.get()) {
+      fireEvent.click(screen.getByRole('button', { name: 'Pokaż lub ukryj prawy panel' }))
+    }
 
     const panel = screen.getByRole('complementary', { name: 'Co robi Agent Czesiek' })
 

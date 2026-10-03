@@ -241,7 +241,7 @@ describe('AttachmentList', () => {
 
     await renderWithI18n(<AttachmentList attachments={[makeAttachment('a', 'doc.pdf')]} onRemove={onRemove} />)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Remove doc.pdf' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Usuń doc.pdf' }))
     expect(onRemove).toHaveBeenCalledWith('a')
   })
 

@@ -1,5 +1,14 @@
-import { act, cleanup, fireEvent, render, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render as renderUI, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { I18nProvider } from '@/i18n'
+
+const render = (ui: Parameters<typeof renderUI>[0]) =>
+  renderUI(
+    <I18nProvider configClient={null} initialLocale="en">
+      {ui}
+    </I18nProvider>
+  )
 
 import { onComposerAttachImagesRequest } from '@/app/chat/composer/focus'
 import { $connection, $selectedStoredSessionId } from '@/store/session'

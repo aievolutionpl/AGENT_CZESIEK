@@ -38,6 +38,7 @@ import { navigateToWorkspacePage, NEW_CHAT_ROUTE } from '../routes'
 
 import { DriveMemoryPanel } from './drive-memory-panel'
 import { GoogleConnectDialog } from './google-connect-dialog'
+import { GoogleServiceStatus } from './google-service-status'
 import { SecretsAuditCard } from './secrets-audit-card'
 import { TrustCard } from './trust-card'
 
@@ -123,6 +124,7 @@ function ConnectionCard({ connection, state }: { connection: JarvisConnection; s
         )}
       </header>
       <p className="text-sm italic text-(--ui-text-tertiary)">{entry.examples}</p>
+      {setup.kind === 'wizard' ? <GoogleServiceStatus onReconnect={() => setWizardOpen(true)} /> : null}
       {setup.kind === 'wizard' && state === 'connected' ? <DriveMemoryPanel /> : null}
       <div>
         <p className="mb-1 text-xs font-semibold uppercase tracking-[0.12em] text-(--ui-text-tertiary)">

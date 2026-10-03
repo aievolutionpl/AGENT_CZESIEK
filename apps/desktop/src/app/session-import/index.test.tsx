@@ -1,7 +1,9 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import type { RenderOptions } from '@testing-library/react'
+import { cleanup, fireEvent, render as renderBase, screen, waitFor } from '@testing-library/react'
 import { afterEach, expect, it, vi } from 'vitest'
 
+import { I18nProvider } from '@/i18n'
 import { setSessionOwnerHint } from '@/store/session'
 
 import { type ForeignImportResult, foreignRequest } from './api'
@@ -67,10 +69,10 @@ it('browses without importing, then retries a failed import on the captured owne
   fireEvent.click(await screen.findByRole('button', { name: /Repair imports/ }))
   await screen.findByText('Please repair this')
   expect(attempts).toBe(0)
-  fireEvent.click(screen.getByRole('button', { name: 'Continue in Hermes' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Continue in Agent Czesiek' }))
   await screen.findByRole('alert')
   expect(onOpenSession).not.toHaveBeenCalled()
-  fireEvent.click(screen.getByRole('button', { name: 'Continue in Hermes' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Continue in Agent Czesiek' }))
   await waitFor(() => expect(onOpenSession).toHaveBeenCalledWith('durable-one'))
   expect(setSessionOwnerHint).toHaveBeenCalledWith('durable-one', owner)
   expect(foreignRequest).toHaveBeenCalledWith(owner, 'import', { id: 'foreign-one' }, expect.any(AbortSignal))
@@ -93,10 +95,20 @@ it('does not navigate when an import finishes after the view has closed', async 
   })
   const { onOpenSession, unmount } = mount()
   fireEvent.click(await screen.findByRole('button', { name: /Repair imports/ }))
-  fireEvent.click(await screen.findByRole('button', { name: 'Open in Hermes' }))
+  fireEvent.click(await screen.findByRole('button', { name: 'Open in Agent Czesiek' }))
   await waitFor(() => expect(finish).toBeDefined())
   unmount()
   finish({ session_id: 'existing', already_imported: true })
   await waitFor(() => expect(setSessionOwnerHint).toHaveBeenCalledWith('existing', owner))
   expect(onOpenSession).not.toHaveBeenCalled()
 })
+
+const render = (ui: React.ReactNode, options?: RenderOptions) =>
+  renderBase(ui, {
+    ...options,
+    wrapper: ({ children }) => (
+      <I18nProvider configClient={null} initialLocale="en">
+        {children}
+      </I18nProvider>
+    )
+  })

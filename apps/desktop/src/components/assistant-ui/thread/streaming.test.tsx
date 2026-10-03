@@ -1,8 +1,10 @@
 import { AssistantRuntimeProvider, type ThreadMessage, useExternalStoreRuntime } from '@assistant-ui/react'
-import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import type { RenderOptions } from '@testing-library/react'
+import { act, fireEvent, render as renderBase, screen, waitFor, within } from '@testing-library/react'
 import { useEffect, useState } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { I18nProvider } from '@/i18n'
 import { $reasoningCollapsedByDefault } from '@/store/reasoning-disclosure'
 
 import { stubThreadEnvironment, stubThreadViewportSize, ThreadRuntime } from '../test-utils'
@@ -297,9 +299,11 @@ function StreamingHarness({ onControls }: { onControls?: (controls: StreamingCon
   })
 
   return (
-    <AssistantRuntimeProvider runtime={runtime}>
-      <Thread loading={isRunning && messages.at(-1)?.role !== 'assistant' ? 'response' : undefined} />
-    </AssistantRuntimeProvider>
+    <I18nProvider configClient={null} initialLocale="pl">
+      <AssistantRuntimeProvider runtime={runtime}>
+        <Thread loading={isRunning && messages.at(-1)?.role !== 'assistant' ? 'response' : undefined} />
+      </AssistantRuntimeProvider>
+    </I18nProvider>
   )
 }
 
@@ -675,11 +679,7 @@ describe('assistant-ui streaming renderer', () => {
 
     const { container, settle } = renderSettlingReasoning()
 
-    expect(
-      within(container)
-        .getByRole('button', { name: /Myśli/i })
-        .getAttribute('aria-expanded')
-    ).toBe('false')
+    expect(within(container).getByRole('button', { name: /Myśli/i }).getAttribute('aria-expanded')).toBe('false')
 
     settle()
 
@@ -799,3 +799,13 @@ describe('assistant-ui streaming renderer', () => {
     })
   })
 })
+
+const render = (ui: React.ReactNode, options?: RenderOptions) =>
+  renderBase(ui, {
+    ...options,
+    wrapper: ({ children }) => (
+      <I18nProvider configClient={null} initialLocale="pl">
+        {children}
+      </I18nProvider>
+    )
+  })

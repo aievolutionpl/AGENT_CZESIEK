@@ -11,7 +11,8 @@ const saveHermesConfig = vi.fn()
 const getElevenLabsVoices = vi.fn()
 const profileSwitch = vi.hoisted(() => ({ onSwitch: null as null | (() => void) }))
 
-vi.mock('@/hermes', () => ({
+vi.mock('@/hermes', async importOriginal => ({
+  ...(await importOriginal<Record<string, unknown>>()),
   getHermesConfigRecord: () => getHermesConfigRecord(),
   getHermesConfigSchema: () => getHermesConfigSchema(),
   saveHermesConfig: (config: unknown, profile?: string) => saveHermesConfig(config, profile),

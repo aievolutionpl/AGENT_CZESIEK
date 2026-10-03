@@ -18,7 +18,7 @@ export const LIVE_VOICES: Record<LiveVoiceProviderId, readonly LiveVoice[]> = {
     { character: 'male', feel: { en: 'firm', pl: 'stanowczy' }, id: 'Orus' },
     { character: 'female', feel: { en: 'bright', pl: 'jasny' }, id: 'Zephyr' },
     { character: 'female', feel: { en: 'firm', pl: 'stanowcza' }, id: 'Kore' },
-    { character: 'female', feel: { en: 'youthful', pl: 'młoda' }, id: 'Leda' },
+    { character: 'female', feel: { en: 'light', pl: 'lekka' }, id: 'Leda' },
     { character: 'female', feel: { en: 'breezy', pl: 'lekka' }, id: 'Aoede' }
   ],
   openai: [

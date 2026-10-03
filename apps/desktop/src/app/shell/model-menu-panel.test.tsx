@@ -1,10 +1,12 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
+import type { RenderOptions } from '@testing-library/react'
+import { act, cleanup, fireEvent, render as renderBase, screen } from '@testing-library/react'
 import { useState } from 'react'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { useModelControls } from '@/app/session/hooks/use-model-controls'
 import { DropdownMenu, DropdownMenuContent } from '@/components/ui/dropdown-menu'
+import { I18nProvider } from '@/i18n'
 import { $collapsedProviders, toggleCollapsedProvider } from '@/store/provider-collapse'
 import { $activeSessionId, $currentModel, $currentProvider } from '@/store/session'
 
@@ -78,13 +80,15 @@ function renderPanel(onSelectModel = vi.fn()) {
   })
 
   const content = render(
-    <QueryClientProvider client={client}>
-      <DropdownMenu open>
-        <DropdownMenuContent>
-          <ModelMenuPanel onSelectModel={onSelectModel} requestGateway={requestGateway as never} />
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </QueryClientProvider>
+    <I18nProvider configClient={null} initialLocale="pl">
+      <QueryClientProvider client={client}>
+        <DropdownMenu open>
+          <DropdownMenuContent>
+            <ModelMenuPanel onSelectModel={onSelectModel} requestGateway={requestGateway as never} />
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </QueryClientProvider>
+    </I18nProvider>
   )
 
   return { onSelectModel, content }
@@ -634,3 +638,13 @@ describe('ModelMenuPanel refresh reconcile × guarded-switch confirm handshake',
     expect(notifyError).not.toHaveBeenCalled()
   })
 })
+
+const render = (ui: React.ReactNode, options?: RenderOptions) =>
+  renderBase(ui, {
+    ...options,
+    wrapper: ({ children }) => (
+      <I18nProvider configClient={null} initialLocale="pl">
+        {children}
+      </I18nProvider>
+    )
+  })

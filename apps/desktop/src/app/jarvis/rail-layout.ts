@@ -119,7 +119,17 @@ export function resetRailLayout(): void {
 const HIDDEN_KEY = 'czesiek:rail-hidden:v1'
 
 /** Whether the user folded the whole rail away. Remembered, so the layout they chose is the one they return to. */
-export const $railHidden = atom<boolean>(storedString(HIDDEN_KEY) === '1')
+export const $railHidden = atom<boolean>(storedString(HIDDEN_KEY) !== '0')
+
+export type WorkspacePanelView = 'tasks' | 'memory'
+const VIEW_KEY = 'czesiek:workspace-panel:v1'
+export const $workspacePanelView = atom<WorkspacePanelView>(storedString(VIEW_KEY) === 'memory' ? 'memory' : 'tasks')
+
+export function openWorkspacePanel(view: WorkspacePanelView): void {
+  $workspacePanelView.set(view)
+  persistString(VIEW_KEY, view)
+  setRailHidden(false)
+}
 
 export function setRailHidden(hidden: boolean): void {
   $railHidden.set(hidden)

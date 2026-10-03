@@ -24,6 +24,7 @@ from hermes_cli.web_server_gateway import _split_text_for_speak_stream
 from fastapi import HTTPException, WebSocket, WebSocketDisconnect
 from hermes_cli.web_models import AudioTranscriptionRequest, TTSSpeakRequest, TTSLeaseRequest
 from typing import Any, Dict, Optional
+from pydantic import BaseModel, Field
 
 _log = logging.getLogger("hermes_cli.web_server")
 router = APIRouter()
@@ -171,6 +172,52 @@ def _elevenlabs_voice_label(voice: Dict[str, Any]) -> str:
     return f"{name} ({category})" if category else name
 
 
+def _elevenlabs_key(profile: Optional[str]) -> str:
+    with _config_profile_scope(profile):
+        api_key = (load_env().get("ELEVENLABS_API_KEY") or "").strip()
+        if api_key or profile:
+            return api_key
+        from agent.secret_scope import UnscopedSecretError, get_secret
+        try:
+            return (get_secret("ELEVENLABS_API_KEY") or "").strip()
+        except UnscopedSecretError:
+            return (os.environ.get("ELEVENLABS_API_KEY") or "").strip()
+
+
+class ElevenLabsPreviewRequest(BaseModel):
+    voice: str = Field(min_length=1, max_length=128, pattern=r"^[A-Za-z0-9_-]+$")
+    language: str = Field(default="pl", pattern=r"^(pl|en)$")
+
+
+@router.post("/api/audio/elevenlabs/preview")
+async def preview_elevenlabs_voice(payload: ElevenLabsPreviewRequest, profile: Optional[str] = None):
+    api_key = _elevenlabs_key(profile)
+    if not api_key:
+        raise HTTPException(status_code=400, detail="Dodaj klucz ElevenLabs w ustawieniach kluczy API.")
+    text = ("Cześć, jestem Czesiek. Co dziś ogarniamy?" if payload.language == "pl"
+            else "Hi, I'm Czesiek. What shall we work on today?")
+    request = urllib.request.Request(
+        "https://api.elevenlabs.io/v1/text-to-speech/" + urllib.parse.quote(payload.voice, safe=""),
+        data=json.dumps({"text": text, "model_id": "eleven_multilingual_v2",
+                         "language_code": payload.language}).encode("utf-8"),
+        headers={"Content-Type": "application/json", "Accept": "audio/mpeg", "xi-api-key": api_key},
+        method="POST",
+    )
+    def fetch():
+        with urllib.request.urlopen(request, timeout=30) as response:
+            return base64.b64encode(response.read()).decode("ascii")
+    try:
+        audio = await asyncio.get_running_loop().run_in_executor(None, fetch)
+    except urllib.error.HTTPError as exc:
+        messages = {401: "Klucz ElevenLabs został odrzucony.", 403: "Brak uprawnień lub środków ElevenLabs.",
+                    404: "Ten głos ElevenLabs nie jest dostępny.", 429: "Limit ElevenLabs. Spróbuj ponownie później."}
+        raise HTTPException(status_code=exc.code if exc.code in messages else 502,
+                            detail=messages.get(exc.code, "ElevenLabs nie odpowiedział."))
+    except (OSError, TimeoutError):
+        raise HTTPException(status_code=502, detail="Nie udało się połączyć z ElevenLabs. Spróbuj ponownie.")
+    return {"audio": audio, "mime": "audio/mpeg"}
+
+
 @router.get("/api/audio/elevenlabs/voices")
 async def get_elevenlabs_voices(profile: Optional[str] = None):
     """Return ElevenLabs voices when an API key is configured.
@@ -180,21 +227,7 @@ async def get_elevenlabs_voices(profile: Optional[str] = None):
     """
     # Config-only scope (await-safe): the key lookup reads the requested
     # profile's .env, matching the profile the settings UI writes to.
-    with _config_profile_scope(profile):
-        api_key = (load_env().get("ELEVENLABS_API_KEY") or "").strip()
-    if not api_key:
-        # Fallback for env-only deployments — scope-aware: under multiplex
-        # os.environ may hold another profile's key, so honor the installed
-        # scope's verdict before touching the env.
-        try:
-            from agent.secret_scope import UnscopedSecretError, get_secret
-
-            try:
-                api_key = (get_secret("ELEVENLABS_API_KEY") or "").strip()
-            except UnscopedSecretError:
-                api_key = (os.environ.get("ELEVENLABS_API_KEY") or "").strip()
-        except Exception:
-            api_key = (os.environ.get("ELEVENLABS_API_KEY") or "").strip()
+    api_key = _elevenlabs_key(profile)
     if not api_key:
         return {"available": False, "voices": []}
 
@@ -220,6 +253,8 @@ async def get_elevenlabs_voices(profile: Optional[str] = None):
             if _voice_list_error_logged_once(f"http-{exc.code}"):
                 _log.info("ElevenLabs voices unavailable: %s — check ELEVENLABS_API_KEY", exc)
             return {"available": False, "voices": [], "error": "unauthorized"}
+        if exc.code == 429:
+            return {"available": False, "voices": [], "error": "rate_limit"}
         if _voice_list_error_logged_once(f"http-{exc.code}"):
             _log.warning("ElevenLabs voice list failed: %s", exc)
         raise HTTPException(status_code=502, detail="Could not load ElevenLabs voices")
