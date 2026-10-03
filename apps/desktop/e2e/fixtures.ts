@@ -652,16 +652,16 @@ export async function deferConfiguredProfileWelcome(page: Page, profiles: string
   }
   const seeded = await page.evaluate(names => {
     let writes = 0
-    const roots = Object.keys(localStorage).filter(
-      key => key.startsWith('ai-evolution-jarvis-onboarding-v1:') && key.endsWith('::default')
-    )
+    const roots = Object.keys(localStorage).filter(key => key.startsWith('ai-evolution-jarvis-onboarding-v1:'))
     for (const rootKey of roots) {
       const state = localStorage.getItem(rootKey)
       if (!state || !JSON.parse(state).skipped) {
         continue
       }
-      const prefix = rootKey.slice(0, -'default'.length)
-      for (const name of names) {
+      // Boot can resume a seeded bot, so the actual dismissal may belong
+      // to that profile rather than default. All fixture profiles are configured.
+      const prefix = rootKey.slice(0, rootKey.lastIndexOf('::') + 2)
+      for (const name of new Set(['default', ...names])) {
         localStorage.setItem(`${prefix}${encodeURIComponent(name)}`, state)
         writes += 1
       }
