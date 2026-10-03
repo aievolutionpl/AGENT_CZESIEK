@@ -1,0 +1,11 @@
+name: Czesiek welcome diagnostics
+on:
+  push:
+    branches: [codex/liquid-glass-release]
+permissions:
+  contents: read
+jobs:
+  welcome:
+    uses: ./.github/workflows/e2e-desktop.yml
+    with:
+      spec: e2e/bot-mode-row-click-mirrors-registry.spec.ts
