@@ -651,7 +651,7 @@ export async function waitForAppReady(
   })
   await dismissProductWelcome(page)
 
-  const chooseLater = page.getByRole('button', { name: /Wybiorę dostawcę później|I'll choose provider later/ })
+  const chooseLater = page.getByRole('button', { name: /Wybiorę dostawcę później|I'll choose (?:a )?provider later/ })
 
   if (await chooseLater.waitFor({ state: 'visible', timeout: 8_000 }).then(() => true, () => false)) {
     await chooseLater.click()
@@ -659,6 +659,25 @@ export async function waitForAppReady(
   }
 
   await dismissProductWelcome(page)
+
+  // Existing mock profiles represent configured bots, not first-run setup.
+  // Preserve the user's actual deferral state rather than inventing completion.
+  const profilesDir = path.join(fixture.sandbox.hermesHome, 'profiles')
+
+  const configuredProfiles = fs.existsSync(profilesDir)
+    ? fs.readdirSync(profilesDir, { withFileTypes: true }).filter(entry => entry.isDirectory()).map(entry => entry.name)
+    : []
+
+  await page.evaluate(profiles => {
+    const rootKey = 'ai-evolution-jarvis-onboarding-v1:local::default'
+    const deferredState = localStorage.getItem(rootKey)
+
+    if (!deferredState) {return}
+
+    for (const profile of profiles) {
+      localStorage.setItem(`ai-evolution-jarvis-onboarding-v1:local::${encodeURIComponent(profile)}`, deferredState)
+    }
+  }, configuredProfiles)
 
   // First-run setup may select Polish after config loads. Generic scenarios
   // explicitly use English; product scenarios pass Polish here.
