@@ -544,3 +544,6 @@ class TestWatchUpdateProgress:
         assert "continued after" in sent
         assert "Hermes update finished" in sent
         assert not (hermes_home / ".update_pending.json").exists()
+
+# These message contracts exercise the English catalog explicitly.
+pytestmark = pytest.mark.usefixtures("english_locale")

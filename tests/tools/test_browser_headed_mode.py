@@ -31,12 +31,13 @@ def _clean_headed_cache():
 # ---------------------------------------------------------------------------
 
 class TestIsHeadedMode:
-    def test_default_is_false(self):
+    def test_default_matches_product_config(self):
+        from hermes_cli.config import DEFAULT_CONFIG
         from tools.browser_tool_cloud import _is_headed_mode
         with patch.dict(os.environ, {}, clear=False):
             os.environ.pop("AGENT_BROWSER_HEADED", None)
             with patch("hermes_cli.config.read_raw_config", return_value={}):
-                assert _is_headed_mode() is False
+                assert _is_headed_mode() == DEFAULT_CONFIG["browser"]["headed"]
 
     def test_config_true(self):
         from tools.browser_tool_cloud import _is_headed_mode

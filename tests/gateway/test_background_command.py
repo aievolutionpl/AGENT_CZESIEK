@@ -297,3 +297,6 @@ class TestHandleBtwCommand:
         event = _make_event(text="/btw what?")
         result = await runner._handle_btw_command(event)
         assert "❌" in result
+
+# These message contracts exercise the English catalog explicitly.
+pytestmark = pytest.mark.usefixtures("english_locale")

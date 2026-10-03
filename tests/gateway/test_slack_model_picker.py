@@ -730,3 +730,6 @@ class TestSlackModelPickerGatewayIntegration:
 
         assert isinstance(result, str)
         assert "old-model" in result
+
+# These message contracts exercise the English catalog explicitly.
+pytestmark = pytest.mark.usefixtures("english_locale")

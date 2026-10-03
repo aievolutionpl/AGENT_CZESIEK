@@ -1815,3 +1815,6 @@ async def test_hygiene_unwind_records_cooldown(monkeypatch, tmp_path):
         await asyncio.wait_for(asyncio.to_thread(cleanup_done.wait), timeout=2)
     finally:
         db.close()
+
+# These message contracts exercise the English catalog explicitly.
+pytestmark = pytest.mark.usefixtures("english_locale")

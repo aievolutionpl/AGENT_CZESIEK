@@ -204,3 +204,6 @@ class TestGatewayResumeRestartsWork:
 
         assert "No goal to resume" in response
         assert adapter._pending_messages == {}
+
+# These message contracts exercise the English catalog explicitly.
+pytestmark = pytest.mark.usefixtures("english_locale")

@@ -23,6 +23,8 @@ Nowe obrazy pulpitu, integracji i pamięci zastępują wcześniejsze screenshoty
 
 CI używa standardowych runnerów GitHub zamiast niedostępnych w forku etykiet płatnych runnerów upstreamu. Pełny zakres testów pozostaje zachowany. Większe runnery można skonfigurować zmiennymi `CZESIEK_PYTHON_CI_RUNNER`, `CZESIEK_WINDOWS_CI_RUNNER` i `CZESIEK_RUST_CI_RUNNER`; równoległość Pythona ustawia `CZESIEK_TEST_WORKERS`. Test hooka pakowania izoluje etap kopiowania natywnych bibliotek, którego rzeczywiste zachowanie sprawdza oddzielny zestaw testów.
 
+Pełny odbiór ujawnił również odziedziczone testy oczekujące angielskich komunikatów i dawnych ustawień przeglądarki. Testy tych kontraktów jawnie wybierają angielski przez fixture; nie zmienia to polskiego domyślnego języka produktu. Test sekwencji lokalnego modelu otrzymuje deterministyczny budżet sprzętu, a test przerwania subagenta korzysta z dłuższych granic synchronizacji zdarzeń. W lokalnym przebiegu 37 plików pozostało pięć niepowodzeń zależnych od POSIX na Windows — nie pominięto ich ani nie zmieniono zachowania bezpieczeństwa.
+
 Nie przeprowadzono rzeczywistej rozmowy Gemini, płatnego odsłuchu ElevenLabs ani autoryzacji Google na koncie użytkownika. Te ścieżki wymagają osobnego odbioru z aktualnymi uprawnieniami i kluczami.
 
 Pełny zestaw natywnych testów Electron na Windows: 161 plików przeszło, 14 nie przeszło, 1 pominięto; 2257 testów przeszło, 42 nie przeszły, 7 pominięto. Znaczna część niepowodzeń dotyczy założeń POSIX, trybów plików oraz ścieżek innych systemów. Wynik wybranych testów i E2E nie zastępuje pełnego odbioru natywnego.

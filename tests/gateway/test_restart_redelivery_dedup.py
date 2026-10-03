@@ -164,3 +164,6 @@ async def test_marker_missing_but_booted_from_restart_ignores_redelivery(tmp_pat
     assert runner._booted_from_restart is False
 
 
+
+# These message contracts exercise the English catalog explicitly.
+pytestmark = pytest.mark.usefixtures("english_locale")

@@ -340,3 +340,6 @@ async def test_matrix_resume_cross_room_requires_explicit_flag_and_warns():
     runner.session_store.switch_session.assert_called_once()
 
 
+
+# These message contracts exercise the English catalog explicitly.
+pytestmark = pytest.mark.usefixtures("english_locale")

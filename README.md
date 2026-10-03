@@ -407,6 +407,8 @@ npm run dev
 
 Pełny pakiet Windows uruchamia dołączony backend bez instalowania zależności; wersje deweloperskie i pozostałe platformy mogą wymagać pobrania środowiska. Dane profilu i klucze nie należą do katalogu ze źródłami. Szczegóły: [docs/AGENT_SETUP.md](docs/AGENT_SETUP.md).
 
+Przy pracy ze źródłami sam silnik można przygotować na Windows przez [scripts/install.ps1](scripts/install.ps1). Do zwykłego korzystania z Cześka wybierz pełny instalator aplikacji z Wydania.
+
 ### Sprawdzenie zmian
 
 Z katalogu `apps/desktop`:

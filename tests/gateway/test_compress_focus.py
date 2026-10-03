@@ -90,3 +90,6 @@ async def test_compress_focus_topic_passed_to_agent():
     assert 'Focus: "database schema"' in result
 
 
+
+# These message contracts exercise the English catalog explicitly.
+pytestmark = pytest.mark.usefixtures("english_locale")

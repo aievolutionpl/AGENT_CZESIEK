@@ -662,3 +662,6 @@ class TestCrossSessionApprovalIsolation:
             os.environ.pop("HERMES_EXEC_ASK", None)
             unregister_gateway_notify("sess-A")
             unregister_gateway_notify("sess-B")
+
+# These message contracts exercise the English catalog explicitly.
+pytestmark = pytest.mark.usefixtures("english_locale")

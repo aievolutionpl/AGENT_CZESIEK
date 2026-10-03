@@ -1198,3 +1198,6 @@ def test_gc_archived_rows_already_removed_by_unsub(kanban_home):
         assert kbn.list_notify_subs(conn, tid) == []
     finally:
         conn.close()
+
+# These message contracts exercise the English catalog explicitly.
+pytestmark = pytest.mark.usefixtures("english_locale")

@@ -115,6 +115,12 @@ os.environ["HERMES_TEST_ISOLATION"] = os.environ.get("HERMES_HOME", "") or "1"
 HERMES_HOME_AT_CONFTEST_IMPORT = os.environ.get("HERMES_HOME", "")
 
 
+@pytest.fixture
+def english_locale(_hermetic_environment, monkeypatch):
+    """Pin English for inherited message contracts without changing product defaults."""
+    monkeypatch.setenv("HERMES_LANGUAGE", "en")
+
+
 # ── Per-file process isolation ──────────────────────────────────────────────
 # Tests run via ``scripts/run_tests_parallel.py``, which spawns a fresh
 # ``python -m pytest <file>`` subprocess per test file. Cross-file state

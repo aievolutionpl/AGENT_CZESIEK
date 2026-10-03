@@ -2043,3 +2043,6 @@ class TestPcmToWav:
             assert w.getframerate() == 16000
             # 48kHz -> 16kHz is a 3x decimation of a 1s clip.
             assert w.getnframes() == 16000
+
+# These message contracts exercise the English catalog explicitly.
+pytestmark = pytest.mark.usefixtures("english_locale")

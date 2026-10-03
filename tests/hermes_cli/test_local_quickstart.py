@@ -22,6 +22,11 @@ def client(tmp_path, monkeypatch):
     monkeypatch.setenv("HERMES_HOME", str(tmp_path / ".hermes"))
     from hermes_cli import web_server
 
+    # Exercise sequencing against a known capable budget, independent of CI RAM.
+    from hermes_cli.local_runtime.estimator import HardwareBudget
+    monkeypatch.setattr("hermes_cli.local_runtime.hardware.probe_budget",
+                        lambda **_: HardwareBudget(64 << 30, 64 << 30, 128 << 30))
+
     test_client = TestClient(web_server.app)
     test_client.headers[web_server._SESSION_HEADER_NAME] = web_server._SESSION_TOKEN
     return test_client

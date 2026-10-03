@@ -295,6 +295,10 @@ class TestRunBrowserCommandTermuxFallback:
 class TestRunBrowserCommandPathConstruction:
     """Verify _run_browser_command() includes Homebrew node dirs in subprocess PATH."""
 
+    @pytest.fixture(autouse=True)
+    def headless_command(self, monkeypatch):
+        monkeypatch.setattr("tools.browser_tool_cloud._is_headed_mode", lambda: False)
+
     def test_subprocess_preserves_executable_path_with_spaces(self, tmp_path):
         """A local agent-browser path containing spaces must stay one argv entry."""
         captured_cmd = None

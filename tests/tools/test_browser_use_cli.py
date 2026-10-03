@@ -919,6 +919,7 @@ class TestBrowserExec:
         assert "error" in result
 
     def test_code_piped_on_stdin(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(bu_cli, "_cursor_overlay_preamble", lambda: "")
         cli = _fake_cli(tmp_path, 'code=$(cat)\necho "got:$code"\n')
         monkeypatch.setattr(bu_cli, "_find_cli", lambda: [cli])
         result = json.loads(bu_cli.browser_exec('print("hi")'))
