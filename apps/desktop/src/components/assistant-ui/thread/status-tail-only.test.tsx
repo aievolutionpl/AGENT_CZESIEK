@@ -4,8 +4,11 @@
 // its content with no spinner: a live indicator above a later user message
 // reads as the agent answering out of order.
 import { type ThreadMessage } from '@assistant-ui/react'
-import { cleanup, render, screen } from '@testing-library/react'
+import type { RenderOptions } from '@testing-library/react'
+import { cleanup, render as renderBase, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
+
+import { I18nProvider } from '@/i18n'
 
 import { stubThreadEnvironment, ThreadRuntime, userMessage } from '../test-utils'
 
@@ -47,7 +50,7 @@ describe('thinking indicator is tail-only', () => {
   it('shows the loading indicator on a running placeholder at the tail', async () => {
     const { container } = render(<Harness messages={[userMessage('u1', 'question'), assistant('a1', '', true)]} />)
 
-    expect(await screen.findByRole('status', { name: 'Hermes is loading a response' })).toBeTruthy()
+    expect(await screen.findByRole('status', { name: 'Agent Czesiek wczytuje odpowiedź' })).toBeTruthy()
     expect(container.querySelector('[data-slot="aui_response-loading"]')).toBeTruthy()
   })
 
@@ -70,3 +73,13 @@ describe('thinking indicator is tail-only', () => {
     expect(container.querySelector('[data-slot="aui_turn-activity"]')).toBeNull()
   })
 })
+
+const render = (ui: React.ReactNode, options?: RenderOptions) =>
+  renderBase(ui, {
+    ...options,
+    wrapper: ({ children }) => (
+      <I18nProvider configClient={null} initialLocale="pl">
+        {children}
+      </I18nProvider>
+    )
+  })

@@ -217,3 +217,6 @@ class TestLoadShowReasoningCoercion:
             'display:\n  show_reasoning: true\n',
         ) is True
 
+
+# These message contracts exercise the English catalog explicitly.
+pytestmark = pytest.mark.usefixtures("english_locale")

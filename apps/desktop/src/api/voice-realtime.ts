@@ -1,4 +1,4 @@
-import { hermesApi, profileScoped } from './client'
+import { capabilityScoped, hermesApi, type ProfileScope, profileScoped } from './client'
 
 /** The two Live voice providers: OpenAI Realtime (WebRTC) and Gemini Live (WebSocket). */
 export type LiveVoiceProviderId = 'gemini' | 'openai'
@@ -76,10 +76,11 @@ export async function createRealtimeVoiceSession({
 export function previewRealtimeVoice(
   provider: LiveVoiceProviderId,
   voice: string,
-  language: string
+  language: string,
+  scope?: ProfileScope
 ): Promise<{ audio: string; mime: string }> {
   return hermesApi<{ audio: string; mime: string }>({
-    ...profileScoped(),
+    ...capabilityScoped(scope),
     body: { language, provider, voice },
     method: 'POST',
     path: '/api/voice/realtime/preview'

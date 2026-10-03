@@ -138,3 +138,6 @@ async def test_stop_no_active_agent_survives_status_clear_failure():
     result = await runner._handle_stop_command(event)
 
     assert "no active" in str(getattr(result, "text", result)).lower()
+
+# These message contracts exercise the English catalog explicitly.
+pytestmark = pytest.mark.usefixtures("english_locale")

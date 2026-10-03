@@ -197,3 +197,13 @@ Instrukcja użytkownika: [własne umiejętności i role](SKILLS_AND_ASSISTANT.md
 
 - The spectrum ring round the orb is gone (`voice-aura.tsx` removed). `app/jarvis/voice-wave.tsx` (`VoiceWave`, `waveTargets`) draws a small wave under the orb from the real audio level; used by the home hero and the conversation header.
 - While live, home shows only orb, wave and dock; everything else sits at the sides of `HomeTopBar`: left-panel toggle + "Workspace" on the left; model pills, "more" and a right-panel toggle on the right. The task-model label no longer says "Hermes".
+
+## Uproszczony pulpit, głos i Google (październik 2026)
+
+Wyniki testów i granice odbioru: [CLEAR_DESKTOP_VALIDATION.md](product/CLEAR_DESKTOP_VALIDATION.md).
+
+- Menu: "apps/desktop/src/app/jarvis/navigation.tsx"; panel: "dashboard.tsx", stan trwały: "rail-layout.ts"; orb: "home-hero.tsx", "core.tsx".
+- Ustawienia głosu: "apps/desktop/src/app/settings/config-settings.tsx", "live-voice-picker.tsx", "elevenlabs-voice-picker.tsx". Jeden odtwarzacz i ochrona późnych odpowiedzi: "use-voice-preview.ts".
+- ElevenLabs: "src/api/elevenlabs.ts" → "hermes_cli/web_routers/audio.py"; klucze tylko w backendzie, profilowe.
+- Google: "src/app/connections/google-service-status.tsx", "google-connect-dialog.tsx" → "agent/google_connect.py" → "skills/productivity/google-workspace/scripts/google_api.py check" (minimalne metadane trzech usług).
+- Odbiór wyglądu i sesji: "apps/desktop/e2e/jarvis-shell-vertical.spec.ts"; obrazy: "docs/assets/czesiek/acceptance/".

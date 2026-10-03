@@ -3,7 +3,6 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { I18nProvider } from '@/i18n'
 import * as profiles from '@/store/profile'
-import { ThemeProvider } from '@/themes/context'
 
 import { JarvisShell } from './shell'
 import { $jarvisUi } from './store'
@@ -24,7 +23,7 @@ describe('Agent CzesiekShell', () => {
   it('opens a fresh conversation in the active profile', () => {
     const start = vi.spyOn(profiles, 'newSessionInProfile').mockImplementation(() => {})
     renderShell('jarvis')
-    fireEvent.click(screen.getByRole('button', { name: 'Nowa sesja' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Nowa rozmowa' }))
     expect(start).toHaveBeenCalledWith(profiles.$activeGatewayProfile.get() || 'default')
     start.mockRestore()
   })
@@ -34,32 +33,11 @@ describe('Agent CzesiekShell', () => {
 
     const navigation = screen.getByRole('navigation', { name: 'Główna nawigacja' })
 
-    const labels = [
-      'Pulpit',
-      'Zadania',
-      'Agenci',
-      'Nowa sesja',
-      'Historia',
-      'Mapa wiedzy',
-      'Moje prompty',
-      'Pliki i wyniki',
-      'Wspomnienia',
-      'Integracje',
-      'Automatyzacje',
-      'Narzędzia',
-      'Monitor systemu',
-      'Ustawienia'
-    ]
-
-    expect(
-      within(navigation)
-        .getAllByRole('button')
-        .map(button => button.textContent)
-    ).toEqual(labels)
-
-    for (const label of labels) {
-      expect(screen.getByRole('button', { name: label }).className).toContain('min-h-11')
+    for (const label of ['Pulpit', 'Zadania', 'Agenci', 'Rozmowy', 'Integracje', 'Więcej funkcji']) {
+      expect(within(navigation).getByRole('button', { name: label }).className).toContain('min-h-11')
     }
+
+    expect(screen.queryByRole('menuitem')).toBeNull()
 
     expect(screen.getByRole('button', { name: 'Pulpit' }).getAttribute('aria-current')).toBe('page')
     expect(screen.getByRole('button', { name: 'Ustawienia' }).className).toContain('min-h-11')
@@ -100,10 +78,11 @@ describe('Agent CzesiekShell', () => {
   it('switches the active semantic view without remounting another store', () => {
     renderShell('jarvis')
 
-    fireEvent.click(screen.getByRole('button', { name: 'Wspomnienia' }))
+    fireEvent.pointerDown(screen.getByRole('button', { name: 'Więcej funkcji' }), { button: 0, ctrlKey: false })
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Pamięć i mapa wiedzy' }))
 
-    expect(screen.getByRole('button', { name: 'Wspomnienia' }).getAttribute('aria-current')).toBe('page')
-    expect(screen.getByRole('main').getAttribute('data-jarvis-view')).toBe('memory')
+    expect(screen.getByRole('button', { name: 'Więcej funkcji' }).className).toContain('jarvis-nav-active')
+    expect(screen.getByRole('main').getAttribute('data-jarvis-view')).toBe('starmap')
   })
 
   it('does not nest a main landmark around runtime children that own their surface landmark', () => {
@@ -119,20 +98,9 @@ describe('Agent CzesiekShell', () => {
     expect(screen.getByTestId('runtime-main')).toBe(screen.getByRole('main'))
   })
 
-  it('switches the whole app between light and dark from the rail', () => {
-    render(
-      <ThemeProvider>
-        <I18nProvider configClient={null} initialLocale="pl">
-          <JarvisShell initialView="jarvis" />
-        </I18nProvider>
-      </ThemeProvider>
-    )
-
-    fireEvent.click(screen.getByRole('radio', { name: 'Ciemny' }))
-    expect(document.documentElement.classList.contains('dark')).toBe(true)
-    expect(screen.getByRole('radio', { name: 'Ciemny' }).getAttribute('aria-checked')).toBe('true')
-
-    fireEvent.click(screen.getByRole('radio', { name: 'Jasny' }))
-    expect(document.documentElement.classList.contains('dark')).toBe(false)
+  it('keeps theme and language controls in settings rather than duplicating them in navigation', () => {
+    renderShell()
+    expect(screen.queryByRole('radio')).toBeNull()
+    expect(screen.getByRole('button', { name: 'Ustawienia' })).toBeTruthy()
   })
 })

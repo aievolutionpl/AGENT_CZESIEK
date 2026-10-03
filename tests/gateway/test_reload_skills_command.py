@@ -138,3 +138,6 @@ async def test_reload_skills_handler_queues_note_on_diff(monkeypatch):
     assert "    - gamma: Old removed skill" in note
 
 
+
+# These message contracts exercise the English catalog explicitly.
+pytestmark = pytest.mark.usefixtures("english_locale")

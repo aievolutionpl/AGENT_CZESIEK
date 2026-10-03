@@ -123,3 +123,6 @@ async def test_diff_session_no_changes_message(tmp_path, monkeypatch):
     assert "No changes" in result
 
 
+
+# These message contracts exercise the English catalog explicitly.
+pytestmark = [pytestmark, pytest.mark.usefixtures("english_locale")]

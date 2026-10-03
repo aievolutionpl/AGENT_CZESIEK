@@ -513,3 +513,6 @@ def test_wedged_agent_count_ignores_sentinels_and_bad_summaries(monkeypatch):
         }
     )
     assert runner._wedged_agent_count() == 1
+
+# These message contracts exercise the English catalog explicitly.
+pytestmark = pytest.mark.usefixtures("english_locale")

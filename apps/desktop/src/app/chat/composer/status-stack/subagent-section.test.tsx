@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { afterEach, expect, it, vi } from 'vitest'
 
@@ -36,20 +36,20 @@ it('shows live work only from the composer session and keeps it hidden after col
     </MemoryRouter>
   )
 
-  expect(screen.queryByText('Task 0')).toBeNull()
+  expect(section().queryByText('Task 0')).toBeNull()
   expect(screen.queryByText('Private foreign task')).toBeNull()
   const header = screen.getByRole('button', { name: /5 Subagents/ })
   fireEvent.click(header)
-  expect(screen.getByText('Task 0')).toBeTruthy()
+  expect(section().getByText('Task 0')).toBeTruthy()
   expect(screen.getByText('Reading actual source')).toBeTruthy()
   fireEvent.click(header)
-  expect(screen.queryByText('Task 0')).toBeNull()
+  expect(section().queryByText('Task 0')).toBeNull()
   expect(screen.queryByText('Task 4')).toBeNull()
   expect(header.getAttribute('aria-expanded')).toBe('false')
   act(() => upsertSubagent('owner', { subagent_id: 'child-0', text: 'More progress' }, false, 'subagent.progress'))
-  expect(screen.queryByText('Task 0')).toBeNull()
+  expect(section().queryByText('Task 0')).toBeNull()
   fireEvent.click(header)
-  expect(screen.getByText('Task 0')).toBeTruthy()
+  expect(section().getByText('Task 0')).toBeTruthy()
   expect(screen.getByText('Task 4')).toBeTruthy()
   expect(screen.getByText('More progress')).toBeTruthy()
   view.rerender(
@@ -57,7 +57,7 @@ it('shows live work only from the composer session and keeps it hidden after col
       <ComposerStatusStack queue={null} sessionId="empty" />
     </MemoryRouter>
   )
-  expect(screen.queryByText('Task 0')).toBeNull()
+  expect(document.querySelector('[data-slot="composer-subagents"]')).toBeNull()
 })
 
 it('collapses a single worker and its selected detail using the caret, preserving the steering draft', () => {
@@ -76,7 +76,7 @@ it('collapses a single worker and its selected detail using the caret, preservin
   fireEvent.change(draft, { target: { value: 'Keep this draft' } })
   const header = screen.getByRole('button', { name: /1 Subagent/ })
   fireEvent.click(header.firstElementChild!)
-  expect(screen.queryByText('Single task')).toBeNull()
+  expect(section().queryByText('Single task')).toBeNull()
   expect(view.container.querySelector('[data-slot="composer-subagent-detail"]')).toBeNull()
   expect(header.getAttribute('aria-expanded')).toBe('false')
   fireEvent.click(header)
@@ -92,7 +92,9 @@ it('retires the live frame only after every child settles, without depending on 
     </MemoryRouter>
   )
   fireEvent.click(screen.getByRole('button', { name: /1 Subagent/ }))
-  expect(screen.getByText('Live task')).toBeTruthy()
+  expect(section().getByText('Live task')).toBeTruthy()
   act(() => upsertSubagent('owner', { subagent_id: 'child', status: 'completed' }, false, 'subagent.complete'))
-  expect(screen.queryByText('Live task')).toBeNull()
+  expect(document.querySelector('[data-slot="composer-subagents"]')).toBeNull()
 })
+
+const section = () => within(document.querySelector('[data-slot="composer-subagents"]') as HTMLElement)

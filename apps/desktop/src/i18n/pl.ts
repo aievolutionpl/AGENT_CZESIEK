@@ -4020,9 +4020,9 @@ export const pl = defineLocale({
     wakingProfile: profile => `Budzę profil ${profile}…`,
     placeholderStarting: 'Uruchamianie Agenta Cześka...',
     placeholderReconnecting: 'Ponowne łączenie z Agentem Cześkiem…',
-    placeholderFollowUp: 'Wyślij wiadomość uzupełniającą',
+    placeholderFollowUp: 'Napisz lub powiedz, czego potrzebujesz…',
     newSessionPlaceholders: [
-      'Co budujemy?',
+      'Napisz lub powiedz, czego potrzebujesz…',
       'Daj Agentowi Cześkowi zadanie',
       'Co Ci chodzi po głowie?',
       'Opisz, czego potrzebujesz',

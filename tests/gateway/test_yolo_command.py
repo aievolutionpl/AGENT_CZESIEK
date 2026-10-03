@@ -60,3 +60,6 @@ async def test_yolo_command_toggles_only_current_session(monkeypatch):
     assert "OFF" in result_off
     assert is_session_yolo_enabled(session_a) is False
     assert os.environ.get("HERMES_YOLO_MODE") is None
+
+# These message contracts exercise the English catalog explicitly.
+pytestmark = pytest.mark.usefixtures("english_locale")

@@ -17,7 +17,13 @@ import { BlockerView, formatBlockerCommandLine, UpdatesOverlay } from './updates
 async function renderWithI18n(ui: React.ReactNode) {
   await act(async () => {
     render(
-      <I18nProvider configClient={{ getConfig: async () => ({}), saveConfig: async () => ({ ok: true }) }}>
+      <I18nProvider
+        configClient={{
+          getConfig: async () => ({ display: { language: 'en' } }),
+          saveConfig: async () => ({ ok: true })
+        }}
+        initialLocale="en"
+      >
         <Dialog open>
           <DialogContent>{ui}</DialogContent>
         </Dialog>
@@ -29,7 +35,13 @@ async function renderWithI18n(ui: React.ReactNode) {
 async function renderUpdatesOverlay() {
   await act(async () => {
     render(
-      <I18nProvider configClient={{ getConfig: async () => ({}), saveConfig: async () => ({ ok: true }) }}>
+      <I18nProvider
+        configClient={{
+          getConfig: async () => ({ display: { language: 'en' } }),
+          saveConfig: async () => ({ ok: true })
+        }}
+        initialLocale="en"
+      >
         <UpdatesOverlay />
       </I18nProvider>
     )
@@ -112,7 +124,7 @@ describe('BlockerView', () => {
 
     await renderUpdatesOverlay()
 
-    expect(screen.getByText('Close other processes to update Hermes')).toBeTruthy()
+    expect(screen.getByText('Close other processes to update Agent Czesiek')).toBeTruthy()
     expect(screen.getByText('python.exe')).toBeTruthy()
     expect(screen.queryByText('Update didn’t finish')).toBeNull()
   })
@@ -136,7 +148,7 @@ describe('BlockerView', () => {
       />
     )
 
-    expect(screen.getByText('Close other processes to update Hermes')).toBeTruthy()
+    expect(screen.getByText('Close other processes to update Agent Czesiek')).toBeTruthy()
     expect(screen.getByText('python.exe')).toBeTruthy()
     expect(screen.getByText('PID 58636')).toBeTruthy()
     expect(screen.getByText(/can’t safely close these processes automatically/i)).toBeTruthy()
@@ -202,7 +214,7 @@ describe('BlockerView', () => {
       />
     )
 
-    expect(screen.getByText('Close local previews to update Hermes?')).toBeTruthy()
+    expect(screen.getByText('Close local previews to update Agent Czesiek?')).toBeTruthy()
     expect(screen.getByText('Example Preview')).toBeTruthy()
     expect(screen.getByText('Port 8766')).toBeTruthy()
     expect(screen.getByText(/will not modify or delete your files/i)).toBeTruthy()

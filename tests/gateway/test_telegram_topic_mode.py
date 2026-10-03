@@ -830,3 +830,6 @@ def test_get_telegram_topic_binding_by_session_returns_binding(tmp_path):
 # Test for session-split thread_id recovery (issue #27166)
 # ---------------------------------------------------------------------------
 
+
+# These message contracts exercise the English catalog explicitly.
+pytestmark = pytest.mark.usefixtures("english_locale")

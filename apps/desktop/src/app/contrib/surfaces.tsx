@@ -9,12 +9,15 @@
 
 import { useStore } from '@nanostores/react'
 import { type ComponentProps, lazy, memo, type ReactNode, Suspense, useMemo } from 'react'
-import { Navigate, Route, Routes, useParams } from 'react-router'
+import { Navigate, Route, Routes, useNavigate, useParams } from 'react-router'
 
+import { Button } from '@/components/ui/button'
 import { ContribBoundary, ContribRender } from '@/contrib/react/boundary'
 import { useContributions } from '@/contrib/react/use-contributions'
+import { useI18n } from '@/i18n'
 import { $activeConnectionId } from '@/store/connections'
 import { $gateway } from '@/store/gateway'
+import { $productShellNav } from '@/store/product-shell'
 import { $activeGatewayProfile } from '@/store/profile'
 import { $freshDraftReady, $gatewayState } from '@/store/session'
 
@@ -84,6 +87,9 @@ export const StatusbarSurface = memo(function StatusbarSurface({
   const activeGatewayProfile = useStore($activeGatewayProfile)
   const gatewayState = useStore($gatewayState)
   const freshDraftReady = useStore($freshDraftReady)
+  const productShell = useStore($productShellNav)
+  const navigate = useNavigate()
+  const { locale } = useI18n()
   const gatewayScope = `${activeConnectionId ?? ''}\0${activeGatewayProfile}`
   const { inferenceStatus, statusSnapshot } = useStatusSnapshot(gatewayState, actions.requestGateway, gatewayScope)
   const extraLeftItems = useStatusbarContributions('left')
@@ -104,6 +110,17 @@ export const StatusbarSurface = memo(function StatusbarSurface({
     statusSnapshot,
     toggleCommandCenter: actions.toggleCommandCenter
   })
+
+  if (productShell) {
+    return gatewayState === 'open' ? null : (
+      <div className="jarvis-glass flex items-center justify-center gap-3 px-3 py-2 text-sm" role="status">
+        <span>{locale === 'pl' ? 'Brak połączenia z silnikiem Cześka.' : 'Czesiek’s engine is disconnected.'}</span>
+        <Button onClick={() => navigate('/settings?tab=health')} size="sm" variant="secondary">
+          {locale === 'pl' ? 'Napraw' : 'Repair'}
+        </Button>
+      </div>
+    )
+  }
 
   return <StatusbarControls items={statusbarItems} leftItems={leftStatusbarItems} />
 })

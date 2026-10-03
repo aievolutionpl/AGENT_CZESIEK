@@ -85,3 +85,6 @@ async def test_aggressive_dry_run_shows_preview_plus_note():
     runner.session_store.rewrite_transcript.assert_not_called()
 
 
+
+# These message contracts exercise the English catalog explicitly.
+pytestmark = pytest.mark.usefixtures("english_locale")

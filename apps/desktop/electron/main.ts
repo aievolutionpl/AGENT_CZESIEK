@@ -198,7 +198,6 @@ import {
 } from './find-in-page'
 import { createFirstRunSetupGate } from './first-run-setup-gate'
 import { registerFsIpc } from './fs-ipc'
-import { registerScreenCaptureIpc } from './screen-capture'
 import {
   filenameFromContentDisposition,
   fsPumpDeps,
@@ -370,6 +369,7 @@ import {
   saveCollaboratorChoice,
   supportsCzesiekLive
 } from './runtime-collaborator'
+import { registerScreenCaptureIpc } from './screen-capture'
 import {
   classifyStoredSecret,
   readSecretStoragePolicy,
@@ -429,11 +429,7 @@ import {
   windowsUpdatePrerequisiteError,
   wrapHandoffForDetachedConsole
 } from './updater-process'
-import {
-  applyVaultMemoryDefaults,
-  resolveVaultSeedDir,
-  type VaultMemoryOutcome
-} from './vault-seed'
+import { applyVaultMemoryDefaults, resolveVaultSeedDir, type VaultMemoryOutcome } from './vault-seed'
 import {
   formatBlockerMessage,
   formatProbeFailedMessage,
@@ -5180,7 +5176,9 @@ function resolveHermesBackend(backendArgs) {
     }
 
     if (choice.mode === 'existing' && !supportsCzesiekLive(choice.root)) {
-      rememberLog('[runtime] External Hermes lacks Czesiek Live routes; using bundled engine with the same private profile.')
+      rememberLog(
+        '[runtime] External Hermes lacks Czesiek Live routes; using bundled engine with the same private profile.'
+      )
     }
 
     if (choice.mode === 'existing' && supportsCzesiekLive(choice.root)) {

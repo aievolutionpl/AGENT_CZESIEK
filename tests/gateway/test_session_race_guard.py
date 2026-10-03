@@ -288,3 +288,6 @@ async def test_stop_during_sentinel_force_cleans_session():
 # Test 7: Shutdown skips sentinel entries
 # ------------------------------------------------------------------
     # Should not have raised on the sentinel
+
+# These message contracts exercise the English catalog explicitly.
+pytestmark = pytest.mark.usefixtures("english_locale")

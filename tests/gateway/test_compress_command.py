@@ -516,3 +516,6 @@ async def test_compress_command_cleanup_does_not_block_event_loop():
         "event loop was blocked during manual /compress cleanup: only "
         f"{observed.get('ticks_during_block')} ticks while agent.close() was running"
     )
+
+# These message contracts exercise the English catalog explicitly.
+pytestmark = pytest.mark.usefixtures("english_locale")

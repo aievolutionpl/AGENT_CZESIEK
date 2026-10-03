@@ -53,7 +53,7 @@ it('hydrates the empty owner composer and exposes an extended owner-routed trans
   )
 
   fireEvent.click(await screen.findByRole('button', { name: /1 Subagent/ }))
-  await screen.findByText('Recovered work')
+  await screen.findAllByText('Recovered work')
   expect(screen.getByText('Read File')).toBeTruthy()
   expect(request).toHaveBeenCalledWith('remote-owner', 'research', 'subagent.list', { session_id: 'parent' })
   expect($subagentsBySession.get().parent[0].startedAt).toBe(1000000)

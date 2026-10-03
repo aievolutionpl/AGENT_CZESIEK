@@ -235,3 +235,6 @@ class TestNewInHelp:
         new_line = next((line for line in lines if line.startswith("`/new ")), None)
         assert new_line is not None
         assert "[name]" in new_line
+
+# These message contracts exercise the English catalog explicitly.
+pytestmark = pytest.mark.usefixtures("english_locale")

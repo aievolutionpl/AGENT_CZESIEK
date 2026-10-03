@@ -398,3 +398,6 @@ class TestCmdUpdateGatewayMode:
         assert len(calls) == 1
         assert "Restore" in calls[0]
 
+
+# These message contracts exercise the English catalog explicitly.
+pytestmark = pytest.mark.usefixtures("english_locale")

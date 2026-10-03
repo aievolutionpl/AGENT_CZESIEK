@@ -124,3 +124,6 @@ async def test_goal_command_slow_db_init_still_persists(tmp_path, monkeypatch):
         assert state.max_turns == 7
     finally:
         goals._DB_CACHE.clear()
+
+# These message contracts exercise the English catalog explicitly.
+pytestmark = pytest.mark.usefixtures("english_locale")

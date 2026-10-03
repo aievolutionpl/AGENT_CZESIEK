@@ -10,6 +10,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { useI18n } from '@/i18n'
 import {
   Activity,
+  Brain,
+  CheckCircle2,
   ChevronLeft,
   ChevronRight,
   Lightbulb,
@@ -32,7 +34,9 @@ import { JarvisInsightsPanel } from './insights-panel'
 import { deriveJarvisMetrics } from './metrics'
 import type { JarvisNewsItem } from './news'
 import type { JarvisInsightsView } from './panel-copy'
-import { $railHidden, setRailHidden } from './rail-layout'
+import { JarvisQuickAccess } from './quick-access'
+import { $railHidden, $workspacePanelView, openWorkspacePanel, setRailHidden } from './rail-layout'
+import { JarvisMemoryCard } from './rail-memory-card'
 import { JarvisStatusStrip } from './status-strip'
 import { JarvisTipsLauncher } from './tips'
 import type { JarvisUiState } from './types'
@@ -137,6 +141,7 @@ function HomeTopBar({
   switcher?: ReactNode
 }) {
   const { locale, t } = useI18n()
+  const navigate = useNavigate()
   const copy = t.jarvisShell.home
   const briefingCopy = t.jarvisShell.briefing
   const focus = useStore($jarvisFocusMode)
@@ -182,7 +187,26 @@ function HomeTopBar({
         </Button>
       </div>
       <div className="ml-auto flex min-w-0 items-center gap-1.5">
-        {switcher}
+        <Button
+          aria-label={pl ? 'Otwórz zadania' : 'Open tasks'}
+          className="jarvis-glass jarvis-glass-hover rounded-full"
+          onClick={() => openWorkspacePanel('tasks')}
+          size="sm"
+          variant="secondary"
+        >
+          <CheckCircle2 />
+          <span className="hidden sm:inline">{pl ? 'Zadania' : 'Tasks'}</span>
+        </Button>
+        <Button
+          aria-label={pl ? 'Otwórz pamięć' : 'Open memory'}
+          className="jarvis-glass jarvis-glass-hover rounded-full"
+          onClick={() => openWorkspacePanel('memory')}
+          size="sm"
+          variant="secondary"
+        >
+          <Brain />
+          <span className="hidden sm:inline">{pl ? 'Pamięć' : 'Memory'}</span>
+        </Button>
         {petOverlay ? (
           <Button
             aria-label={orbShown ? (pl ? 'Wróć do kuli' : 'Return to orb') : desktopOrbCopy[pl ? 'pl' : 'en'].show}
@@ -202,16 +226,29 @@ function HomeTopBar({
         <Popover onOpenChange={setMenuOpen} open={menuOpen}>
           <PopoverTrigger asChild>
             <Button
-              aria-label={pl ? 'Więcej' : 'More'}
+              aria-label={pl ? 'Opcje rozmowy' : 'Conversation options'}
               className="jarvis-glass jarvis-glass-hover rounded-full"
               size="icon"
               type="button"
               variant="secondary"
             >
               <MoreHorizontal />
+              <span className="sr-only">{pl ? 'Opcje rozmowy' : 'Conversation options'}</span>
             </Button>
           </PopoverTrigger>
-          <PopoverContent align="end" className="jarvis-menu grid w-56 gap-0.5 p-1.5">
+          <PopoverContent align="end" className="jarvis-menu grid w-80 max-w-[calc(100vw-2rem)] gap-2 p-3">
+            <p className="text-sm font-semibold">{pl ? 'Modele rozmowy i zadań' : 'Conversation and task models'}</p>
+            {switcher}
+            <Button
+              onClick={() => {
+                setMenuOpen(false)
+                navigate('/settings?tab=config:voice')
+              }}
+              size="sm"
+              variant="secondary"
+            >
+              {pl ? 'Głos i rozmowa' : 'Voice and conversation'}
+            </Button>
             {items.map(item => (
               <button
                 aria-pressed={item.pressed}
@@ -293,7 +330,6 @@ export function JarvisDashboard({
   onOpenUpdate,
   profileDisplayName,
   rail,
-  railActions,
   state,
   switcher,
   voiceControls
@@ -304,6 +340,7 @@ export function JarvisDashboard({
   const layout = useDashboardLayout(layoutOverride)
   const focus = useStore($jarvisFocusMode)
   const railCollapsed = useStore($railHidden)
+  const workspaceView = useStore($workspacePanelView)
   const showRail = layout === 'desktop' && !focus && !railCollapsed
   const [activityOpen, setActivityOpen] = useState(layout === 'desktop')
   const [view, setView] = useState<JarvisInsightsView>('activity')
@@ -323,8 +360,8 @@ export function JarvisDashboard({
   const voiceActive = state.voice === 'listening' || state.voice === 'speaking'
 
   useEffect(() => {
-    setActivityOpen(layout === 'desktop')
-  }, [layout])
+    setActivityOpen(!railCollapsed)
+  }, [layout, railCollapsed])
 
   // Tells the home hero whether quick access already has a place in the rail.
   const railCards = showRail && Boolean(rail)
@@ -360,19 +397,6 @@ export function JarvisDashboard({
       className="jarvis-conversation relative isolate flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
       data-home={home ? 'true' : undefined}
     >
-      {layout === 'desktop' && !focus && railCollapsed && (
-        <Button
-          aria-label={t.jarvisShell.home.showRail}
-          className="absolute right-4 top-16 z-10 jarvis-glass jarvis-glass-hover"
-          onClick={() => setRailHidden(false)}
-          size="icon"
-          title={t.jarvisShell.home.showRail}
-          type="button"
-          variant="secondary"
-        >
-          <ChevronLeft />
-        </Button>
-      )}
       {/* Theme-aware space backdrop shared by home and conversation. Decoration only. */}
       <span aria-hidden="true" className="jarvis-space" />
       {/* Off home, the two quiet exits live in the corner instead of crowding
@@ -392,7 +416,6 @@ export function JarvisDashboard({
           {tipsLauncher}
         </div>
       )}
-      {home || !switcher ? null : <div className="absolute right-3 top-3 z-10">{switcher}</div>}
       {/* Balanced, centred header: the orb in the middle of the conversation
           and its status beneath it. The orb stays compact while you read and
           grows — smoothly, see core.css — while you talk with Jarvis. */}
@@ -401,12 +424,12 @@ export function JarvisDashboard({
           <JarvisCore compact={compactCore && !voiceActive} live taskPhase={state.task.phase} voice={state.voice} />
         )}
         {home ? null : <VoiceWave active={voiceActive} />}
-        {home ? (
+        {
           <>
             <HomeTopBar connected={connected} openTips={() => openTipsRef.current()} switcher={switcher} />
-            {tipsLauncher}
+            {home ? tipsLauncher : null}
           </>
-        ) : null}
+        }
         {/* Home carries no status pills: the orb and its ring already say what is happening, and the
             icon-only pills above the voice dock read as stray buttons. */}
         {home ? null : (
@@ -449,6 +472,7 @@ export function JarvisDashboard({
 
       event.preventDefault()
       setActivityOpen(false)
+      setRailHidden(true)
       activityToggleRef.current?.focus()
     }
 
@@ -461,6 +485,7 @@ export function JarvisDashboard({
 
   const closeActivity = () => {
     setActivityOpen(false)
+    setRailHidden(true)
     activityToggleRef.current?.focus()
   }
 
@@ -513,7 +538,22 @@ export function JarvisDashboard({
             data-testid="jarvis-rail"
           >
             <div className="flex items-center justify-end gap-2">
-              {railActions}
+              <Button
+                aria-pressed={workspaceView === 'tasks'}
+                onClick={() => openWorkspacePanel('tasks')}
+                size="sm"
+                variant="ghost"
+              >
+                {locale === 'pl' ? 'Zadania' : 'Tasks'}
+              </Button>
+              <Button
+                aria-pressed={workspaceView === 'memory'}
+                onClick={() => openWorkspacePanel('memory')}
+                size="sm"
+                variant="ghost"
+              >
+                {locale === 'pl' ? 'Pamięć' : 'Memory'}
+              </Button>
               <Button
                 aria-label={t.jarvisShell.home.hideRail}
                 className="jarvis-glass jarvis-glass-hover"
@@ -526,8 +566,14 @@ export function JarvisDashboard({
                 <ChevronRight />
               </Button>
             </div>
-            {rail}
-            {insightsPanel}
+            {workspaceView === 'memory' ? (
+              <JarvisMemoryCard connected={connected} />
+            ) : (
+              <>
+                {insightsPanel}
+                <JarvisQuickAccess connected={connected} label={t.jarvisShell.home.shortcutsLabel} limit={3} />
+              </>
+            )}
             <p className="mt-auto flex items-center justify-end gap-2 px-1 pt-2 text-xs text-(--ui-text-tertiary)">
               {t.jarvisShell.home.footerMotto}
               <span
@@ -556,9 +602,9 @@ export function JarvisDashboard({
           aria-controls={activityPanelId}
           aria-expanded={activityOpen}
           aria-label={copy.showActivity}
-          className="absolute right-4 top-4 z-20 min-h-11"
+          className="absolute bottom-20 right-4 z-20 min-h-11"
           data-jarvis-activity-toggle
-          onClick={() => setActivityOpen(open => !open)}
+          onClick={() => setRailHidden(!railCollapsed)}
           ref={activityToggleRef}
           size="sm"
           type="button"
@@ -573,7 +619,18 @@ export function JarvisDashboard({
           )}
         </Button>
       )}
-      {layout !== 'desktop' && activityOpen && insightsPanel}
+      {layout !== 'desktop' &&
+        activityOpen &&
+        (workspaceView === 'memory' ? (
+          <div className="jarvis-glass-strong absolute inset-x-3 bottom-16 z-20 max-h-[60vh] overflow-y-auto rounded-2xl p-3">
+            <Button onClick={closeActivity} size="sm" variant="ghost">
+              {locale === 'pl' ? 'Zamknij pamięć' : 'Close memory'}
+            </Button>
+            <JarvisMemoryCard connected={connected} />
+          </div>
+        ) : (
+          insightsPanel
+        ))}
     </section>
   )
 }

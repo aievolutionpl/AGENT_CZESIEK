@@ -430,3 +430,6 @@ async def test_turn_hold_without_watermark_fence_still_cancels(
     # Legacy path still records the flat retry-after immediately.
     assert fake_db.record_compression_failure_cooldown.called
     assert not fake_db.increment_hygiene_failure_streak.called
+
+# These message contracts exercise the English catalog explicitly.
+pytestmark = pytest.mark.usefixtures("english_locale")

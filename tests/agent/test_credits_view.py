@@ -135,3 +135,6 @@ def test_credits_command_fully_removed():
     assert entry.cli_only is False
     assert entry.gateway_only is False
     assert not entry.aliases
+
+# These message contracts exercise the English catalog explicitly.
+pytestmark = pytest.mark.usefixtures("english_locale")

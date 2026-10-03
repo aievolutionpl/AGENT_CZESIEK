@@ -23,6 +23,7 @@ data the live callbacks already read from.
 from __future__ import annotations
 
 from unittest.mock import MagicMock
+import pytest
 
 
 def _make_adapter():
@@ -191,3 +192,6 @@ class TestHandleReloadSkillsCallsRefreshSkillGroup:
         assert "Skills Reloaded" in result
         assert sync_refresh.called, "sync adapter refresh must be invoked"
         assert async_called["flag"], "async adapter refresh must be awaited"
+
+# These message contracts exercise the English catalog explicitly.
+pytestmark = pytest.mark.usefixtures("english_locale")

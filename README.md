@@ -127,7 +127,7 @@ Pulpit i pamięć pokazują uruchomioną aplikację Electron po aktualizacji z p
 
 ### Pulpit z orbem
 
-![Jasny pulpit Agent Czesiek: większy orb, opis stanu, menu oraz karty startu i pamięci](docs/assets/czesiek/pulpit.png)
+![Jasny pulpit Agent Czesiek: orb, uproszczone menu i jeden pasek rozmowy](docs/assets/czesiek/pulpit.png)
 
 [Otwórz screenshot pulpitu w pełnym rozmiarze](docs/assets/czesiek/pulpit.png). Obrazy leżą w repozytorium, więc są dostępne także po sklonowaniu. Jeśli GitHub chwilowo nie ładuje podglądu, użyj linku do pliku.
 
@@ -170,7 +170,7 @@ Onboarding to dziewięć krótkich kroków: jak działa Czesiek, dostępy, zgody
 3. **Wybierz rolę** (np. asystent dnia). Zaznaczy to polecane narzędzia; każdy wybór możesz zmienić.
 4. **Podłącz model:** wklej własny klucz API (np. OpenRouter) albo zaloguj się kontem ChatGPT. Głos Live wymaga zgodnego dostawcy i osobnego klucza.
 5. **Zdecyduj o dostępie** do komputera, integracjach i trybie zgód. Wrócisz do tego w Ustawieniach.
-6. Na **Pulpicie** zacznij od karty **Zacznij tutaj** — pokazuje postęp na podstawie prawdziwego stanu (model, Google, vault, logowanie w przeglądarce, pierwsze zadanie, raport dnia) i znika, gdy skończysz.
+6. Na **Pulpicie** napisz polecenie lub rozpocznij rozmowę głosową. Przyciski **Zadania** i **Pamięć** otwierają panel; integracje skonfigurujesz w menu **Integracje**.
 
 Kluczy API nie wpisuj w czacie ani w plikach repozytorium. Instrukcje uruchomienia ze źródeł: [Dla deweloperów](#dla-deweloperów).
 
@@ -180,24 +180,18 @@ Kluczy API nie wpisuj w czacie ani w plikach repozytorium. Instrukcje uruchomien
 
 | Pozycja | Do czego służy |
 | --- | --- |
-| **Pulpit** | Początek rozmowy, orb, skróty i prawy panel z kartami. |
-| **Zadania** | Przegląd pracy, statusów i zaplanowanych działań. |
-| **Agenci** | Wybór roli, edycja instrukcji i przygotowanie zadania dla asystenta. |
-| **Nowa sesja** | Czysty start rozmowy (np. po zmianie skilli). |
-| **Historia** | Powrót do wcześniejszych sesji. |
-| **Mapa wiedzy** | Graf notatek vaultu; obok umiejętności i wspomnienia. |
-| **Moje prompty** | Zapisane polecenia do ponownego użycia. |
-| **Pliki i wyniki** | Materiały, które powstały podczas pracy. |
-| **Wspomnienia** | Lista informacji zapisanych dla profilu. |
-| **Integracje** | Google, komunikatory, GitHub i inne usługi w jednym miejscu. |
-| **Automatyzacje** | Zdarzenia i wyzwalacze; webhooki to funkcja zaawansowana. |
-| **Narzędzia** | Biblioteka umiejętności, przeglądarka agenta, katalog serwerów MCP. |
-| **Monitor systemu** | Informacje diagnostyczne o stanie działania. |
-| **Ustawienia** | Model, głos, wygląd, dostęp, kopie i „Czy wszystko działa?”. |
+| **Pulpit** | Rozmowa i duży orb pokazujący rzeczywisty stan Cześka. |
+| **Zadania** | Zaplanowane działania i ich statusy. |
+| **Agenci** | Gotowe role i współpracownicy wykonujący zadania. |
+| **Rozmowy** | Historia i powrót do poprzedniej rozmowy. |
+| **Integracje** | Google i inne połączone usługi. |
+| **Więcej** | Pamięć i mapa wiedzy, Pliki i wyniki, Moje prompty, Umiejętności, Automatyzacje, Monitor systemu. |
+
+**Nowa rozmowa** ma własny przycisk nad menu. Na dole znajdują się profil i Ustawienia. Język oraz motyw wybierzesz w ustawieniach wyglądu. Nowy profil zaczyna po polsku i w jasnym trybie; zapisane preferencje pozostają zachowane.
 
 ### Prawy panel
 
-Panel z kartami: **Zacznij tutaj**, **Połącz więcej** (podpowiada integracje, które zwiększą pomoc Cześka), **Model i tryb**, **Pamięć** (szybki zapis notatki do vaultu i ostatnie wpisy), **Newsy AI** (filtr źródeł, „Zapytaj Cześka”, „Zapisz w pamięci”), **Statystyki** (sesje, tokeny, koszt z ostatnich 7/14/30 dni), **Agenci** i **Szybki dostęp**. Karty możesz zwijać, przeciągać za nagłówek, ukrywać i przywracać do układu domyślnego (**Dostosuj panel**). Ukryta karta niczego nie pobiera. Samą szufladę zwiniesz całkowicie.
+Panel jest domyślnie zamknięty. **Zadania** na górze pulpitu otwierają rzeczywistą aktywność, statystyki i krótkie podpowiedzi. **Pamięć** otwiera notatki bieżącego profilu. Możesz go zamknąć, a aplikacja zapamięta wybór. Nowe zdarzenia nie otwierają go samoczynnie. **Opcje rozmowy** zawierają model do zadań i przejście do ustawień głosu. **Kula na pulpicie** zachowuje istniejącą rozmowę w nakładce Electron.
 
 ### Raport dnia
 
@@ -293,6 +287,15 @@ Dane Cześka leżą w osobnym katalogu: Windows `%LOCALAPPDATA%\AI Evolution Jar
 
 Model do zadań, głos i połączone usługi to oddzielne ustawienia.
 
+### Co zmieniło się w tym wydaniu
+
+[Wyniki odbioru i ograniczenia tego wydania](docs/product/CLEAR_DESKTOP_VALIDATION.md).
+
+- Krótsze menu, spokojne mleczne szkło i otwierany panel zadań/pamięci.
+- Orb dopasowuje się do miejsca nad paskiem rozmowy; kolory i podpisy wynikają ze zdarzeń pracy i audio.
+- **Głos i rozmowa**: Gemini Live oraz osobny katalog głosów ElevenLabs z wyszukiwaniem i odsłuchem po polsku. Zmiana próbki, profilu lub zamknięcie ekranu zatrzymują poprzedni odsłuch.
+- Karta Google pokazuje osobny wynik testu Gmail, Kalendarza i Dysku. Test czyta wyłącznie minimalne metadane, nie wysyła poczty ani nie zmienia plików.
+
 ### Modele i głos
 
 | Połączenie | Zastosowanie | Co przygotować |
@@ -302,6 +305,14 @@ Model do zadań, głos i połączone usługi to oddzielne ustawienia.
 | **OpenAI API** | Modele OpenAI; głos Realtime | Klucz API i uprawnienia do wybranego modelu. |
 | **Gemini API** | Modele Google i tryb Live | Klucz oraz model zgodny z daną funkcją. |
 | **Inni dostawcy** | Alternatywny model lub synteza mowy | Konfiguracja w ustawieniach danej funkcji. |
+
+**Gemini Live** prowadzi bezpośrednią rozmowę audio. Model domyślny to "gemini-3.8-live"; dostęp konkretnego klucza trzeba sprawdzić w panelu „Czy wszystko działa?”. Głos Gemini zaczyna obowiązywać od następnej rozmowy. Lista głosów opiera się na [dokumentacji Google Live API](https://ai.google.dev/gemini-api/docs/live-guide).
+
+**ElevenLabs** w tym wydaniu służy do próbek i czytania odpowiedzi. Nie zastępuje natywnego audio Gemini Live. Katalog pochodzi z Twojego konta, a klucz pozostaje po stronie silnika. Odsłuch może zużywać limit konta. Błąd nie przełącza Cię automatycznie na innego płatnego dostawcę.
+
+**Google**: po konfiguracji OAuth kliknij „Przetestuj”. Gmail, Kalendarz i Dysk mogą mieć różne wyniki: połączono, brak uprawnień, ponowne logowanie, limit albo chwilowa niedostępność. Sam zapis tokenu nie potwierdza połączenia. Test nie pobiera treści maili ani dokumentów.
+
+Automatyczne testy używają tymczasowych profili i zastępczego dostawcy. Prawdziwe konta Google, Gemini i ElevenLabs wymagają osobnego odbioru z autoryzowanymi danymi; lokalne testy nie są dowodem działania płatnych usług na Twoim koncie.
 
 Nie musisz kupować dostępu do wszystkich dostawców. Zacznij od jednego modelu do tekstu, sprawdź rozmowę, potem dodaj głos i integracje. Dostępność logowania kontem zależy od dostawcy i planu — subskrypcja aplikacji konsumenckiej nie zawsze jest kluczem API.
 
@@ -395,6 +406,8 @@ npm run dev
 ```
 
 Pełny pakiet Windows uruchamia dołączony backend bez instalowania zależności; wersje deweloperskie i pozostałe platformy mogą wymagać pobrania środowiska. Dane profilu i klucze nie należą do katalogu ze źródłami. Szczegóły: [docs/AGENT_SETUP.md](docs/AGENT_SETUP.md).
+
+Przy pracy ze źródłami sam silnik można przygotować na Windows przez [scripts/install.ps1](scripts/install.ps1). Do zwykłego korzystania z Cześka wybierz pełny instalator aplikacji z Wydania.
 
 ### Sprawdzenie zmian
 

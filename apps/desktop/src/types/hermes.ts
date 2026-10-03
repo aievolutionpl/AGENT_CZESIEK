@@ -52,6 +52,7 @@ export interface ElevenLabsVoice {
 
 export interface ElevenLabsVoicesResponse {
   available: boolean
+  error?: 'unauthorized' | 'rate_limit'
   voices: ElevenLabsVoice[]
 }
 

@@ -1,6 +1,15 @@
 import { type ThreadMessage } from '@assistant-ui/react'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render as renderUI, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { I18nProvider } from '@/i18n'
+
+const render = (ui: Parameters<typeof renderUI>[0]) =>
+  renderUI(
+    <I18nProvider configClient={null} initialLocale="en">
+      {ui}
+    </I18nProvider>
+  )
 
 import { $displayTimestamps } from '@/store/display-timestamps'
 import { clearAllPrompts, setApprovalRequest } from '@/store/prompts'

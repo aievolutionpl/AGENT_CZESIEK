@@ -1,6 +1,3 @@
-import { readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
-
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -11,20 +8,8 @@ import { applyVoiceEngineFromConfig } from '@/store/voice-prefs'
 
 import { JarvisHomeHero } from './home-hero'
 import { initialJarvisUiState } from './projector'
+import { JarvisQuickAccess } from './quick-access'
 import { $jarvisUi, publishJarvisVoiceState } from './store'
-
-/** The jarvis stylesheets sit next to these tests; vitest module URLs are not file URLs. */
-function readJarvisCss(file: string): string {
-  for (const from of ['src/app/jarvis', 'apps/desktop/src/app/jarvis']) {
-    try {
-      return readFileSync(resolve(process.cwd(), from, file), 'utf8')
-    } catch {
-      // Try the next root the runner may have been started from.
-    }
-  }
-
-  throw new Error(`could not read ${file}`)
-}
 
 const insert = vi.hoisted(() => vi.fn())
 
@@ -50,6 +35,16 @@ function renderHero(props: Partial<React.ComponentProps<typeof JarvisHomeHero>> 
   )
 
   return { onStartListening, ...view }
+}
+
+function renderQuickAccess() {
+  return render(
+    <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+      <I18nProvider configClient={null} initialLocale="pl">
+        <JarvisQuickAccess connected label={pl.jarvisShell.home.shortcutsLabel} limit={3} />
+      </I18nProvider>
+    </QueryClientProvider>
+  )
 }
 
 afterEach(() => {
@@ -119,19 +114,9 @@ describe('Agent CzesiekHomeHero', () => {
     expect(screen.getByTestId('jarvis-core').getAttribute('data-voice')).toBe('listening')
   })
 
-  it('an action chip starts the request in the composer instead of sending it', () => {
-    renderHero()
-
-    const actions = screen.getByRole('group', { name: pl.jarvisShell.home.actionsLabel })
-
-    fireEvent.click(within(actions).getByRole('button', { name: pl.jarvisShell.home.actions.plan.label }))
-
-    expect(insert).toHaveBeenCalledWith(pl.jarvisShell.home.actions.plan.prompt, { mode: 'prefix', target: 'main' })
-  })
-
   it('puts a pulse suggestion first; taking it fills the composer and dismissing it tells the backend', async () => {
     pulseApi.getPulse.mockResolvedValueOnce({ generated_at: 0, matters: [FAILING_JOB] })
-    renderHero()
+    renderQuickAccess()
 
     const nav = screen.getByRole('group', { name: pl.jarvisShell.home.shortcutsLabel })
     const title = pl.jarvisShell.pulse.kinds.failing_job.title(FAILING_JOB.params)
@@ -148,7 +133,7 @@ describe('Agent CzesiekHomeHero', () => {
 
   it('dismissing a pulse suggestion does not touch the composer', async () => {
     pulseApi.getPulse.mockResolvedValueOnce({ generated_at: 0, matters: [FAILING_JOB] })
-    renderHero()
+    renderQuickAccess()
 
     const dismiss = await screen.findByRole('button', { name: new RegExp(`^${pl.jarvisShell.pulse.dismiss}`) })
 
@@ -158,7 +143,7 @@ describe('Agent CzesiekHomeHero', () => {
   })
 
   it('offers at most three shortcuts, and a shortcut only fills the composer', () => {
-    renderHero()
+    renderQuickAccess()
 
     const shortcuts = within(screen.getByRole('group', { name: pl.jarvisShell.home.shortcutsLabel })).getAllByRole(
       'button'
@@ -186,21 +171,10 @@ describe('Agent CzesiekHomeHero', () => {
     expect(onStartListening).not.toHaveBeenCalled()
   })
 
-  it('offers one primary voice action above three quiet suggestions', () => {
+  it('keeps one clear voice action and puts shortcuts in the tasks panel', () => {
     renderHero()
-
-    const actions = screen.getByRole('group', { name: pl.jarvisShell.home.actionsLabel })
-    const talk = screen.getByRole('button', { name: pl.jarvisShell.home.talk })
-
-    // The suggestions never wrap: no wrapping utility, and the stylesheet says `nowrap`.
-    expect(actions.className).not.toContain('flex-wrap')
-    expect(readJarvisCss('glass.css')).toMatch(/\.jarvis-home__actions\s*\{[^}]*flex-wrap:\s*nowrap/)
-
-    // The talk button is the screen's single primary and is not one of the suggestions.
-    expect(actions.querySelectorAll('.jarvis-action')).toHaveLength(3)
-    expect(actions.contains(talk)).toBe(false)
-    expect(talk.className).toContain('jarvis-action--talk')
-    expect(screen.getByTestId('jarvis-home-hero').querySelectorAll('.jarvis-action--talk')).toHaveLength(1)
+    expect(screen.queryByRole('group', { name: pl.jarvisShell.home.actionsLabel })).toBeNull()
+    expect(screen.getAllByRole('button', { name: pl.jarvisShell.home.talk })).toHaveLength(1)
   })
 
   it('never puts two microphone controls on this screen', () => {

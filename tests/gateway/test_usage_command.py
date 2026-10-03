@@ -275,3 +275,6 @@ class TestUsageContextBreakdown:
         # Zero-token category is dropped, not rendered.
         assert "Conversation" not in result
 
+
+# These message contracts exercise the English catalog explicitly.
+pytestmark = pytest.mark.usefixtures("english_locale")

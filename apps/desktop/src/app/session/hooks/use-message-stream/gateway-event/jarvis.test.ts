@@ -1,5 +1,7 @@
-import { cleanup, render, screen } from '@testing-library/react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { cleanup, render as renderBase, screen } from '@testing-library/react'
 import { createElement } from 'react'
+import { MemoryRouter } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { JarvisDashboard } from '@/app/jarvis/dashboard'
@@ -12,7 +14,7 @@ import type { GatewayEventContext } from './types'
 function context(overrides: Partial<GatewayEventContext> = {}): GatewayEventContext {
   return {
     deps: {
-      sessionStateByRuntimeIdRef: { current: new Map() },
+      sessionStateByRuntimeIdRef: { current: new Map() }
     } as GatewayEventContext['deps'],
     event: { session_id: 'active-session', type: 'message.start' },
     explicitSid: 'active-session',
@@ -22,7 +24,7 @@ function context(overrides: Partial<GatewayEventContext> = {}): GatewayEventCont
     payload: { task_id: 'task-1' } as GatewayEventContext['payload'],
     scheduleConfigRefresh: vi.fn(),
     sessionId: 'active-session',
-    ...overrides,
+    ...overrides
   }
 }
 
@@ -46,9 +48,9 @@ describe('publishAgent CzesiekGatewayEvent', () => {
           at: 1_700_000_100,
           sessionId: 'active-session',
           taskId: 'task-1',
-          type: 'task.running',
-        },
-      ],
+          type: 'task.running'
+        }
+      ]
     })
   })
 
@@ -68,8 +70,8 @@ describe('publishAgent CzesiekGatewayEvent', () => {
         event: { session_id: 'background-session', type: 'message.start' },
         explicitSid: 'background-session',
         isActiveEvent: false,
-        sessionId: 'background-session',
-      }),
+        sessionId: 'background-session'
+      })
     )
 
     expect($jarvisUi.get()).toBe(previous)
@@ -79,8 +81,8 @@ describe('publishAgent CzesiekGatewayEvent', () => {
     publishJarvisGatewayEvent(
       context({
         event: { session_id: 'active-session', type: 'tool.complete' },
-        payload: { task_id: 'task-1', tool_id: 'tool-1' } as GatewayEventContext['payload'],
-      }),
+        payload: { task_id: 'task-1', tool_id: 'tool-1' } as GatewayEventContext['payload']
+      })
     )
 
     expect($jarvisUi.get().task).toEqual({ id: 'task-1', phase: 'idle' })
@@ -88,8 +90,8 @@ describe('publishAgent CzesiekGatewayEvent', () => {
     publishJarvisGatewayEvent(
       context({
         event: { session_id: 'active-session', type: 'message.complete' },
-        payload: { task_id: 'task-1' } as GatewayEventContext['payload'],
-      }),
+        payload: { task_id: 'task-1' } as GatewayEventContext['payload']
+      })
     )
 
     expect($jarvisUi.get().task).toEqual({ id: 'task-1', phase: 'verified' })
@@ -105,15 +107,15 @@ describe('publishAgent CzesiekGatewayEvent', () => {
           rendered: 'rendered fallback',
           status: 'error',
           task_id: 'task-1',
-          text: 'text fallback',
-        } as GatewayEventContext['payload'],
-      }),
+          text: 'text fallback'
+        } as GatewayEventContext['payload']
+      })
     )
 
     expect($jarvisUi.get().task).toEqual({ id: 'task-1', phase: 'failed' })
     expect($jarvisUi.get().activity.at(-1)).toMatchObject({
       detail: 'provider rejected the request',
-      type: 'task.failed',
+      type: 'task.failed'
     })
   })
 
@@ -125,16 +127,16 @@ describe('publishAgent CzesiekGatewayEvent', () => {
           error: 'technical error field from stale metadata',
           rendered: 'Rendered fallback',
           task_id: 'task-1',
-          text: '  Backend answer  ',
-        } as GatewayEventContext['payload'],
-      }),
+          text: '  Backend answer  '
+        } as GatewayEventContext['payload']
+      })
     )
 
     expect($jarvisUi.get().task).toEqual({ id: 'task-1', phase: 'verified' })
     expect($jarvisUi.get().result).toBe('Backend answer')
     expect($jarvisUi.get().activity.at(-1)).toMatchObject({
       detail: 'Backend answer',
-      type: 'task.verified',
+      type: 'task.verified'
     })
   })
 
@@ -145,9 +147,9 @@ describe('publishAgent CzesiekGatewayEvent', () => {
         payload: {
           rendered: '  Rendered result  ',
           task_id: 'task-1',
-          text: '   ',
-        } as GatewayEventContext['payload'],
-      }),
+          text: '   '
+        } as GatewayEventContext['payload']
+      })
     )
 
     expect($jarvisUi.get().result).toBe('Rendered result')
@@ -157,8 +159,8 @@ describe('publishAgent CzesiekGatewayEvent', () => {
     publishJarvisGatewayEvent(
       context({
         event: { session_id: 'active-session', type: 'message.complete' },
-        payload: { task_id: 'task-1' } as GatewayEventContext['payload'],
-      }),
+        payload: { task_id: 'task-1' } as GatewayEventContext['payload']
+      })
     )
 
     expect($jarvisUi.get().task).toEqual({ id: 'task-1', phase: 'verified' })
@@ -171,30 +173,33 @@ describe('publishAgent CzesiekGatewayEvent', () => {
         event: { session_id: 'active-session', type: 'message.complete' },
         payload: {
           task_id: 'task-1',
-          text: 'Notatka została utworzona.',
-        } as GatewayEventContext['payload'],
-      }),
+          text: 'Notatka została utworzona.'
+        } as GatewayEventContext['payload']
+      })
     )
 
     render(
-      createElement(
-        I18nProvider,
-        {
-          children: createElement(
-            JarvisDashboard,
-            {
-              children: createElement('div', { 'data-testid': 'real-chat' }, 'Real transcript'),
-              connected: true,
-              state: $jarvisUi.get(),
-            }
-          ),
-          configClient: null,
-          initialLocale: 'pl',
-        },
-      )
+      createElement(I18nProvider, {
+        children: createElement(JarvisDashboard, {
+          children: createElement('div', { 'data-testid': 'real-chat' }, 'Real transcript'),
+          connected: true,
+          state: $jarvisUi.get()
+        }),
+        configClient: null,
+        initialLocale: 'pl'
+      })
     )
 
     expect(screen.getByRole('heading', { name: 'Notatka została utworzona.' })).toBeTruthy()
     expect(screen.getByTestId('real-chat')).toBeTruthy()
   })
 })
+
+const render = (ui: React.ReactNode) =>
+  renderBase(ui, {
+    wrapper: ({ children }) =>
+      createElement(QueryClientProvider, {
+        client: new QueryClient(),
+        children: createElement(MemoryRouter, { children })
+      })
+  })
