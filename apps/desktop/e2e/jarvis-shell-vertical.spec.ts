@@ -197,7 +197,7 @@ async function setViewportWidth(width: number, height = 800): Promise<void> {
 }
 
 test.beforeAll(async () => {
-  fixture = await setupMockBackend()
+  fixture = await setupMockBackend({ language: 'pl' })
   await completeOnboardingAndReload()
   cdp = await fixture.app.context().newCDPSession(fixture.page)
 })
