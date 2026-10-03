@@ -27,7 +27,7 @@ import {
 } from '@/store/session'
 import type { ModelOptionProvider } from '@/types/hermes'
 
-import { PROFILES_ROUTE, SETTINGS_ROUTE } from '../routes'
+import { AGENTS_ROUTE, LEARN_ROUTE, PROFILES_ROUTE, SETTINGS_ROUTE } from '../routes'
 
 import { CHATGPT_PROVIDER_SLUG, chatGptWorkModel } from './chatgpt-connect'
 import { ChatGptQuickConnect } from './chatgpt-quick-connect'
@@ -292,7 +292,7 @@ export function JarvisModelCard({ connected, onSelectModel, providers, requestGa
 const AGENTS_SHOWN = 5
 
 export function JarvisAgentsCard() {
-  const { t } = useI18n()
+  const { t, locale } = useI18n()
   const copy = t.jarvisShell.home.agents
   const navigate = useNavigate()
   const profiles = useStore($profiles)
@@ -342,6 +342,16 @@ export function JarvisAgentsCard() {
       {profiles.length > AGENTS_SHOWN ? (
         <p className="mt-2 text-xs text-(--ui-text-tertiary)">{copy.more(profiles.length - AGENTS_SHOWN)}</p>
       ) : null}
+      <div className="mt-3 flex flex-wrap gap-3">
+        <LinkAction
+          label={locale === 'pl' ? 'Wybierz współpracownika' : 'Choose a teammate'}
+          onClick={() => navigate(AGENTS_ROUTE)}
+        />
+        <LinkAction
+          label={locale === 'pl' ? 'Jak działa AI?' : 'How does AI work?'}
+          onClick={() => navigate(LEARN_ROUTE)}
+        />
+      </div>
     </RailCard>
   )
 }

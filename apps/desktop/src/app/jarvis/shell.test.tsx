@@ -33,13 +33,13 @@ describe('Agent CzesiekShell', () => {
 
     const navigation = screen.getByRole('navigation', { name: 'Główna nawigacja' })
 
-    for (const label of ['Pulpit', 'Zadania', 'Agenci', 'Rozmowy', 'Integracje', 'Więcej funkcji']) {
+    for (const label of ['Workspace', 'Zadania', 'Agenci', 'Rozmowy', 'Integracje', 'Więcej funkcji']) {
       expect(within(navigation).getByRole('button', { name: label }).className).toContain('min-h-11')
     }
 
     expect(screen.queryByRole('menuitem')).toBeNull()
 
-    expect(screen.getByRole('button', { name: 'Pulpit' }).getAttribute('aria-current')).toBe('page')
+    expect(screen.getByRole('button', { name: 'Workspace' }).getAttribute('aria-current')).toBe('page')
     expect(screen.getByRole('button', { name: 'Ustawienia' }).className).toContain('min-h-11')
     expect(screen.getByRole('button', { name: 'Profil' }).className).toContain('min-h-11')
   })
@@ -47,7 +47,7 @@ describe('Agent CzesiekShell', () => {
   it('moves through navigation by keyboard without leaving the nav group', () => {
     renderShell('jarvis')
 
-    const jarvis = screen.getByRole('button', { name: 'Pulpit' })
+    const jarvis = screen.getByRole('button', { name: 'Workspace' })
     jarvis.focus()
     fireEvent.keyDown(jarvis, { key: 'ArrowDown' })
 

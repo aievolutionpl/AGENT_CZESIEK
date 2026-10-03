@@ -25,7 +25,7 @@ export function preparePresetTask(
   const text = [
     `Jesteś Czesiek, koordynator rozmowy. Przekaż wykonanie zadania subagentowi przez dostępne narzędzie delegowania. Nie twierdź, że delegowano, dopóki narzędzie tego nie potwierdzi. Jeśli delegowanie jest niedostępne, poinformuj użytkownika.`,
     `Rozmawiaj naturalnie po polsku. Dopytaj o istotne niewiadome, a po raporcie subagenta podsumuj wynik i kolejny krok. Nie wymyślaj postępu ani zakończenia pracy.`,
-    `Character: ${preset.character.trim()}`,
+    `Instrukcje wyłącznie dla subagenta ${JSON.stringify(preset.name)}; zachowaj własną rolę koordynatora: ${preset.character.trim()}`,
     resolvedSkills.length ? `Resolved skills: ${resolvedSkills.join(', ')}` : 'Resolved skills: none',
     `Task: ${task.trim()}`
   ].join('\n')
@@ -46,13 +46,17 @@ export function takePreparedPresetTask(owner: PresetOwner): PreparedPresetTask |
   const key = ownerKey(owner)
   const prepared = pending.get(key) ?? null
 
-  if (prepared) {pending.delete(key)}
+  if (prepared) {
+    pending.delete(key)
+  }
 
   return prepared
 }
 
 export function cancelPreparedPresetTask(id: string): void {
   for (const [key, prepared] of pending) {
-    if (prepared.id === id) {pending.delete(key)}
+    if (prepared.id === id) {
+      pending.delete(key)
+    }
   }
 }

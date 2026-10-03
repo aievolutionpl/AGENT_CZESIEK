@@ -5,44 +5,131 @@ import { NEW_CHAT_ROUTE } from '@/app/routes'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 
+import { CharacterAvatar } from './character-avatar'
 import { preparePresetTask } from './launch-preset'
 import type { PresetOwner } from './preset-store'
-import { type PresetSkillAvailability, skillAvailability, type SubagentPreset } from './presets'
+import { skillAvailability, type SubagentPreset } from './presets'
 
-export function PresetList({ owner, presets, skills, onEdit }: { owner: PresetOwner; presets: readonly SubagentPreset[]; skills: readonly { name: string; enabled: boolean }[]; onEdit: (preset: SubagentPreset) => void }) {
+interface PresetListProps {
+  owner: PresetOwner
+  presets: readonly SubagentPreset[]
+  skills: readonly { name: string; enabled: boolean }[]
+  onEdit: (preset: SubagentPreset) => void
+}
+
+export function PresetList({ owner, presets, skills, onEdit }: PresetListProps) {
   const navigate = useNavigate()
   const [tasks, setTasks] = useState<Record<string, string>>({})
-  const [availability, setAvailability] = useState<Record<string, PresetSkillAvailability[]>>({})
+  const [search, setSearch] = useState('')
+  const [department, setDepartment] = useState('Wszystkie')
+  const departments = ['Wszystkie', ...new Set(presets.map(item => item.department || 'Pozostałe'))]
 
-  const inspect = (preset: SubagentPreset) => {
-    setAvailability(current => ({ ...current, [preset.id]: skillAvailability(preset.skills, skills) }))
-  }
-
-  const prepare = (preset: SubagentPreset) => {
-    const task = (tasks[preset.id] ?? '').trim()
-
-    if (!task) {return}
-    const resolved = availability[preset.id] ?? skillAvailability(preset.skills, skills)
-    preparePresetTask(owner, preset, task, resolved)
-    navigate(NEW_CHAT_ROUTE)
-  }
+  const filtered = presets.filter(
+    preset =>
+      (department === 'Wszystkie' || (preset.department || 'Pozostałe') === department) &&
+      `${preset.name} ${preset.character}`.toLocaleLowerCase('pl').includes(search.toLocaleLowerCase('pl'))
+  )
 
   return (
-    <section className="grid gap-3">
-      <div className="flex items-center justify-between gap-2"><h2 className="text-sm font-semibold">Gotowi do pomocy</h2><span className="text-xs text-muted-foreground">{presets.length} ról</span></div>
-      {presets.map(preset => {
-        const states = availability[preset.id]
+    <section className="grid gap-4">
+      <div className="flex flex-wrap items-center gap-3">
+        <Input
+          aria-label="Szukaj agenta"
+          onChange={event => setSearch(event.target.value)}
+          placeholder="Znajdź osobę lub specjalizację…"
+          value={search}
+        />
+        <label className="flex items-center gap-2 text-sm">
+          Dział
+          <select
+            className="jarvis-choice min-h-10 rounded-lg px-3"
+            onChange={event => setDepartment(event.target.value)}
+            value={department}
+          >
+            {departments.map(item => (
+              <option key={item}>{item}</option>
+            ))}
+          </select>
+        </label>
+        <span className="text-xs text-muted-foreground">{filtered.length} ról</span>
+      </div>
+      {filtered.length === 0 ? (
+        <p className="text-sm text-muted-foreground">Nie ma takiej roli. Zmień filtr albo utwórz własnego agenta.</p>
+      ) : null}
+      <div className="grid gap-4 @xl:grid-cols-2">
+        {filtered.map(preset => {
+          const states = skillAvailability(preset.skills, skills)
+          const unavailable = states.some(item => item.state !== 'enabled')
 
-        return (
-          <article className="grid gap-2 rounded-lg border border-border/60 p-3" key={preset.id}>
-            <div className="flex items-start justify-between gap-2"><div><h3 className="text-sm font-medium">{preset.name}</h3><p className="mt-1 text-xs leading-relaxed text-muted-foreground">{preset.character}</p></div><Button onClick={() => onEdit(preset)} size="xs" variant="ghost">Edytuj</Button></div>
-            <div className="flex flex-wrap gap-1">{preset.skills.map(skill => <span className="rounded bg-muted px-1.5 py-0.5 text-[0.65rem] text-muted-foreground" key={skill.name}>{skill.name}{states?.find(item => item.name === skill.name)?.state === 'missing' ? ' · niedostępny' : ''}</span>)}</div>
-            {states?.some(item => item.state !== 'enabled') ? <p className="text-xs text-amber-600 dark:text-amber-400">Niektóre skille są niedostępne. Włącz je w Narzędziach przed zleceniem zadania.</p> : null}
-            <div className="flex gap-2"><Input aria-label={`${preset.name} task`} onChange={event => setTasks(current => ({ ...current, [preset.id]: event.target.value }))} placeholder="Co chcesz zlecić?" value={tasks[preset.id] ?? ''} /><Button disabled={!tasks[preset.id]?.trim()} onClick={() => prepare(preset)} size="sm">Przygotuj zadanie</Button></div>
-            {!states ? <Button className="justify-self-start" onClick={() => inspect(preset)} size="xs" variant="text">Sprawdź skille</Button> : null}
-          </article>
-        )
-      })}
+          return (
+            <article className="office-agent-card grid content-start gap-3 p-4" key={preset.id}>
+              <div className="flex items-center gap-3">
+                <CharacterAvatar avatar={preset.avatar} name={preset.name} />
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs text-muted-foreground">{preset.department || 'Twój zespół'}</p>
+                  <h3 className="text-base font-semibold">{preset.name}</h3>
+                </div>
+                <Button onClick={() => onEdit(preset)} size="xs" variant="ghost">
+                  Edytuj
+                </Button>
+              </div>
+              <details className="text-sm leading-relaxed text-muted-foreground">
+                <summary className="cursor-pointer">Charakter i sposób pracy</summary>
+                <p className="mt-2">{preset.character}</p>
+              </details>
+              {preset.skills.length ? (
+                <p className="text-xs text-muted-foreground">
+                  Skille:{' '}
+                  {states.map(item => `${item.name}${item.state !== 'enabled' ? ' (niedostępny)' : ''}`).join(', ')}
+                </p>
+              ) : null}
+              {unavailable ? (
+                <p className="text-xs text-amber-600 dark:text-amber-400">
+                  Włącz wymagane skille w Narzędziach lub edytuj rolę. Zadanie może korzystać tylko z dostępnych
+                  umiejętności.
+                </p>
+              ) : null}
+              {preset.exampleTask ? (
+                <Button
+                  className="justify-self-start"
+                  onClick={() => setTasks(current => ({ ...current, [preset.id]: preset.exampleTask! }))}
+                  size="xs"
+                  variant="text"
+                >
+                  Wstaw przykładowe zadanie
+                </Button>
+              ) : null}
+              <form
+                className="grid gap-2"
+                onSubmit={event => {
+                  event.preventDefault()
+                  const task = tasks[preset.id]?.trim()
+
+                  if (!task) {
+                    return
+                  }
+
+                  preparePresetTask(owner, preset, task, states)
+                  navigate(NEW_CHAT_ROUTE)
+                }}
+              >
+                <Input
+                  aria-label={`${preset.name} task`}
+                  onChange={event => setTasks(current => ({ ...current, [preset.id]: event.target.value }))}
+                  placeholder="Co chcesz zlecić?"
+                  value={tasks[preset.id] ?? ''}
+                />
+                <Button disabled={!tasks[preset.id]?.trim()} size="sm" type="submit">
+                  Przygotuj zadanie
+                </Button>
+              </form>
+              <p className="text-xs text-muted-foreground">
+                Sprawdzisz treść w rozmowie przed wysłaniem. Czesiek koordynuje pracę.
+              </p>
+            </article>
+          )
+        })}
+      </div>
     </section>
   )
 }

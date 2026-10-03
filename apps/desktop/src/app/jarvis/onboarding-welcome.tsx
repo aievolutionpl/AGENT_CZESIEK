@@ -9,7 +9,10 @@
 
 import logoUrl from '@/assets/czesiek-logo.png'
 import type { Translations } from '@/i18n'
+import { useI18n } from '@/i18n'
 import { Bookmark, Brain, Check, ChevronRight, Lock, Mic, ShieldLock, Wrench } from '@/lib/icons'
+
+import { CHARACTER_AVATARS, CharacterAvatar } from '../agents/character-avatar'
 
 type WelcomeCopy = Translations['jarvisOnboarding']['welcome']
 type Pillar = keyof WelcomeCopy['pillars']
@@ -22,6 +25,8 @@ const PILLARS: readonly { icon: React.ComponentType<{ className?: string }>; id:
 ]
 
 export function WelcomeStep({ copy }: { copy: WelcomeCopy }) {
+  const { locale } = useI18n()
+
   return (
     <div className="grid gap-5" data-testid="jarvis-onboarding-welcome">
       <div className="flex items-center gap-4">
@@ -60,6 +65,34 @@ export function WelcomeStep({ copy }: { copy: WelcomeCopy }) {
         </div>
       </section>
 
+      <section className="jarvis-well grid gap-3 p-4">
+        <h2 className="text-base font-semibold">
+          {locale === 'pl' ? 'Czesiek i Twoje biuro' : 'Czesiek and your team'}
+        </h2>
+        <div className="flex flex-wrap gap-2">
+          {CHARACTER_AVATARS.map(item => (
+            <CharacterAvatar avatar={item.id} key={item.id} name={item.name} />
+          ))}
+        </div>
+        <p className="text-sm leading-6 text-(--ui-text-secondary)">
+          {locale === 'pl'
+            ? 'Ty rozmawiasz z Cześkiem, a on zleca zadania współpracownikom od marketingu, sprzedaży, analizy i innych działów. Po konfiguracji wybierzesz gotową rolę albo stworzysz własną w sekcji Agenci.'
+            : 'Talk to Czesiek while teammates handle marketing, sales, research and other tasks. After setup, choose a role or create your own in Agents.'}
+        </p>
+        <p className="text-sm text-(--ui-text-secondary)">
+          {locale === 'pl'
+            ? 'Nie znasz jeszcze pojęć AI? W menu znajdziesz mini-lekcje i słownik „Nauka AI”.'
+            : 'New to AI? Find short lessons and a glossary in Learn AI.'}
+        </p>
+        <a
+          className="justify-self-start text-sm text-(--ui-accent) underline underline-offset-4"
+          href="https://aievolutionpolska.pl"
+          rel="noopener noreferrer"
+          target="_blank"
+        >
+          AI Evolution Polska ↗
+        </a>
+      </section>
       <section aria-label={copy.flowLabel}>
         <p className="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-(--ui-text-tertiary)">
           {copy.flowLabel}

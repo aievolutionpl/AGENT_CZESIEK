@@ -23,6 +23,7 @@ import { $freshDraftReady, $gatewayState } from '@/store/session'
 
 import { ChatView } from '../chat'
 import { ChatSidebar } from '../chat/sidebar'
+import { LearnView } from '../learn'
 import { TerminalPaneChrome } from '../right-sidebar/terminal/chrome'
 import { contributedRoutes, NEW_CHAT_ROUTE, ROUTES_AREA, sessionRoute } from '../routes'
 import { useStatusSnapshot } from '../shell/hooks/use-status-snapshot'
@@ -187,6 +188,7 @@ export const ChatRoutesSurface = memo(function ChatRoutesSurface({
   return (
     <Routes>
       <Route element={chatView} index />
+      <Route element={page(<LearnView />)} path="learn" />
       <Route element={chatView} path=":sessionId" />
       <Route element={page(<SkillsView setStatusbarItemGroup={setStatusbarItemGroup} />)} path="skills" />
       <Route element={page(<MessagingView setStatusbarItemGroup={setStatusbarItemGroup} />)} path="messaging" />

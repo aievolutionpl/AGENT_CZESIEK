@@ -91,7 +91,7 @@ describe('AgentsView preset surface', () => {
       )
     })
     expect(await screen.findByText('Gotowe role asystenta')).toBeTruthy()
-    expect(screen.getByText('Marketing')).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Marketing' })).toBeTruthy()
     expect(screen.getByText('No live subagents')).toBeTruthy()
   })
 })

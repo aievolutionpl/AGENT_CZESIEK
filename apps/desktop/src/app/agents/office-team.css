@@ -1,0 +1,66 @@
+.office-avatar {
+  display: inline-grid;
+  flex-shrink: 0;
+  width: 3.5rem;
+  height: 3.5rem;
+  place-items: center;
+  border-radius: 1.1rem;
+  border: 1px solid var(--glass-border, var(--ui-stroke-tertiary));
+  background-color: var(--ui-bg-tertiary);
+  color: var(--ui-accent);
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+.office-avatar-portrait {
+  background-image: url('../../assets/office-team.webp');
+  background-size: 300% 200%;
+  background-repeat: no-repeat;
+}
+.office-agent-card {
+  border: 1px solid var(--glass-border, var(--ui-stroke-tertiary));
+  border-radius: var(--jarvis-radius-panel, 1.25rem);
+  background: var(--glass-bg, var(--ui-bg-secondary));
+  backdrop-filter: blur(16px);
+  transition:
+    border-color 180ms ease,
+    background-color 180ms ease;
+}
+.office-agent-card:focus-within,
+.office-agent-card:hover {
+  border-color: var(--ui-accent);
+}
+.office-agent-card:hover .office-avatar-portrait,
+.office-avatar-option:focus-visible .office-avatar-portrait {
+  animation: office-greet 900ms ease-in-out;
+}
+.office-avatar-option[aria-pressed='true'] {
+  outline: 2px solid var(--ui-accent);
+  outline-offset: 3px;
+}
+@keyframes office-greet {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  30% {
+    transform: rotate(-4deg) translateY(-2px);
+  }
+  65% {
+    transform: rotate(4deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .office-agent-card {
+    transition: none;
+  }
+  .office-agent-card:hover .office-avatar-portrait,
+  .office-avatar-option:focus-visible .office-avatar-portrait {
+    animation: none;
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .office-agent-card {
+    background: var(--ui-bg-secondary);
+    backdrop-filter: none;
+  }
+}
