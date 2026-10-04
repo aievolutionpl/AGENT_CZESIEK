@@ -17,7 +17,9 @@ function introPlayer(): HTMLAudioElement {
 
 export function startJarvisIntroMusic(restart = false): void {
   // Live transcripts can repeat the same phrase while it is being recognized.
-  if (isJarvisIntroMusicPlaying()) return
+  if (isJarvisIntroMusicPlaying()) {
+    return
+  }
   const audio = introPlayer()
 
   if (restart) {
@@ -34,7 +36,9 @@ const STARTUP_PLAYED_KEY = 'jarvis-intro-startup-played'
 
 /** The intro once per app launch (a window reload is not a new launch). Later plays come from the phrase only. */
 export function playJarvisIntroOnStartup(): void {
-  if (startupPlayed) return
+  if (startupPlayed) {
+    return
+  }
   startupPlayed = true
   try {
     if (window.sessionStorage.getItem(STARTUP_PLAYED_KEY)) {

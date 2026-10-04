@@ -202,7 +202,9 @@ export function ContribWiring({ children }: { children: ReactNode }) {
 
    
   useEffect(() => {
-    if (!isAuxiliaryWindow()) playJarvisIntroOnStartup()
+    if (!isAuxiliaryWindow()) {
+      playJarvisIntroOnStartup()
+    }
   }, [])
 
   // eslint-disable-next-line no-restricted-syntax -- one-shot request-seen sentinel, not an atom mirror

@@ -2,6 +2,7 @@
 import { act, cleanup, renderHook } from '@testing-library/react'
 import { afterEach, expect, test, vi } from 'vitest'
 
+import type * as IntroMusic from '@/lib/jarvis-intro-music'
 import type { RealtimeVoiceHandlers } from '@/lib/realtime-voice'
 import { $subagentsBySession, type SubagentProgress } from '@/store/subagents'
 
@@ -16,7 +17,7 @@ const mocks = vi.hoisted(() => ({
 }))
 
 vi.mock('@/lib/jarvis-intro-music', async importOriginal => ({
-  ...await importOriginal<typeof import('@/lib/jarvis-intro-music')>(),
+  ...await importOriginal<typeof IntroMusic>(),
   startJarvisIntroMusic: mocks.music
 }))
 
