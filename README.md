@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/assets/czesiek/logo.png" width="180" alt="Logo Agent Czesiek" />
+<img src="docs/assets/czesiek/logo.png" width="220" alt="Agent Czesiek — logo AI Evolution Polska" />
 
 # Agent Czesiek
 
@@ -20,6 +20,16 @@
 
 > **Mówisz, co chcesz osiągnąć. Czesiek dopytuje, przyjmuje zlecenie, a Hermes wykonuje je narzędziami i wraca z raportem.**
 > Projekt rozwija AI Evolution Polska, korzystając z silnika Hermes Agent od Nous Research.
+
+![Aktualny interfejs Agent Czesiek: Liquid Glass, duży orb oraz przezroczyste lewe i prawe menu](docs/assets/czesiek/workspace-liquid-glass.png)
+
+**Czesiek w kilku zdaniach:** to aplikacja na komputer, w której rozmawiasz z asystentem głosem albo tekstem. Opisujesz zadanie, a Czesiek pomaga ustalić plan i przekazuje pracę silnikowi Hermes oraz dostępnym subagentom. Rozmowy, postęp i wyniki znajdziesz w jednym Workspace. Dostęp do plików, przeglądarki i połączonych kont zależy od Twoich ustawień oraz udzielonych zgód.
+
+- **Rozmowa:** napisz polecenie w Workspace albo skonfiguruj model Live w ustawieniach głosu.
+- **Praca:** wybierz gotowego specjalistę w **Agenci** lub stwórz własnego. Sprawdź przygotowane zadanie przed wysłaniem.
+- **Twój styl:** domyślny **Liquid Glass** pokazuje tapetę pod szklanymi panelami i przyciskami. W **Ustawienia → Wygląd → Wygląd interfejsu** przełączysz go na **Klasyczny**; wybór zostaje po ponownym uruchomieniu.
+
+**Instalacja i kod to osobne etapy.** Zrzuty pokazują aktualny kod aplikacji, a dostępne instalatory znajdziesz w [Releases](https://github.com/aievolutionpl/AGENT_CZESIEK/releases). Sama aktualizacja README ani merge nie oznaczają publikacji nowego instalatora.
 
 ## Spis treści
 
@@ -121,11 +131,9 @@ Poniżej są rzeczywiste zrzuty aplikacji Electron z tej aktualizacji, wykonane 
 
 ### Workspace: rozmowa i orb
 
-![Workspace Agenta Cześka z orbem i pogrupowanym menu](docs/assets/czesiek/workspace-office.png)
+Widok Workspace w domyślnym trybie Liquid Glass zobaczysz na początku tego README. Jedna tapeta obejmuje całe okno, a przezroczyste lewe menu i prawy panel mają rozmycie, jasne krawędzie oraz delikatne refleksy.
 
-![Liquid Glass z tapetą pod lewym menu i prawym panelem](docs/assets/czesiek/workspace-liquid-glass.png)
-
-**Workspace** to główne miejsce rozmowy. Menu rozdziela pracę, połączenia i wiedzę; profil oraz ustawienia są na dole. Orb pokazuje stan rozmowy i pracy. Panele po bokach można chować, żeby zostawić więcej miejsca na rozmowę.
+**Workspace** to główne miejsce rozmowy. Menu rozdziela pracę, połączenia i wiedzę; profil oraz ustawienia są na dole. Orb pokazuje stan rozmowy i pracy. Panele po bokach można chować, żeby zostawić więcej miejsca na rozmowę. Zmianę wyglądu pokazuje [zrzut ustawień poniżej](#ustawienia-co-i-gdzie-podłączyć).
 
 ### Onboarding: od logo do własnego asystenta
 
@@ -544,11 +552,13 @@ Lista celowo uczciwa — to, czego nie należy zakładać:
 
 ## Co nowego
 
-### Wersja testowa 0.17.6-rc.1
+### Aktualny kod i przygotowywana wersja testowa 0.17.6-rc.1
 
 Workspace z czytelniejszym menu, biuro sześciu firmowych specjalistów, edytor własnych agentów i animowane avatary. Nowa sekcja Nauka AI, szybkie style współpracy w onboardingu oraz ustawienia profilu zapisane dla konkretnego połączenia i profilu. README zawiera nowe screenshoty i przewodnik po modelach pracy, głosie oraz integracjach.
 
-To wydanie do testów. Bez firmowego certyfikatu instalator Windows może wyświetlić ostrzeżenie SmartScreen. Nie traktujemy go jako podpisanego wydania produkcyjnego; stan podpisu i pakietów sprawdzaj w notatkach wydania.
+Liquid Glass jest domyślnym wyglądem. Tapeta wypełnia całe okno, panele i przyciski mają szklane powierzchnie, a ustawienia pozwalają wrócić do klasycznego stylu. Wybór zapisuje się na komputerze.
+
+Instalator 0.17.6-rc.1 nie został jeszcze opublikowany: pełna kontrola wydania wykryła problemy w scenariuszach rozmów z botami. Dostępne wersje i ich rzeczywisty status sprawdzaj w [Releases](https://github.com/aievolutionpl/AGENT_CZESIEK/releases). Bez firmowego certyfikatu instalator Windows może wyświetlić ostrzeżenie SmartScreen. Wersja testowa nie jest podpisanym wydaniem produkcyjnym.
 
 Najnowszy [przegląd interfejsu i integracji](docs/product/POLISH_BRAND_EXPERIENCE.md) opisuje nowe tła jasne i ciemne, branding AI Evolution Polska, czytelniejsze ustawienia, wyszukiwanie modeli pracy i izolację synchronizacji Dysku. Polecane modele pojawiają się tylko wtedy, gdy udostępnia je podłączony dostawca. Wcześniej poprawiliśmy [zapis pamięci i orb](docs/product/PRODUCT_POLISH_2026_10.md). Pełna historia: [git log](https://github.com/aievolutionpl/AGENT_CZESIEK/commits/main) i [Releases](https://github.com/aievolutionpl/AGENT_CZESIEK/releases).
 
