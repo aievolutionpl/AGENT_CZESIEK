@@ -288,6 +288,8 @@ Podczas rozmowy pulpit zostawia orba, małą falę dźwięku (z realnego poziomu
 
 **Dźwięki interfejsu** (ciche, generowane w aplikacji) wyłączysz w Ustawienia → Wygląd; przycisk wyciszenia na pasku tytułu wycisza wszystko.
 
+**Muzyka powitalna** gra raz przy uruchomieniu głównego okna, z głośnością 30% i bez zapętlenia. Ponownie uruchomisz ją, mówiąc **„tatuś wrócił”**. Hałas, klaskanie oraz wypowiedzi asystenta nie uruchamiają utworu; powtarzane rozpoznanie frazy nie restartuje już grającej muzyki.
+
 Przed pierwszą rozmową:
 
 1. Wybierz dostawcę i model dostępny na swoim koncie.

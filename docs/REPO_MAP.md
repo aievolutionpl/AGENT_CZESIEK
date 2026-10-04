@@ -62,6 +62,8 @@ Sekrety i dane profilu pozostają poza repozytorium.
 
 ## Własne skille, role i orb
 
+- Muzyka powitalna: `apps/desktop/src/lib/jarvis-intro-music.ts` (jednorazowy start, odtwarzacz i fraza „tatuś wrócił”), `app/contrib/wiring.tsx` (start tylko w głównym oknie), `app/chat/composer/hooks/use-realtime-conversation.ts` i `use-composer-voice.ts` (transkrypcja użytkownika). Poziom mikrofonu nie uruchamia muzyki.
+
 - Wygląd i polskie ustawienia: `apps/desktop/src/app/jarvis/glass.css`, `src/i18n/{pl,en,types}.ts`. Tła: `src/assets/backgrounds/czesiek-glass-*.webp`.
 - Modele pracy: `apps/desktop/src/app/jarvis/work-models.ts` i `model-switcher-options.ts` (propozycje filtrowane katalogiem, wyszukiwanie).
 - Integracje i pamięć Dysku: `apps/desktop/src/app/connections/`; `drive-memory-panel.tsx` przypina żądania i cache do połączenia/profilu. Opis zakresu: [POLISH_BRAND_EXPERIENCE.md](product/POLISH_BRAND_EXPERIENCE.md).

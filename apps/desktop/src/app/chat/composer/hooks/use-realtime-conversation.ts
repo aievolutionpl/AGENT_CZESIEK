@@ -3,8 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { getVoiceDesk } from '@/api/voice-desk'
 import { createRealtimeVoiceSession } from '@/api/voice-realtime'
 import { useI18n } from '@/i18n'
-import { createDoubleClapDetector } from '@/lib/double-clap'
-import { isJarvisIntroMusicPlaying, isJarvisMusicPhrase, startJarvisIntroMusic } from '@/lib/jarvis-intro-music'
+import { isJarvisMusicPhrase, startJarvisIntroMusic } from '@/lib/jarvis-intro-music'
 import { createDeskTools } from '@/lib/live-voice/desk-tools'
 import { startDeskWatcher } from '@/lib/live-voice/desk-watcher'
 import { startLiveVoice } from '@/lib/live-voice/start'
@@ -91,8 +90,6 @@ export function useRealtimeConversation({
   const [muted, setMuted] = useState(false)
   const [level, setLevel] = useState(0)
   const sessionRef = useRef<null | RealtimeVoiceSession>(null)
-  const clapDetector = useRef(createDoubleClapDetector())
-  const listeningRef = useRef(false)
   const args = useRef({ busy, failureLabel, markSpoken, messages, onFatalError, onSubmit, onInterrupt })
   args.current = { busy, failureLabel, markSpoken, messages, onFatalError, onSubmit, onInterrupt }
 
@@ -367,8 +364,6 @@ export function useRealtimeConversation({
     sessionRef.current?.stop()
     sessionRef.current = null
     $speakerMuted.set(false)
-    clapDetector.current.reset()
-    listeningRef.current = false
     setMuted(false)
     setStatus('idle')
     setLevel(0)
@@ -402,18 +397,9 @@ export function useRealtimeConversation({
         },
         // Quantized: the meter needs ~32 steps, not a re-render per sample.
         onLevel: next => {
-          if (
-            listeningRef.current &&
-            !isJarvisIntroMusicPlaying() &&
-            clapDetector.current.feed(next, performance.now())
-          ) {
-            startJarvisIntroMusic(true)
-          }
-
           setLevel(Math.round(next * 32) / 32)
         },
         onStatus: next => {
-          listeningRef.current = next === 'listening'
           setStatus(STATUS[next])
         }
       },

@@ -201,7 +201,9 @@ export function ContribWiring({ children }: { children: ReactNode }) {
   const currentCwd = useStore($currentCwd)
 
    
-  useEffect(() => playJarvisIntroOnStartup(), [])
+  useEffect(() => {
+    if (!isAuxiliaryWindow()) playJarvisIntroOnStartup()
+  }, [])
 
   // eslint-disable-next-line no-restricted-syntax -- one-shot request-seen sentinel, not an atom mirror
   useEffect(() => {
