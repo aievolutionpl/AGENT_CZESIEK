@@ -2,6 +2,7 @@
 import { act, cleanup, renderHook } from '@testing-library/react'
 import { afterEach, expect, test, vi } from 'vitest'
 
+import type * as IntroMusic from '@/lib/jarvis-intro-music'
 import type { RealtimeVoiceHandlers } from '@/lib/realtime-voice'
 import { $subagentsBySession, type SubagentProgress } from '@/store/subagents'
 
@@ -9,9 +10,15 @@ import type { ReplyMessage } from './agent-reply'
 import { useRealtimeConversation } from './use-realtime-conversation'
 
 const mocks = vi.hoisted(() => ({
+  music: vi.fn(),
   handlers: null as RealtimeVoiceHandlers | null,
   notify: vi.fn((_text: string) => true),
   request: vi.fn(async () => ({ found: true, status: 'queued' }))
+}))
+
+vi.mock('@/lib/jarvis-intro-music', async importOriginal => ({
+  ...await importOriginal<typeof IntroMusic>(),
+  startJarvisIntroMusic: mocks.music
 }))
 
 vi.mock('@/lib/live-voice/start', () => ({
@@ -25,6 +32,7 @@ vi.mock('@/store/session-states', () => ({ requestForOwnedSession: mocks.request
 vi.mock('@/store/notifications', () => ({ notifyError: vi.fn() }))
 afterEach(() => {
   cleanup()
+  vi.restoreAllMocks()
   vi.useRealTimers()
   vi.clearAllMocks()
   mocks.notify.mockImplementation(() => true)
@@ -37,6 +45,26 @@ const flush = async (ms: number) => {
     await vi.advanceTimersByTimeAsync(ms)
   })
 }
+
+test('microphone peaks and assistant transcripts never trigger music; the user phrase does', async () => {
+  vi.useFakeTimers()
+  render({ busy: () => false, messages: () => [], onSubmit: vi.fn() })
+  await flush(0)
+  await act(async () => {
+    mocks.handlers!.onStatus('listening')
+    for (const [time, level] of [[0, 0.02], [80, 0.55], [140, 0.04], [370, 0.02], [420, 0.6], [485, 0.03]]) {
+      vi.setSystemTime(time)
+      vi.spyOn(performance, 'now').mockReturnValue(time)
+      mocks.handlers!.onLevel!(level)
+    }
+    mocks.handlers!.onTranscript?.('assistant', 'Tatuś wrócił')
+    mocks.handlers!.onTranscript?.('user', 'Witaj, Cześku')
+  })
+  expect(mocks.music).not.toHaveBeenCalled()
+  await act(async () => { mocks.handlers!.onTranscript?.('user', 'Tatuś wrócił!') })
+  expect(mocks.music).toHaveBeenCalledOnce()
+  vi.restoreAllMocks()
+})
 
 const answer = (id: string, text: string): ReplyMessage => ({
   id,

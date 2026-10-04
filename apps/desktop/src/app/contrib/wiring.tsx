@@ -86,7 +86,7 @@ import {
 import { clearSessionTodos, setSessionTodos, todosForHydration } from '@/store/todos'
 import { $briefingPhrases } from '@/store/voice-prefs'
 import { armWakeWord, stopClientCapture } from '@/store/wake-word'
-import { isAuxiliaryWindow, isBrowserWindow, isHudWindow } from '@/store/windows'
+import { isAuxiliaryWindow, isBrowserWindow, isHudWindow, isPeerInstanceWindow } from '@/store/windows'
 import { useSkinCommand } from '@/themes/use-skin-command'
 
 import { closeWorkspaceTab } from '../chat/close-tab'
@@ -201,7 +201,11 @@ export function ContribWiring({ children }: { children: ReactNode }) {
   const currentCwd = useStore($currentCwd)
 
    
-  useEffect(() => playJarvisIntroOnStartup(), [])
+  useEffect(() => {
+    if (!isAuxiliaryWindow() && !isPeerInstanceWindow()) {
+      playJarvisIntroOnStartup()
+    }
+  }, [])
 
   // eslint-disable-next-line no-restricted-syntax -- one-shot request-seen sentinel, not an atom mirror
   useEffect(() => {
