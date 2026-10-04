@@ -86,7 +86,7 @@ import {
 import { clearSessionTodos, setSessionTodos, todosForHydration } from '@/store/todos'
 import { $briefingPhrases } from '@/store/voice-prefs'
 import { armWakeWord, stopClientCapture } from '@/store/wake-word'
-import { isAuxiliaryWindow, isBrowserWindow, isHudWindow } from '@/store/windows'
+import { isAuxiliaryWindow, isBrowserWindow, isHudWindow, isPeerInstanceWindow } from '@/store/windows'
 import { useSkinCommand } from '@/themes/use-skin-command'
 
 import { closeWorkspaceTab } from '../chat/close-tab'
@@ -202,7 +202,7 @@ export function ContribWiring({ children }: { children: ReactNode }) {
 
    
   useEffect(() => {
-    if (!isAuxiliaryWindow()) {
+    if (!isAuxiliaryWindow() && !isPeerInstanceWindow()) {
       playJarvisIntroOnStartup()
     }
   }, [])
