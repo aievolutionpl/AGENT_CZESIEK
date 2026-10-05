@@ -398,8 +398,8 @@ export function useRealtimeConversation({
         const progress = workers.length
           ? workers.slice(0, 3).map(item => `${item.goal}: ${item.status}`).join('\n')
           : lang.current === 'pl'
-          ? 'Hermes nadal przygotowuje odpowiedź. Nie mam jeszcze potwierdzonego wyniku. Możemy dalej rozmawiać.'
-          : 'Hermes is still preparing the answer. No confirmed result yet. We can keep talking.'
+          ? 'Czekam na odpowiedź Hermesa. Nie mam jeszcze potwierdzonego wyniku. Możemy dalej rozmawiać.'
+          : 'Waiting for Hermes to respond. No confirmed result yet. We can keep talking.'
 
         announcements.current.push(progress, undefined, true)
       }

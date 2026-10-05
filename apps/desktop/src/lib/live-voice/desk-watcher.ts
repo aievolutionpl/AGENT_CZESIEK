@@ -33,7 +33,7 @@ export function diffDesk(known: DeskKnown, items: readonly DeskItem[], sessionId
 
     known.set(item.id, item.verdict)
 
-    if ((!seed || assigned.has(item.id)) && before !== item.verdict && ANNOUNCED.has(item.verdict) && isMine(item, sessionId)) {
+    if ((!seed || assigned.has(item.id)) && (before !== item.verdict || assigned.has(item.id)) && ANNOUNCED.has(item.verdict) && isMine(item, sessionId)) {
       announcements.push(item.line)
     }
   }
@@ -53,6 +53,7 @@ export interface DeskWatcherDeps {
 /** Start polling the board; returns the stop function. A board that cannot be read is skipped, never fatal. */
 export function startDeskWatcher({ assigned, fetchDesk, intervalMs = DESK_POLL_MS, lang, push, sessionId }: DeskWatcherDeps) {
   const known: DeskKnown = new Map()
+  const seenAssignments = new Set<string>()
   let seeded = false
   let stopped = false
   let inFlight = false
@@ -73,12 +74,20 @@ export function startDeskWatcher({ assigned, fetchDesk, intervalMs = DESK_POLL_M
       if (!stopped && requestedSession === sessionId()) {
         if (owner !== requestedSession) {
           known.clear()
+          seenAssignments.clear()
           seeded = false
           owner = requestedSession
           lastProgress = Date.now()
         }
 
-        const changes = diffDesk(known, digest.items, requestedSession, !seeded, assigned?.())
+        const freshAssignments = new Set([...(assigned?.() || [])].filter(id => !seenAssignments.has(id)))
+        const changes = diffDesk(known, digest.items, requestedSession, !seeded, freshAssignments)
+
+        for (const item of digest.items) {
+          if (freshAssignments.has(item.id)) {
+            seenAssignments.add(item.id)
+          }
+        }
 
         for (const text of changes) {
           push(text)

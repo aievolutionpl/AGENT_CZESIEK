@@ -28,6 +28,7 @@ describe('diffDesk', () => {
     expect(diffDesk(known, [item('a', 'done'), item('b', 'running')], 's1')).toEqual([])
     expect(diffDesk(known, [item('a', 'done'), item('b', 'done')], 's1')).toEqual(['- b: done'])
     expect(diffDesk(new Map(), [item('new', 'done')], 's1', true, new Set(['new']))).toEqual(['- new: done'])
+    expect(diffDesk(new Map([['new', 'done']]), [item('new', 'done')], 's1', false, new Set(['new']))).toEqual(['- new: done'])
   })
 
   it('says each change once, and only for outcomes worth interrupting for', () => {
