@@ -880,7 +880,10 @@ export function JarvisOnboarding({
 
       let nextConfig = setNested(snapshotConfig, 'voice.auto_tts', voiceMode !== 'quiet')
 
-      const personality = normalizePersonality(stateRef.current.selections?.personality)
+      const personality = normalizePersonality(
+        stateRef.current.selections?.personality ?? getNested(snapshotConfig, 'display.czesiek_profile')
+      )
+
       nextConfig = setNested(nextConfig, 'display.czesiek_profile', personality)
 
       const liveProvider = LIVE_VOICE_PROVIDERS[voiceMode]

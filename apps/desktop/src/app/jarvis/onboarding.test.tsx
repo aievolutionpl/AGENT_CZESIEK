@@ -107,6 +107,24 @@ function renderOnboarding(props: Partial<React.ComponentProps<typeof JarvisOnboa
   )
 }
 
+it('preserves the saved personality when questions are skipped on an existing profile', async () => {
+  const personality = normalizePersonality({ name: 'Ola', purpose: 'Planowanie kampanii', tone: 'direct' })
+  const saveConfig = vi.fn().mockResolvedValue({ ok: true })
+  persistReadyApprovalsState()
+  renderOnboarding({
+    initialStep: 'approvals',
+    loadConfig: async () => ({ custom_prompt: 'Zachowaj moje reguły.', display: { czesiek_profile: personality } }),
+    saveConfig
+  })
+  fireEvent.click(await screen.findByRole('radio', { name: 'Zrównoważony' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Zakończ' }))
+  await waitFor(() => expect(saveConfig).toHaveBeenCalledOnce())
+  const saved = saveConfig.mock.calls[0][0] as { custom_prompt: string; display: { czesiek_profile: CzesiekPersonality } }
+  expect(saved.display.czesiek_profile).toEqual(personality)
+  expect(saved.custom_prompt).toContain(personalityPrompt(personality))
+  expect(saved.custom_prompt).toContain('Zachowaj moje reguły.')
+})
+
 function persistReadyApprovalsState() {
   window.localStorage.setItem(
     onboardingStorageKey(),
