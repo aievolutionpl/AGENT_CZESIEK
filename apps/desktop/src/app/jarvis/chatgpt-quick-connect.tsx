@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 
 import type { ProfileScope } from '@/api/client'
 import { ModelBrandIcon } from '@/components/model-brand-icon'
+import { ChatGptLoginGuide } from '@/components/onboarding/chatgpt-login-guide'
 import { Button } from '@/components/ui/button'
 import { cancelOAuthSession, pollOAuthSession, setGlobalModel, startOAuthLogin } from '@/hermes'
 import { useI18n } from '@/i18n'
@@ -19,7 +20,7 @@ const COPY = {
     denied: 'Sign-in was declined. You can try again.',
     expired: 'The code expired. Start again.',
     failed: 'Could not sign in.',
-    hint: 'Use the GPT you already pay for — no API key, no extra bill.',
+    hint: 'Use your ChatGPT plan for work models, within its limits. No API key required.',
     open: 'Open the sign-in page',
     start: 'Sign in with ChatGPT',
     title: 'ChatGPT subscription',
@@ -31,7 +32,7 @@ const COPY = {
     denied: 'Logowanie odrzucone. Możesz spróbować jeszcze raz.',
     expired: 'Kod wygasł. Zacznij od nowa.',
     failed: 'Nie udało się zalogować.',
-    hint: 'Użyj GPT, za który już płacisz — bez klucza API i bez dodatkowego rachunku.',
+    hint: 'Połącz modele pracy w ramach limitów swojego planu ChatGPT. Bez klucza API.',
     open: 'Otwórz stronę logowania',
     start: 'Zaloguj się kontem ChatGPT',
     title: 'Subskrypcja ChatGPT',
@@ -119,6 +120,7 @@ export function ChatGptQuickConnect({ className, loadOptions, onConnected, scope
           <p className={cn('text-xs leading-5', dark ? 'text-[#C7CBD1]' : 'text-(--ui-text-secondary)')}>{copy.hint}</p>
         </div>
       </div>
+      <ChatGptLoginGuide />
       {phase === 'idle' ? (
         <Button className="min-h-11" onClick={() => void begin()} type="button">
           {copy.start}

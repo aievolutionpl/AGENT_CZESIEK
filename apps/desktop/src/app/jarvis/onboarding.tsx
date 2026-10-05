@@ -79,7 +79,7 @@ import { WelcomeStep } from './onboarding-welcome'
 import { OPENROUTER_ENV_KEY, type OpenRouterConnectResult } from './openrouter-connect'
 import { OPENROUTER_PROVIDER_SLUG, resolveOpenRouterPresets } from './openrouter-presets'
 import { OpenRouterQuickConnect } from './openrouter-quick-connect'
-import { withPersonality } from './personality'
+import { normalizePersonality, withPersonality } from './personality'
 import { setupCopy } from './setup-copy'
 
 /**
@@ -880,9 +880,8 @@ export function JarvisOnboarding({
 
       let nextConfig = setNested(snapshotConfig, 'voice.auto_tts', voiceMode !== 'quiet')
 
-      if (stateRef.current.selections?.personality) {
-        nextConfig = setNested(nextConfig, 'display.czesiek_profile', stateRef.current.selections.personality)
-      }
+      const personality = normalizePersonality(stateRef.current.selections?.personality)
+      nextConfig = setNested(nextConfig, 'display.czesiek_profile', personality)
 
       const liveProvider = LIVE_VOICE_PROVIDERS[voiceMode]
 
@@ -896,7 +895,7 @@ export function JarvisOnboarding({
       nextConfig = setNested(
         nextConfig,
         'custom_prompt',
-        withCoordinatorPrompt(withPersonality(snapshotConfig.custom_prompt, stateRef.current.selections?.personality))
+        withCoordinatorPrompt(withPersonality(snapshotConfig.custom_prompt, personality))
       )
 
       assertModelAssignmentResult(await saveModel({ provider: providerAtRequest, model: modelAtRequest }, requestScope))

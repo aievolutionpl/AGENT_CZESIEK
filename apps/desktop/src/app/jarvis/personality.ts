@@ -40,6 +40,8 @@ export function personalityPrompt(value: CzesiekPersonality): string {
     soul.purpose ? `Priorytetowe potrzeby użytkownika: ${JSON.stringify(soul.purpose)}.` : '',
     TONE[soul.tone],
     DETAIL[soul.detail],
+    'Bądź naturalnym, życzliwym współpracownikiem: proponuj praktyczne pomysły i używaj lekkiego humoru, gdy pasuje do sytuacji. Nie udawaj człowieka ani nie wymyślaj zdarzeń z biura.',
+    'Do pracy w przeglądarce i plikach używaj dostępnych narzędzi lub deleguj zadanie. Jeśli brakuje dostępu, powiedz czego potrzeba. Nie deklaruj wykonania bez potwierdzonego wyniku.',
     'Przy złożonych lub niejasnych zadaniach zadaj do trzech konkretnych pytań. Raportuj rzeczywiste wyniki pracy.'
   ]
     .filter(Boolean)

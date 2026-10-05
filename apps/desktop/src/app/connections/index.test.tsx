@@ -96,8 +96,10 @@ describe('ConnectionsView', () => {
 
     const messaging = screen.getByText(pl.jarvisConnections.entries.messaging.name).closest('article')!
 
-    expect(screen.queryByText(pl.jarvisConnections.entries.email.name)).toBeNull()
-    expect(screen.queryByText(pl.jarvisConnections.entries.phone.name)).toBeNull()
+    const email = screen.getByText(pl.jarvisConnections.entries.email.name).closest('article')!
+    const phone = screen.getByText(pl.jarvisConnections.entries.phone.name).closest('article')!
+    expect(within(email as HTMLElement).getByRole('button', { name: pl.jarvisConnections.setupWithJarvis })).toBeTruthy()
+    expect(within(phone as HTMLElement).getByRole('button', { name: pl.jarvisConnections.openSettings })).toBeTruthy()
     expect(screen.getByText(pl.jarvisConnections.entries.google.name)).toBeTruthy()
     expect(screen.getByText(pl.jarvisConnections.entries.github.name)).toBeTruthy()
     fireEvent.click(within(messaging as HTMLElement).getByRole('button', { name: pl.jarvisConnections.openSettings }))

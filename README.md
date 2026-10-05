@@ -184,6 +184,10 @@ W **Ustawienia → Wygląd** zapisz swój profil współpracy. Zmiany instrukcji
 
 Najpierw połącz dostawcę w **Ustawienia → Dostawcy**, potem wybierz model w **Model**. OpenRouter to wygodna opcja do zadań; obsługiwane logowanie ChatGPT jest alternatywą. Dostępne modele, limity i rozliczenia zależą od Twojego konta. Klucz zapisuj wyłącznie w formularzu aplikacji.
 
+**Subskrypcja ChatGPT:** przed logowaniem kodem urządzenia otwórz w ChatGPT **Ustawienia → Bezpieczeństwo i logowanie** i włącz **„Enable device code sign-in for Codex, Excel, PowerPoint, and Word”**. Na koncie firmowym może być potrzebna zgoda administratora. Następnie wróć do Cześka, rozpocznij logowanie i wpisz jednorazowy kod wyłącznie na otwartej stronie OpenAI. Nie wysyłaj kodu w czacie. [Oficjalna instrukcja](https://developers.openai.com/codex/auth/#preferred-device-code-authentication-beta).
+
+To logowanie łączy **model do pracy** w ramach limitów Twojego planu. **Rozmowa Gemini Live** wymaga osobnego klucza Gemini API, a ElevenLabs służy osobnej syntezie mowy. W **Integracjach** znajdziesz również pocztę IMAP/SMTP i powiadomienia ntfy, obok Google, GitHub, Notion, komunikatorów, Home Assistant i MCP. Zapisane dane nie są potwierdzeniem działania usługi — użyj testu połączenia.
+
 </details>
 
 <details>

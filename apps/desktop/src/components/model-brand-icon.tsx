@@ -1,6 +1,7 @@
 import {
   SiAlibabacloud,
   SiClaude,
+  SiElevenlabs,
   SiGooglegemini,
   SiHuggingface,
   SiMeta,
@@ -18,7 +19,8 @@ import nousMark from '@/assets/brands/nous.png'
 import openaiMark from '@/assets/brands/openai.png'
 import { cn } from '@/lib/utils'
 
-type Glyph = ComponentType<SVGProps<SVGSVGElement>>
+interface BrandGlyphProps extends SVGProps<SVGSVGElement> { title?: string }
+type Glyph = ComponentType<BrandGlyphProps>
 
 /** A model maker's mark. Makers missing from the simple-icons pack get a drawn glyph of their own. */
 export interface ModelBrand {
@@ -51,6 +53,7 @@ const ChipGlyph: Glyph = props => (
 )
 
 export const MODEL_BRANDS: readonly ModelBrand[] = [
+  { Icon: SiElevenlabs, color: '#222222', match: ['elevenlabs'], name: 'ElevenLabs' },
   { image: { mask: false, src: deepseekMark }, color: '#4D6BFE', match: ['deepseek'], name: 'DeepSeek' },
   { image: { mask: true, src: openaiMark }, color: '#10A37F', match: ['openai', 'gpt', 'realtime', 'o3', 'o4'], name: 'OpenAI' },
   { Icon: SiClaude, color: '#D97757', match: ['anthropic', 'claude', 'sonnet', 'opus', 'haiku'], name: 'Claude' },
@@ -122,7 +125,7 @@ export function ModelBrandIcon({ className, hints = [], model, size = 'md' }: Mo
           <img alt="" draggable={false} src={brand.image.src} />
         )
       ) : brand.Icon ? (
-        <brand.Icon className="text-(--brand)" />
+          <brand.Icon aria-hidden="true" className="text-(--brand)" title="" />
       ) : null}
     </span>
   )

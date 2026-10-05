@@ -4197,6 +4197,7 @@ export const zh: Translations = {
     externalPending: provider => `${provider} 通过自己的 CLI 登录。请在终端运行此命令，然后回来选择“我已登录”：`,
     signedIn: '我已登录',
     deviceCodeOpened: provider => `已在浏览器中打开 ${provider}。请在那里输入此代码：`,
+    chatGptLoginGuide: en.onboarding.chatGptLoginGuide,
     reopenVerification: '重新打开验证页面',
     copy: '复制',
     defaultModel: '默认模型',
