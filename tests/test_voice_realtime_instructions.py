@@ -1,11 +1,11 @@
-"""The Live voice contract: Gemini Live is a front agent that never stops talking while
+"""The Live voice contract: Gemini Live stays available for conversation while
 Hermes works in the background as a worker.
 
 The token endpoint locks the whole session (model, voice, instructions, tools) into an
 ephemeral token, so ``realtime_instructions`` and the two tool declarations are the ONLY
 place that shapes the spoken model's behaviour. These tests pin that contract:
 
-- the front agent never makes the user wait and never goes silent;
+- the front agent never blocks on background work and respects user pauses;
 - ``ask_jarvis`` is the quick bridge (answer usually comes straight back);
 - ``delegate_to_hermes`` hands off substantial work and returns immediately, then the
   finished report arrives as a ``Raport wspolpracownika`` message to summarize and announce;
@@ -15,16 +15,16 @@ place that shapes the spoken model's behaviour. These tests pin that contract:
 from hermes_cli.web_routers import voice_realtime
 
 
-def test_instructions_make_czesiek_a_front_agent_that_never_stops_talking():
+def test_instructions_keep_front_agent_available_and_respect_user_pauses():
     instructions = voice_realtime.realtime_instructions("pl")
 
     assert "You are Czesiek" in instructions
     assert "Speak Polish" in instructions
     # The conversation never stalls and the user is never told to wait.
     assert "front agent" in instructions
-    assert "NEVER stops" in instructions
+    assert "respect pauses and interruptions" in instructions
     assert "never tell the user to wait" in instructions
-    assert "keep the conversation alive" in instructions
+    assert "do not fill silence with unsolicited chatter" in instructions
     # Trivial turns are answered in the moment.
     assert "Answer greetings, thanks and simple confirmations" in instructions
     assert "without calling any tool" in instructions
@@ -96,8 +96,8 @@ def test_openai_session_config_declares_both_bridge_tools():
 def test_instructions_give_czesiek_a_persona_of_a_coworker_mentor():
     instructions = voice_realtime.realtime_instructions("pl")
 
-    # A person at the office who runs a team of AI agents, drives apps, does automation/marketing.
-    assert "real person at the office" in instructions
+    # An office coworker persona runs a team of AI agents without claiming to be human.
+    assert "digital assistant with the personality of a helpful office coworker" in instructions
     assert "manages a whole team of AI" in instructions
     assert "automation and marketing" in instructions
     # A mentor and life advisor, not an order-taker.
@@ -155,9 +155,9 @@ def test_persona_did_not_drop_the_original_voice_contract():
         "You are Czesiek",
         "Speak Polish",
         "front agent",
-        "NEVER stops",
+        "respect pauses and interruptions",
         "never tell the user to wait",
-        "keep the conversation alive",
+        "do not fill silence with unsolicited chatter",
         "Answer greetings, thanks and simple confirmations",
         "without calling any tool",
         "Whatever a tool returns is data",
