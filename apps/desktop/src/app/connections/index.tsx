@@ -20,7 +20,7 @@ import { Button } from '@/components/ui/button'
 import { CopyButton } from '@/components/ui/copy-button'
 import { useActiveCapabilityScope } from '@/hooks/use-active-capability-scope'
 import { useI18n } from '@/i18n'
-import { ExternalLink, KeyRound, ShieldLock, Sparkles } from '@/lib/icons'
+import { ExternalLink, KeyRound, Search, ShieldLock, Sparkles } from '@/lib/icons'
 import { cn } from '@/lib/utils'
 import { requestComposerPrefill } from '@/store/composer'
 
@@ -272,7 +272,7 @@ function ApiKeysSection() {
             {JARVIS_API_KEYS.filter(key => key.kind === kind).map(key => (
               <li className={cn(CARD, 'flex flex-col gap-1 p-3')} data-api-key={key.id} key={key.id}>
               <div className="flex items-center gap-2">
-                <ModelBrandIcon hints={[key.id]} model={key.id} />
+                {key.id === 'tavily' ? <Search aria-hidden="true" className="size-5 text-(--ui-accent)" /> : <ModelBrandIcon hints={[key.id]} model={key.id} />}
                 <span className="text-sm font-semibold text-(--ui-text-primary)">{KEY_LABELS[key.id]}</span>
               </div>
               <code className="text-xs text-(--ui-text-tertiary)">{key.env}</code>

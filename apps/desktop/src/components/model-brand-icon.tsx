@@ -53,7 +53,7 @@ const ChipGlyph: Glyph = props => (
 )
 
 export const MODEL_BRANDS: readonly ModelBrand[] = [
-  { Icon: SiElevenlabs, color: '#222222', match: ['elevenlabs'], name: 'ElevenLabs' },
+  { Icon: SiElevenlabs, color: 'var(--ui-text-primary)', match: ['elevenlabs'], name: 'ElevenLabs' },
   { image: { mask: false, src: deepseekMark }, color: '#4D6BFE', match: ['deepseek'], name: 'DeepSeek' },
   { image: { mask: true, src: openaiMark }, color: '#10A37F', match: ['openai', 'gpt', 'realtime', 'o3', 'o4'], name: 'OpenAI' },
   { Icon: SiClaude, color: '#D97757', match: ['anthropic', 'claude', 'sonnet', 'opus', 'haiku'], name: 'Claude' },
