@@ -27,6 +27,8 @@ describe('diffDesk', () => {
     expect(diffDesk(known, [item('a', 'done'), item('b', 'running')], 's1', true)).toEqual([])
     expect(diffDesk(known, [item('a', 'done'), item('b', 'running')], 's1')).toEqual([])
     expect(diffDesk(known, [item('a', 'done'), item('b', 'done')], 's1')).toEqual(['- b: done'])
+    expect(diffDesk(new Map(), [item('new', 'done')], 's1', true, new Set(['new']))).toEqual(['- new: done'])
+    expect(diffDesk(new Map([['new', 'done']]), [item('new', 'done')], 's1', false, new Set(['new']))).toEqual(['- new: done'])
   })
 
   it('says each change once, and only for outcomes worth interrupting for', () => {
@@ -34,8 +36,8 @@ describe('diffDesk', () => {
 
     diffDesk(known, [item('a', 'queued')], 's1', true)
 
-    expect(diffDesk(known, [item('a', 'running')], 's1')).toEqual([])
-    expect(diffDesk(known, [item('a', 'retrying')], 's1')).toEqual([])
+    expect(diffDesk(known, [item('a', 'running')], 's1')).toEqual(['- a: running'])
+    expect(diffDesk(known, [item('a', 'retrying')], 's1')).toEqual(['- a: retrying'])
     expect(diffDesk(known, [item('a', 'needs_you')], 's1')).toEqual(['- a: needs_you'])
     expect(diffDesk(known, [item('a', 'needs_you')], 's1')).toEqual([])
     expect(diffDesk(known, [item('a', 'done_unreported')], 's1')).toEqual(['- a: done_unreported'])
@@ -49,7 +51,8 @@ describe('diffDesk', () => {
     const fresh = [
       item('mine-voice', 'done', { session_id: null }),
       item('mine-chat', 'done', { created_by: 'default', session_id: 's1' }),
-      item('theirs', 'done', { created_by: 'cron', session_id: 's2' })
+      item('theirs', 'done', { created_by: 'cron', session_id: 's2' }),
+      item('other-voice', 'done', { created_by: 'voice', session_id: 's2' })
     ]
 
     expect(diffDesk(known, fresh, 's1')).toEqual(['- mine-voice: done', '- mine-chat: done'])
@@ -60,6 +63,46 @@ describe('startDeskWatcher', () => {
   afterEach(() => vi.useRealTimers())
 
   const digest = (...items: DeskItem[]) => ({ items }) as DeskDigest
+
+  it('reports verified ongoing work periodically, then announces its result only once', async () => {
+    vi.useFakeTimers()
+    let verdict: DeskVerdict = 'running'
+    const push = vi.fn()
+
+    const stop = startDeskWatcher({
+      fetchDesk: async () => digest(item('a', verdict)), lang: () => 'pl', push, sessionId: () => 's1'
+    })
+
+    await vi.advanceTimersByTimeAsync(19_999)
+    expect(push).not.toHaveBeenCalled()
+    await vi.advanceTimersByTimeAsync(1)
+    expect(push).toHaveBeenCalledExactlyOnceWith('- a: running', true)
+    verdict = 'done'
+    await vi.advanceTimersByTimeAsync(4_000)
+    expect(push).toHaveBeenLastCalledWith('- a: done')
+    push.mockClear()
+    await vi.advanceTimersByTimeAsync(40_000)
+    expect(push).not.toHaveBeenCalled()
+    stop()
+  })
+
+  it('discards a late response from the conversation the user has left', async () => {
+    vi.useFakeTimers()
+    let session = 's1'
+    let resolve!: (digest: DeskDigest) => void
+    const push = vi.fn()
+
+    const stop = startDeskWatcher({
+      fetchDesk: () => new Promise<DeskDigest>(done => { resolve = done }),
+      lang: () => 'pl', push, sessionId: () => session
+    })
+
+    session = 's2'
+    resolve(digest(item('a', 'done')))
+    await vi.advanceTimersByTimeAsync(0)
+    expect(push).not.toHaveBeenCalled()
+    stop()
+  })
 
   it('seeds on the first read, pushes later changes, survives a failed read and stops when told', async () => {
     vi.useFakeTimers()

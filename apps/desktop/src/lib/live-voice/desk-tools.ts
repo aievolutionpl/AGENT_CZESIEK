@@ -42,6 +42,7 @@ const COPY = {
 } as const
 
 export interface DeskToolDeps {
+  onAssigned?: (taskId: string, sessionId: null | string) => void
   /** A screenshot as a data URL, or null when capture is unavailable or denied. */
   capture?: () => Promise<null | string>
   lang: () => DeskLang
@@ -53,19 +54,22 @@ export interface DeskToolDeps {
 const text = (value: unknown) => (typeof value === 'string' ? value.trim() : '')
 
 /** `onTool` for the Live providers: one handler per desk tool, each answering with text for the model. */
-export function createDeskTools({ capture, lang, onLook, sessionId }: DeskToolDeps) {
+export function createDeskTools({ capture, lang, onAssigned, onLook, sessionId }: DeskToolDeps) {
   const handlers: Record<string, (args: VoiceToolArgs) => Promise<string>> = {
     assign_work: async args => {
       const priority = Number(args.priority)
+      const owner = sessionId()
 
       const result = await dispatchVoiceWork({
         assignee: text(args.assignee) || undefined,
         details: text(args.details),
         lang: lang(),
         priority: Number.isFinite(priority) ? priority : 0,
-        session_id: sessionId(),
+        session_id: owner,
         title: text(args.title)
       })
+
+      onAssigned?.(result.task_id, owner)
 
       return result.text
     },
