@@ -125,6 +125,8 @@ To uproszczony schemat odpowiedzialności. Interfejs rozmawia z backendem przez 
 
 Dwa osobne wybory modeli: **model zadaniowy** (Hermes — myślenie i narzędzia) oraz **model głosu Live** (rozmowa). Możesz zmieniać je niezależnie, także z ekranu głosu. Domyślny tryb „Szybki” ogranicza wysiłek rozumowania, żeby rozmowa była żwawa.
 
+Podczas pracy możesz dalej rozmawiać z Cześkiem. Aplikacja sprawdza tablicę zadań co 4 sekundy i przekazuje krótkie informacje o trwającej pracy nie częściej niż co 20 sekund. Raport końcowy ma pierwszeństwo przed tymi aktualizacjami. Jeśli model przyjmie raport, ale nie rozpocznie odpowiedzi głosowej, aplikacja ponawia dostarczenie; po trzech próbach pokazuje wynik w powiadomieniu. Statusy pochodzą z backendu — brak potwierdzonego wyniku nie oznacza sukcesu.
+
 ## Tak wygląda aplikacja
 
 Poniżej są rzeczywiste zrzuty aplikacji Electron z tej aktualizacji, wykonane na odizolowanym profilu testowym. Dane są demonstracyjne. Zrzuty nie zawierają prywatnych kluczy i nie potwierdzają połączenia z płatnymi usługami AI.

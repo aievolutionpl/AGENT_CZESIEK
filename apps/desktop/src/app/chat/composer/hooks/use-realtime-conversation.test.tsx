@@ -29,7 +29,7 @@ vi.mock('@/lib/live-voice/start', () => ({
   }
 }))
 vi.mock('@/store/session-states', () => ({ requestForOwnedSession: mocks.request }))
-vi.mock('@/store/notifications', () => ({ notifyError: vi.fn() }))
+vi.mock('@/store/notifications', () => ({ notify: vi.fn(), notifyError: vi.fn() }))
 afterEach(() => {
   cleanup()
   vi.restoreAllMocks()
@@ -52,11 +52,13 @@ test('microphone peaks and assistant transcripts never trigger music; the user p
   await flush(0)
   await act(async () => {
     mocks.handlers!.onStatus('listening')
+
     for (const [time, level] of [[0, 0.02], [80, 0.55], [140, 0.04], [370, 0.02], [420, 0.6], [485, 0.03]]) {
       vi.setSystemTime(time)
       vi.spyOn(performance, 'now').mockReturnValue(time)
       mocks.handlers!.onLevel!(level)
     }
+
     mocks.handlers!.onTranscript?.('assistant', 'Tatuś wrócił')
     mocks.handlers!.onTranscript?.('user', 'Witaj, Cześku')
   })
@@ -141,6 +143,8 @@ test('releases the model right away when Hermes is slow, then voices the answer 
   busy = false
   await flush(1_000)
 
+  expect(markSpoken).not.toHaveBeenCalled()
+  mocks.handlers!.onStatus('speaking')
   expect(markSpoken).toHaveBeenCalledWith('late')
   expect(mocks.notify).toHaveBeenCalledWith('Raport gotowy: trzy pliki.')
 })
@@ -161,7 +165,7 @@ test('hands the tool answer back at the inline budget, never at the five-minute 
     return value
   })
 
-  await flush(6_800)
+  await flush(3_200)
   expect(settled).toBe(false)
 
   await flush(400)
@@ -199,7 +203,7 @@ test('keeps a report queued while the model speaks and delivers it, once, when i
   busy = false
   await flush(2_000)
 
-  expect(markSpoken).toHaveBeenCalledWith('answer')
+  expect(markSpoken).not.toHaveBeenCalled()
   expect(mocks.notify).toHaveBeenCalledWith(report)
 
   // Still speaking: every drain tick retries instead of dropping the report.
@@ -214,6 +218,8 @@ test('keeps a report queued while the model speaks and delivers it, once, when i
   mocks.notify.mockClear()
   await flush(400)
   expect(mocks.notify).toHaveBeenCalledWith(report)
+  mocks.handlers!.onStatus('speaking')
+  expect(markSpoken).toHaveBeenCalledWith('answer')
 
   mocks.notify.mockClear()
   await flush(2_000)
@@ -238,6 +244,19 @@ test('acknowledges delegated work in one short, jargon-free sentence', async () 
   expect(acknowledgement).toBe('Przekazuję zadanie do wykonania i powiem, gdy pojawi się wynik.')
   expect((acknowledgement.match(/\./g) ?? []).length).toBe(1)
   expect(acknowledgement).not.toMatch(/backend|zlecenie|ukończenia/i)
+})
+
+test('reports waiting work and eventually times out even when submission never resolves', async () => {
+  vi.useFakeTimers()
+  render({ busy: () => false, messages: () => [], onSubmit: () => new Promise<void>(() => undefined) })
+  await flush(0)
+  await mocks.handlers!.onDelegate('Przygotuj analizę')
+  await flush(20_400)
+  expect(mocks.notify).toHaveBeenCalledWith(expect.stringContaining('No confirmed result yet'))
+  mocks.handlers!.onStatus('speaking')
+  mocks.notify.mockClear()
+  await flush(280_600)
+  expect(mocks.notify).toHaveBeenCalledWith(expect.stringContaining('Nie otrzymałem jeszcze potwierdzonego wyniku'))
 })
 
 test('adopts a slow answer when the conversation is created, but never voices one from another', async () => {

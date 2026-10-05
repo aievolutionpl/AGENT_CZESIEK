@@ -9,22 +9,23 @@
 
 import type { DeskDigest, DeskItem, DeskLang, DeskVerdict } from '@/api/voice-desk'
 
-/** Verdicts that are worth interrupting for; `running`, `queued` and `retrying` are not. */
-const ANNOUNCED: ReadonlySet<DeskVerdict> = new Set(['blocked', 'done', 'done_unreported', 'needs_you', 'stalled'])
+/** Important transitions; unchanged active work gets a separate, throttled update. */
+const ANNOUNCED: ReadonlySet<DeskVerdict> = new Set(['blocked', 'done', 'done_unreported', 'needs_you', 'stalled', 'running', 'retrying'])
 
-export const DESK_POLL_MS = 8_000
+export const DESK_POLL_MS = 4_000
+export const DESK_PROGRESS_MS = 20_000
 
 /** Verdicts seen so far, by task id. */
 export type DeskKnown = Map<string, DeskVerdict>
 
 const isMine = (item: DeskItem, sessionId: null | string) =>
-  item.created_by === 'voice' || (sessionId !== null && item.session_id === sessionId)
+  (item.created_by === 'voice' && item.session_id === null) || (sessionId !== null && item.session_id === sessionId)
 
 /**
  * The announcements for what changed since `known`, which is updated in place. With `seed` nothing is
  * announced: the digest only becomes the baseline.
  */
-export function diffDesk(known: DeskKnown, items: readonly DeskItem[], sessionId: null | string, seed = false) {
+export function diffDesk(known: DeskKnown, items: readonly DeskItem[], sessionId: null | string, seed = false, assigned: ReadonlySet<string> = new Set()) {
   const announcements: string[] = []
 
   for (const item of items) {
@@ -32,7 +33,7 @@ export function diffDesk(known: DeskKnown, items: readonly DeskItem[], sessionId
 
     known.set(item.id, item.verdict)
 
-    if (!seed && before !== item.verdict && ANNOUNCED.has(item.verdict) && isMine(item, sessionId)) {
+    if ((!seed || assigned.has(item.id)) && before !== item.verdict && ANNOUNCED.has(item.verdict) && isMine(item, sessionId)) {
       announcements.push(item.line)
     }
   }
@@ -41,19 +42,22 @@ export function diffDesk(known: DeskKnown, items: readonly DeskItem[], sessionId
 }
 
 export interface DeskWatcherDeps {
+  assigned?: () => ReadonlySet<string>
   fetchDesk: (lang: DeskLang) => Promise<DeskDigest>
   intervalMs?: number
   lang: () => DeskLang
-  push: (text: string) => void
+  push: (text: string, progress?: boolean) => void
   sessionId: () => null | string
 }
 
 /** Start polling the board; returns the stop function. A board that cannot be read is skipped, never fatal. */
-export function startDeskWatcher({ fetchDesk, intervalMs = DESK_POLL_MS, lang, push, sessionId }: DeskWatcherDeps) {
+export function startDeskWatcher({ assigned, fetchDesk, intervalMs = DESK_POLL_MS, lang, push, sessionId }: DeskWatcherDeps) {
   const known: DeskKnown = new Map()
   let seeded = false
   let stopped = false
   let inFlight = false
+  let lastProgress = Date.now()
+  let owner = sessionId()
 
   const poll = async () => {
     if (stopped || inFlight) {
@@ -61,13 +65,35 @@ export function startDeskWatcher({ fetchDesk, intervalMs = DESK_POLL_MS, lang, p
     }
 
     inFlight = true
+    const requestedSession = sessionId()
 
     try {
       const digest = await fetchDesk(lang())
 
-      if (!stopped) {
-        for (const text of diffDesk(known, digest.items, sessionId(), !seeded)) {
+      if (!stopped && requestedSession === sessionId()) {
+        if (owner !== requestedSession) {
+          known.clear()
+          seeded = false
+          owner = requestedSession
+          lastProgress = Date.now()
+        }
+
+        const changes = diffDesk(known, digest.items, requestedSession, !seeded, assigned?.())
+
+        for (const text of changes) {
           push(text)
+        }
+
+        if (changes.length) {
+          lastProgress = Date.now()
+        }
+
+        const active = digest.items.filter(item => isMine(item, requestedSession)
+          && ['queued', 'running', 'retrying', 'in_review'].includes(item.verdict))
+
+        if (!changes.length && active.length && Date.now() - lastProgress >= DESK_PROGRESS_MS) {
+          push(active.map(item => item.line).join('\n'), true)
+          lastProgress = Date.now()
         }
 
         seeded = true

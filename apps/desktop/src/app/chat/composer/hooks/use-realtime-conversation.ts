@@ -6,6 +6,7 @@ import { useI18n } from '@/i18n'
 import { isJarvisMusicPhrase, startJarvisIntroMusic } from '@/lib/jarvis-intro-music'
 import { createDeskTools } from '@/lib/live-voice/desk-tools'
 import { startDeskWatcher } from '@/lib/live-voice/desk-watcher'
+import { VoiceReportQueue } from '@/lib/live-voice/report-queue'
 import { startLiveVoice } from '@/lib/live-voice/start'
 import type { RealtimeVoiceSession, RealtimeVoiceStatus } from '@/lib/realtime-voice'
 import { canCaptureScreen, captureScreenDataUrl } from '@/lib/screen-capture'
@@ -25,7 +26,7 @@ const ASK_TIMEOUT_MS = 5 * 60_000
  * with a short spoken acknowledgement. Long enough for a quick turn, short
  * enough that the voice never goes silent mid-conversation.
  */
-const ASK_INLINE_BUDGET_MS = 7_000
+const ASK_INLINE_BUDGET_MS = 3_500
 
 /** How often a queued report is offered to the model (it retries while it speaks). */
 const ANNOUNCEMENT_DRAIN_MS = 400
@@ -93,8 +94,14 @@ export function useRealtimeConversation({
   const args = useRef({ busy, failureLabel, markSpoken, messages, onFatalError, onSubmit, onInterrupt })
   args.current = { busy, failureLabel, markSpoken, messages, onFatalError, onSubmit, onInterrupt }
 
-  const announcements = useRef<string[]>([])
+  const announcements = useRef(new VoiceReportQueue(text => notify({
+    kind: 'info',
+    title: 'Raport współpracownika — głos nie odpowiedział',
+    message: text
+  })))
+
   const dispatching = useRef(false)
+  const assignedTasks = useRef(new Set<string>())
   const currentSession = useRef(sessionId)
   const pending = useRef<{ session: string | null; cancelled: boolean } | null>(null)
   /** Asks whose answer is still on its way, so a late report knows its conversation. */
@@ -138,6 +145,11 @@ export function useRealtimeConversation({
   const deskTools = useMemo(
     () =>
       createDeskTools({
+        onAssigned: (id, owner) => {
+          if (owner === currentSession.current) {
+            assignedTasks.current.add(id)
+          }
+        },
         capture: canCaptureScreen() ? captureScreenDataUrl : undefined,
         lang: () => lang.current,
         onLook: () =>
@@ -161,16 +173,21 @@ export function useRealtimeConversation({
     }
 
     return startDeskWatcher({
+      assigned: () => assignedTasks.current,
       fetchDesk: getVoiceDesk,
       lang: () => lang.current,
-      push: text => announcements.current.push(text),
+      push: (text, progress) => {
+        if (!progress || !announcements.current.pending) {
+          announcements.current.push(text, undefined, progress)
+        }
+      },
       sessionId: () => currentSession.current
     })
   }, [enabled])
 
-  // eslint-disable-next-line no-restricted-syntax -- queues backend transition events; does not mirror reactive state
   useEffect(() => {
-    announcements.current = []
+    announcements.current.clear()
+    assignedTasks.current.clear()
     const known = new Map(($subagentsBySession.get()[sessionId || ''] || []).map(item => [item.id, item.status]))
 
     return $subagentsBySession.subscribe(all => {
@@ -223,8 +240,8 @@ export function useRealtimeConversation({
         }
 
         if (reply.id !== null) {
-          args.current.markSpoken(reply.id)
-          announcements.current.push(reply.text.slice(0, 3000))
+          const id = reply.id
+          announcements.current.push(reply.text.slice(0, 3000), () => args.current.markSpoken(id))
         } else {
           announcements.current.push(
             reply.reason === 'timeout'
@@ -314,15 +331,15 @@ export function useRealtimeConversation({
       }
     }
 
-    void submitAndAwaitReply(ownedSource, () => source.onSubmit(request), ASK_TIMEOUT_MS)
+    void Promise.race([submitAndAwaitReply(ownedSource, () => source.onSubmit(request), ASK_TIMEOUT_MS), afterHardLimit()])
       .then(reply => {
         if (task.cancelled || currentSession.current !== task.session) {
           return
         }
 
         if (reply.id !== null) {
-          args.current.markSpoken(reply.id)
-          announcements.current.push(reply.text.slice(0, 3000))
+          const id = reply.id
+          announcements.current.push(reply.text.slice(0, 3000), () => args.current.markSpoken(id))
         } else {
           announcements.current.push(
             'Nie otrzymałem jeszcze potwierdzonego wyniku. Sprawdź stan zadania w rozmowie; nie traktuj tego jako ukończenia.'
@@ -350,17 +367,14 @@ export function useRealtimeConversation({
     }
 
     const timer = window.setInterval(() => {
-      const next = announcements.current[0]
-
-      if (next && sessionRef.current?.notify?.(next)) {
-        announcements.current.shift()
-      }
+      announcements.current.drain(text => sessionRef.current?.notify?.(text) ?? false, Date.now())
     }, ANNOUNCEMENT_DRAIN_MS)
 
     return () => window.clearInterval(timer)
   }, [enabled])
 
   const end = useCallback(async () => {
+    announcements.current.clear()
     sessionRef.current?.stop()
     sessionRef.current = null
     $speakerMuted.set(false)
@@ -370,6 +384,29 @@ export function useRealtimeConversation({
   }, [])
 
   useEffect(() => $speakerMuted.subscribe(muted => sessionRef.current?.setSpeakerMuted?.(muted)), [])
+
+  useEffect(() => {
+    if (!enabled) {
+      return
+    }
+
+    const timer = window.setInterval(() => {
+      const workers = ($subagentsBySession.get()[currentSession.current || ''] || [])
+        .filter(item => item.status === 'running' || item.status === 'queued')
+
+      if ((pending.current || slowAsks.current.length || workers.length) && !announcements.current.pending && !$speakerMuted.get()) {
+        const progress = workers.length
+          ? workers.slice(0, 3).map(item => `${item.goal}: ${item.status}`).join('\n')
+          : lang.current === 'pl'
+          ? 'Hermes nadal przygotowuje odpowiedź. Nie mam jeszcze potwierdzonego wyniku. Możemy dalej rozmawiać.'
+          : 'Hermes is still preparing the answer. No confirmed result yet. We can keep talking.'
+
+        announcements.current.push(progress, undefined, true)
+      }
+    }, 20_000)
+
+    return () => window.clearInterval(timer)
+  }, [enabled])
 
   // eslint-disable-next-line no-restricted-syntax -- session lifecycle (open/close a WebRTC call), not an atom mirror
   useEffect(() => {
@@ -400,6 +437,9 @@ export function useRealtimeConversation({
           setLevel(Math.round(next * 32) / 32)
         },
         onStatus: next => {
+          if (next === 'speaking') {
+            announcements.current.spoken()
+          }
           setStatus(STATUS[next])
         }
       },

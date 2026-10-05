@@ -2,6 +2,8 @@
 
 ## Workspace, biuro agentów i nauka AI
 
+- Raportowanie Live: `apps/desktop/src/lib/live-voice/desk-watcher.ts` sprawdza tablicę co 4 s i ogranicza aktualizacje pracy do 20 s; `report-queue.ts` ponawia ciche dostarczenie raportu i pokazuje powiadomienie po trzech próbach. `use-realtime-conversation.ts` łączy tablicę, podagentów i odpowiedzi Hermesa z kolejką głosu.
+
 - Logowanie subskrypcją ChatGPT: `apps/desktop/src/components/onboarding/chatgpt-login-guide.tsx` zawiera wspólną instrukcję włączenia kodu urządzenia; używają jej `app/jarvis/chatgpt-quick-connect.tsx`, `components/onboarding/flow.tsx` oraz zakładka kluczy w Integracjach. `chatgpt-connect.ts` nadal odpowiada za właściwy OAuth i wybór modelu pracy.
 - Charakter: `app/jarvis/personality.ts` i zapis w `onboarding.tsx` (także przy pominięciu pytań); głos: `hermes_cli/web_routers/voice_realtime.py`. Oba zachowują delegowanie i raportują potwierdzone wyniki. Ikony usług są w `app/jarvis/connection-icons.ts`, a modeli/głosu w `components/model-brand-icon.tsx`.
 
