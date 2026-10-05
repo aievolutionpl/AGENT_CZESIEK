@@ -124,6 +124,8 @@
 }
 
 :root[data-czesiek-material='liquid'] [data-jarvis-shell] button[role='radio'][aria-checked='true'] {
+  /* The selected glass surface is pale; use the theme's readable foreground. */
+  color: var(--ui-text-primary);
   border-color: color-mix(in srgb, var(--ui-accent) 55%, var(--glass-border));
   background-color: color-mix(in srgb, var(--ui-accent) 14%, var(--liquid-control));
   box-shadow:
