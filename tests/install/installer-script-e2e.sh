@@ -255,8 +255,15 @@ assert_desktop_artifact() {
   # checkout -- install.sh builds it there and registers no OS entry point.
   local release_dir="$INSTALL_DIR/apps/desktop/release"
   local found=""
+  local product executable
+  product="$(node -e 'const p=require(process.argv[1]); console.log(p.build?.productName || p.productName || "Hermes")' "$INSTALL_DIR/apps/desktop/package.json")"
+  executable="$(node -e 'const p=require(process.argv[1]); console.log(p.build?.executableName || p.build?.productName || p.productName || "Hermes")' "$INSTALL_DIR/apps/desktop/package.json")"
   local cand
   for cand in \
+    "$release_dir/linux-unpacked/$executable" \
+    "$release_dir/linux-arm64-unpacked/$executable" \
+    "$release_dir/mac-arm64/$product.app/Contents/MacOS/$executable" \
+    "$release_dir/mac/$product.app/Contents/MacOS/$executable" \
     "$release_dir/linux-unpacked/Hermes" \
     "$release_dir/linux-unpacked/hermes" \
     "$release_dir/mac-arm64/Hermes.app" \
