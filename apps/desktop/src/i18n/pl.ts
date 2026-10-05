@@ -4578,6 +4578,16 @@ export const pl = defineLocale({
       `${provider} loguje się przez własne CLI. Uruchom to polecenie w terminalu, a potem wróć i wybierz „Zalogowałem się”:`,
     signedIn: 'Zalogowałem się',
     deviceCodeOpened: provider => `Otworzyliśmy ${provider} w Twojej przeglądarce. Wpisz tam ten kod:`,
+    chatGptLoginGuide: {
+      title: 'Zanim połączysz subskrypcję ChatGPT',
+      steps: [
+        'W ChatGPT otwórz Ustawienia → Bezpieczeństwo i logowanie (Security and login).',
+        'Włącz „Enable device code sign-in for Codex, Excel, PowerPoint, and Word”. Na koncie firmowym dostęp może włączyć administrator.',
+        'Wróć tutaj, rozpocznij logowanie i wpisz jednorazowy kod na stronie OpenAI. Po zatwierdzeniu Czesiek połączy konto automatycznie.'
+      ],
+      safety: 'Kod wpisuj tylko na stronie OpenAI — nie wysyłaj go w czacie. Subskrypcja służy modelowi pracy; rozmowa Gemini Live wymaga osobnego klucza Gemini API.',
+      docs: 'Oficjalna instrukcja logowania'
+    },
     reopenVerification: 'Otwórz ponownie stronę weryfikacji',
     copy: 'Kopiuj',
     defaultModel: 'Model domyślny',

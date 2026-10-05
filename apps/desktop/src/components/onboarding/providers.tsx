@@ -1,3 +1,4 @@
+import { ModelBrandIcon } from '@/components/model-brand-icon'
 import { RowButton } from '@/components/ui/row-button'
 import { useI18n } from '@/i18n'
 import { Check, ChevronRight, Terminal } from '@/lib/icons'
@@ -15,7 +16,6 @@ const PROVIDER_DISPLAY: Record<string, { order: number; title: string }> = {
   'claude-code': { order: 6, title: 'Anthropic OAuth: Required Extra Usage Credits to Use Subscription' }
 }
 
-const assetPath = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\/+/, '')}`
 
 export const providerTitle = (p: OAuthProvider) => PROVIDER_DISPLAY[p.id]?.title ?? p.name
 const orderOf = (p: OAuthProvider) => PROVIDER_DISPLAY[p.id]?.order ?? 99
@@ -42,7 +42,7 @@ export function FeaturedProviderRow({
       <span aria-hidden className="arc-border arc-reverse arc-nous" />
       <div className="min-w-0">
         <div className="flex items-center gap-2">
-          <img alt="" className="size-5 shrink-0 rounded" src={assetPath('apple-touch-icon.png')} />
+          <ModelBrandIcon hints={['openai']} model="openai/gpt" />
           <span className="text-[length:var(--conversation-text-font-size)] font-semibold">
             {providerTitle(provider)}
           </span>

@@ -22,10 +22,22 @@ import {
   submitOnboardingCode
 } from '@/store/onboarding'
 
+import { ChatGptLoginGuide } from './chatgpt-login-guide'
 import { DecodedLabel, GlyphText, HackeryButton, useScramble } from './glyph'
 import { providerTitle } from './providers'
 
-export function FlowPanel({
+export function FlowPanel(props: React.ComponentProps<typeof ProviderFlowPanel>) {
+  const provider = 'provider' in props.flow ? props.flow.provider : undefined
+
+  return (
+    <div className="grid gap-4">
+      {provider?.id === 'openai-codex' ? <ChatGptLoginGuide /> : null}
+      <ProviderFlowPanel {...props} />
+    </div>
+  )
+}
+
+function ProviderFlowPanel({
   ctx,
   flow,
   leaving,

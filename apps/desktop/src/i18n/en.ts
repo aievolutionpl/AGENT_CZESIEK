@@ -4165,6 +4165,16 @@ export const en: Translations = {
       `${provider} signs in through its own CLI. Run this command in a terminal, then come back and pick "I've signed in":`,
     signedIn: "I've signed in",
     deviceCodeOpened: provider => `We opened ${provider} in your browser. Enter this code there:`,
+    chatGptLoginGuide: {
+      title: 'Before connecting your ChatGPT subscription',
+      steps: [
+        'In ChatGPT, open Settings → Security and login.',
+        'Enable “Enable device code sign-in for Codex, Excel, PowerPoint, and Word”. A workspace administrator may need to enable access for a work account.',
+        'Return here, start sign-in and enter the one-time code on the OpenAI page. Czesiek connects automatically after you approve.'
+      ],
+      safety: 'Enter the code only on the OpenAI page; never send it in chat. Your subscription powers the work model; Gemini Live conversation needs a separate Gemini API key.',
+      docs: 'Official sign-in instructions'
+    },
     reopenVerification: 'Re-open verification page',
     copy: 'Copy',
     defaultModel: 'Default model',

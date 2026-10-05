@@ -2,6 +2,9 @@
 
 ## Workspace, biuro agentów i nauka AI
 
+- Logowanie subskrypcją ChatGPT: `apps/desktop/src/components/onboarding/chatgpt-login-guide.tsx` zawiera wspólną instrukcję włączenia kodu urządzenia; używają jej `app/jarvis/chatgpt-quick-connect.tsx`, `components/onboarding/flow.tsx` oraz zakładka kluczy w Integracjach. `chatgpt-connect.ts` nadal odpowiada za właściwy OAuth i wybór modelu pracy.
+- Charakter: `app/jarvis/personality.ts` i zapis w `onboarding.tsx` (także przy pominięciu pytań); głos: `hermes_cli/web_routers/voice_realtime.py`. Oba zachowują delegowanie i raportują potwierdzone wyniki. Ikony usług są w `app/jarvis/connection-icons.ts`, a modeli/głosu w `components/model-brand-icon.tsx`.
+
 - Liquid Glass: `apps/desktop/src/app/jarvis/liquid-glass.css` (tapeta całego okna i materiały), `src/store/interface-material.ts` (lokalny wybór stylu), `app/settings/interface-material.tsx` (przełącznik w Wygląd). Domyślnie Liquid Glass; nie zmienia natywnej przezroczystości okna ani uprawnień agenta.
 
 - Nawigacja: `apps/desktop/src/app/jarvis/navigation.tsx`; nazwa Workspace zachowuje dotychczasową trasę `/`.

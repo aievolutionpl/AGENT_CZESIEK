@@ -1,4 +1,7 @@
-import { Bell, GitBranch, Layers3, Lightbulb, Mail, MessageCircle, Network, NotebookTabs } from '@/lib/icons'
+import { SiGithub, SiGoogle, SiNotion } from '@icons-pack/react-simple-icons'
+import { createElement } from 'react'
+
+import { Bell, Lightbulb, Mail, MessageCircle, Network } from '@/lib/icons'
 
 import type { JarvisConnectionId } from './connections-catalog'
 
@@ -8,11 +11,11 @@ type IconComponent = React.ComponentType<{ className?: string }>
 export const CONNECTION_ICONS: Record<JarvisConnectionId, { icon: IconComponent; tile: string }> = {
   email: { icon: Mail, tile: 'bg-sky-400/15 text-sky-700 dark:text-sky-300 ring-1 ring-inset ring-current/15' },
   github: {
-    icon: GitBranch,
+    icon: props => createElement(SiGithub, { ...props, 'aria-hidden': true, title: '' }),
     tile: 'bg-zinc-300/15 text-zinc-700 dark:text-zinc-200 ring-1 ring-inset ring-current/15'
   },
   google: {
-    icon: Layers3,
+    icon: props => createElement(SiGoogle, { ...props, 'aria-hidden': true, title: '' }),
     tile: 'bg-emerald-400/15 text-emerald-700 dark:text-emerald-300 ring-1 ring-inset ring-current/15'
   },
   mcp: {
@@ -24,7 +27,7 @@ export const CONNECTION_ICONS: Record<JarvisConnectionId, { icon: IconComponent;
     tile: 'bg-cyan-400/15 text-cyan-700 dark:text-cyan-300 ring-1 ring-inset ring-current/15'
   },
   notion: {
-    icon: NotebookTabs,
+    icon: props => createElement(SiNotion, { ...props, 'aria-hidden': true, title: '' }),
     tile: 'bg-stone-300/15 text-stone-700 dark:text-stone-200 ring-1 ring-inset ring-current/15'
   },
   phone: { icon: Bell, tile: 'bg-amber-400/15 text-amber-700 dark:text-amber-300 ring-1 ring-inset ring-current/15' },

@@ -14,11 +14,13 @@ import { useNavigate } from 'react-router'
 
 import { CONNECTION_STATUS_KEY, type ConnectionState, getConnectionStatus } from '@/api/connections'
 import integrationsArt from '@/assets/czesiek-integrations.webp'
+import { ModelBrandIcon } from '@/components/model-brand-icon'
+import { ChatGptLoginGuide } from '@/components/onboarding/chatgpt-login-guide'
 import { Button } from '@/components/ui/button'
 import { CopyButton } from '@/components/ui/copy-button'
 import { useActiveCapabilityScope } from '@/hooks/use-active-capability-scope'
 import { useI18n } from '@/i18n'
-import { ExternalLink, KeyRound, ShieldLock, Sparkles } from '@/lib/icons'
+import { ExternalLink, KeyRound, Search, ShieldLock, Sparkles } from '@/lib/icons'
 import { cn } from '@/lib/utils'
 import { requestComposerPrefill } from '@/store/composer'
 
@@ -47,7 +49,7 @@ const TABS = ['connections', 'keys', 'api'] as const
 type ConnectionsTab = (typeof TABS)[number]
 
 const CARD = 'jarvis-panel jarvis-rise rounded-3xl p-4'
-const INTEGRATION_CONNECTIONS = new Set(['google', 'notion', 'github', 'smartHome', 'mcp', 'messaging'])
+const KEY_LABELS: Record<string, string> = { openrouter: 'OpenRouter', openai: 'OpenAI', anthropic: 'Claude', gemini: 'Gemini Live', elevenlabs: 'ElevenLabs', tavily: 'Tavily' }
 
 function ExternalAnchor({ href, label }: { href: string; label: string }) {
   return (
@@ -192,9 +194,6 @@ function ConnectionsGrid({ query }: { query: string }) {
   const needle = query.trim().toLocaleLowerCase()
 
   const visible = JARVIS_CONNECTIONS.filter(connection => {
-    if (!INTEGRATION_CONNECTIONS.has(connection.id)) {
-      return false
-    }
 
     const entry = copy.entries[connection.id]
 
@@ -246,6 +245,13 @@ function ApiKeysSection() {
         <KeyRound className="mt-0.5 size-5 shrink-0 text-(--ui-accent)" />
         <p className="text-sm leading-6 text-(--ui-text-secondary)">{copy.body}</p>
       </div>
+      <details className={CARD}>
+        <summary className="cursor-pointer text-sm font-semibold text-(--ui-text-primary)">ChatGPT / Codex</summary>
+        <div className="mt-3 grid gap-3">
+          <ChatGptLoginGuide />
+          <Button onClick={() => navigate(JARVIS_KEY_ROUTES.model)} type="button" variant="secondary">{t.jarvisConnections.openSettings}</Button>
+        </div>
+      </details>
       {(['model', 'tool'] as const).map(kind => (
         <section className="grid gap-2" key={kind}>
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -265,7 +271,11 @@ function ApiKeysSection() {
           <ul className="grid gap-2 lg:grid-cols-2">
             {JARVIS_API_KEYS.filter(key => key.kind === kind).map(key => (
               <li className={cn(CARD, 'flex flex-col gap-1 p-3')} data-api-key={key.id} key={key.id}>
-                <code className="text-xs font-semibold text-(--ui-text-primary)">{key.env}</code>
+              <div className="flex items-center gap-2">
+                {key.id === 'tavily' ? <Search aria-hidden="true" className="size-5 text-(--ui-accent)" /> : <ModelBrandIcon hints={[key.id]} model={key.id} />}
+                <span className="text-sm font-semibold text-(--ui-text-primary)">{KEY_LABELS[key.id]}</span>
+              </div>
+              <code className="text-xs text-(--ui-text-tertiary)">{key.env}</code>
                 <span className="text-sm text-(--ui-text-secondary)">{copy.purposes[key.id]}</span>
                 <ExternalAnchor href={key.url} label={copy.getKey} />
               </li>

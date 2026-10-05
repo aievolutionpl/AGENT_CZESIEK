@@ -14,6 +14,7 @@ import {
   JARVIS_ONBOARDING_VERSION,
   jarvisOnboardingStorageKey
 } from './jarvis/onboarding-state'
+import { normalizePersonality } from './jarvis/personality'
 
 import AppRoot, { appCompositionMode, JARVIS_VIEW_TARGETS, jarvisViewForLocation } from './index'
 
@@ -473,6 +474,7 @@ describe('desktop app root Agent Czesiek integration', () => {
       {
         approvals: { mode: 'smart' },
         custom_prompt: expect.stringContaining('Czesiek: koordynator głosowy'),
+        display: { czesiek_profile: normalizePersonality(undefined) },
         voice: { auto_tts: false, engine: 'classic' }
       },
       { connectionId: 'local', profile: 'default' }

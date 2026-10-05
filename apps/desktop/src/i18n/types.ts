@@ -3392,6 +3392,7 @@ export interface Translations {
     externalPending: (provider: string) => string
     signedIn: string
     deviceCodeOpened: (provider: string) => string
+    chatGptLoginGuide: { title: string; steps: string[]; safety: string; docs: string }
     reopenVerification: string
     copy: string
     defaultModel: string

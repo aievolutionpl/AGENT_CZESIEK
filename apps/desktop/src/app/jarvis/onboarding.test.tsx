@@ -21,6 +21,7 @@ import {
   shouldShowJarvisOnboarding,
   writeJarvisOnboardingState
 } from './onboarding-state'
+import { type CzesiekPersonality, normalizePersonality, personalityPrompt } from './personality'
 
 // The wizard resolves providers over the gateway, so a busy CI runner needs more
 // than the library defaults (1s async / 5s per test) — otherwise these tests flake
@@ -105,6 +106,24 @@ function renderOnboarding(props: Partial<React.ComponentProps<typeof JarvisOnboa
     </I18nProvider>
   )
 }
+
+it('preserves the saved personality when questions are skipped on an existing profile', async () => {
+  const personality = normalizePersonality({ name: 'Ola', purpose: 'Planowanie kampanii', tone: 'direct' })
+  const saveConfig = vi.fn().mockResolvedValue({ ok: true })
+  persistReadyApprovalsState()
+  renderOnboarding({
+    initialStep: 'approvals',
+    loadConfig: async () => ({ custom_prompt: 'Zachowaj moje reguły.', display: { czesiek_profile: personality } }),
+    saveConfig
+  })
+  fireEvent.click(await screen.findByRole('radio', { name: 'Zrównoważony' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Zakończ' }))
+  await waitFor(() => expect(saveConfig).toHaveBeenCalledOnce())
+  const saved = saveConfig.mock.calls[0][0] as { custom_prompt: string; display: { czesiek_profile: CzesiekPersonality } }
+  expect(saved.display.czesiek_profile).toEqual(personality)
+  expect(saved.custom_prompt).toContain(personalityPrompt(personality))
+  expect(saved.custom_prompt).toContain('Zachowaj moje reguły.')
+})
 
 function persistReadyApprovalsState() {
   window.localStorage.setItem(
@@ -378,8 +397,11 @@ describe('Agent CzesiekOnboarding', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Zakończ' }))
 
-    await waitFor(() => expect(saveConfig).toHaveBeenCalledTimes(2))
-    await waitFor(() => expect(readStoredOnboardingState()?.completedSteps).toContain('approvals'))
+  await waitFor(() => expect(saveConfig).toHaveBeenCalledTimes(2))
+  const saved = saveConfig.mock.calls[1][0] as { custom_prompt: string; display: { czesiek_profile: CzesiekPersonality } }
+  expect(saved.display.czesiek_profile).toEqual(normalizePersonality(undefined))
+  expect(saved.custom_prompt).toContain(personalityPrompt(saved.display.czesiek_profile))
+  await waitFor(() => expect(readStoredOnboardingState()?.completedSteps).toContain('approvals'))
   })
 
   it('does not complete when the final state cannot be serialized and retry succeeds', async () => {
@@ -610,6 +632,7 @@ describe('Agent CzesiekOnboarding', () => {
       {
         approvals: { mode: 'smart' },
         custom_prompt: expect.stringContaining('Cześkiem'),
+        display: { czesiek_profile: normalizePersonality(undefined) },
         stt: { enabled: false },
         voice: { auto_tts: false, engine: 'classic' }
       },
