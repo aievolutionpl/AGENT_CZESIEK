@@ -172,7 +172,10 @@ jobs:
         if: matrix.leg.platform == 'mac'
         shell: bash
         run: |
-          python3 -m pip install --quiet uv==0.12.21
+          # Homebrew's Python is externally managed (PEP 668): a bare pip install fails.
+          python3 -m venv "$RUNNER_TEMP/uv-venv"
+          "$RUNNER_TEMP/uv-venv/bin/python" -m pip install --quiet uv==0.12.21
+          export PATH="$RUNNER_TEMP/uv-venv/bin:$PATH"
           bash scripts/stage-macos-runtime.sh
 
       - name: Stage bundled engine (Windows)
