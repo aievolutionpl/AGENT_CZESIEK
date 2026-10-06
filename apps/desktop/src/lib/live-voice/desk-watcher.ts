@@ -10,7 +10,15 @@
 import type { DeskDigest, DeskItem, DeskLang, DeskVerdict } from '@/api/voice-desk'
 
 /** Important transitions; unchanged active work gets a separate, throttled update. */
-const ANNOUNCED: ReadonlySet<DeskVerdict> = new Set(['blocked', 'done', 'done_unreported', 'needs_you', 'stalled', 'running', 'retrying'])
+const ANNOUNCED: ReadonlySet<DeskVerdict> = new Set([
+  'blocked',
+  'done',
+  'done_unreported',
+  'needs_you',
+  'stalled',
+  'running',
+  'retrying'
+])
 
 export const DESK_POLL_MS = 4_000
 export const DESK_PROGRESS_MS = 20_000
@@ -25,7 +33,13 @@ const isMine = (item: DeskItem, sessionId: null | string) =>
  * The announcements for what changed since `known`, which is updated in place. With `seed` nothing is
  * announced: the digest only becomes the baseline.
  */
-export function diffDesk(known: DeskKnown, items: readonly DeskItem[], sessionId: null | string, seed = false, assigned: ReadonlySet<string> = new Set()) {
+export function diffDesk(
+  known: DeskKnown,
+  items: readonly DeskItem[],
+  sessionId: null | string,
+  seed = false,
+  assigned: ReadonlySet<string> = new Set()
+) {
   const announcements: string[] = []
 
   for (const item of items) {
@@ -33,7 +47,12 @@ export function diffDesk(known: DeskKnown, items: readonly DeskItem[], sessionId
 
     known.set(item.id, item.verdict)
 
-    if ((!seed || assigned.has(item.id)) && (before !== item.verdict || assigned.has(item.id)) && ANNOUNCED.has(item.verdict) && isMine(item, sessionId)) {
+    if (
+      (!seed || assigned.has(item.id)) &&
+      (before !== item.verdict || assigned.has(item.id)) &&
+      ANNOUNCED.has(item.verdict) &&
+      isMine(item, sessionId)
+    ) {
       announcements.push(item.line)
     }
   }
@@ -51,7 +70,14 @@ export interface DeskWatcherDeps {
 }
 
 /** Start polling the board; returns the stop function. A board that cannot be read is skipped, never fatal. */
-export function startDeskWatcher({ assigned, fetchDesk, intervalMs = DESK_POLL_MS, lang, push, sessionId }: DeskWatcherDeps) {
+export function startDeskWatcher({
+  assigned,
+  fetchDesk,
+  intervalMs = DESK_POLL_MS,
+  lang,
+  push,
+  sessionId
+}: DeskWatcherDeps) {
   const known: DeskKnown = new Map()
   const seenAssignments = new Set<string>()
   let seeded = false
@@ -97,8 +123,10 @@ export function startDeskWatcher({ assigned, fetchDesk, intervalMs = DESK_POLL_M
           lastProgress = Date.now()
         }
 
-        const active = digest.items.filter(item => isMine(item, requestedSession)
-          && ['queued', 'running', 'retrying', 'in_review'].includes(item.verdict))
+        const active = digest.items.filter(
+          item =>
+            isMine(item, requestedSession) && ['queued', 'running', 'retrying', 'in_review'].includes(item.verdict)
+        )
 
         if (!changes.length && active.length && Date.now() - lastProgress >= DESK_PROGRESS_MS) {
           push(active.map(item => item.line).join('\n'), true)
