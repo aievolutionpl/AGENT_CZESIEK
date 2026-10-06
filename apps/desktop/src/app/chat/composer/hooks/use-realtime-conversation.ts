@@ -94,11 +94,15 @@ export function useRealtimeConversation({
   const args = useRef({ busy, failureLabel, markSpoken, messages, onFatalError, onSubmit, onInterrupt })
   args.current = { busy, failureLabel, markSpoken, messages, onFatalError, onSubmit, onInterrupt }
 
-  const announcements = useRef(new VoiceReportQueue(text => notify({
-    kind: 'info',
-    title: 'Raport współpracownika — głos nie odpowiedział',
-    message: text
-  })))
+  const announcements = useRef(
+    new VoiceReportQueue(text =>
+      notify({
+        kind: 'info',
+        title: 'Raport współpracownika — głos nie odpowiedział',
+        message: text
+      })
+    )
+  )
 
   const dispatching = useRef(false)
   const assignedTasks = useRef(new Set<string>())
@@ -331,7 +335,10 @@ export function useRealtimeConversation({
       }
     }
 
-    void Promise.race([submitAndAwaitReply(ownedSource, () => source.onSubmit(request), ASK_TIMEOUT_MS), afterHardLimit()])
+    void Promise.race([
+      submitAndAwaitReply(ownedSource, () => source.onSubmit(request), ASK_TIMEOUT_MS),
+      afterHardLimit()
+    ])
       .then(reply => {
         if (task.cancelled || currentSession.current !== task.session) {
           return
@@ -391,15 +398,23 @@ export function useRealtimeConversation({
     }
 
     const timer = window.setInterval(() => {
-      const workers = ($subagentsBySession.get()[currentSession.current || ''] || [])
-        .filter(item => item.status === 'running' || item.status === 'queued')
+      const workers = ($subagentsBySession.get()[currentSession.current || ''] || []).filter(
+        item => item.status === 'running' || item.status === 'queued'
+      )
 
-      if ((pending.current || slowAsks.current.length || workers.length) && !announcements.current.pending && !$speakerMuted.get()) {
+      if (
+        (pending.current || slowAsks.current.length || workers.length) &&
+        !announcements.current.pending &&
+        !$speakerMuted.get()
+      ) {
         const progress = workers.length
-          ? workers.slice(0, 3).map(item => `${item.goal}: ${item.status}`).join('\n')
+          ? workers
+              .slice(0, 3)
+              .map(item => `${item.goal}: ${item.status}`)
+              .join('\n')
           : lang.current === 'pl'
-          ? 'Czekam na odpowiedź Hermesa. Nie mam jeszcze potwierdzonego wyniku. Możemy dalej rozmawiać.'
-          : 'Waiting for Hermes to respond. No confirmed result yet. We can keep talking.'
+            ? 'Czekam na odpowiedź Hermesa. Nie mam jeszcze potwierdzonego wyniku. Możemy dalej rozmawiać.'
+            : 'Waiting for Hermes to respond. No confirmed result yet. We can keep talking.'
 
         announcements.current.push(progress, undefined, true)
       }
@@ -440,6 +455,7 @@ export function useRealtimeConversation({
           if (next === 'speaking') {
             announcements.current.spoken()
           }
+
           setStatus(STATUS[next])
         }
       },
