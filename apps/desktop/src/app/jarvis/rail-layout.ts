@@ -112,6 +112,27 @@ export function setRailCardHidden(id: RailCardId, hidden: boolean): void {
   commit({ ...current, hidden: hidden ? [...rest, id] : rest })
 }
 
+/** Ready-made layouts: the cards each one shows, first to last. Everything else is hidden, not lost. */
+export const RAIL_PRESETS = {
+  minimal: ['start', 'model'],
+  news: ['news', 'insights', 'memory'],
+  work: ['agents', 'quick-access', 'memory', 'model']
+} as const satisfies Record<string, readonly RailCardId[]>
+
+export type RailPresetId = keyof typeof RAIL_PRESETS
+
+/** The layout a preset describes: its cards on top in its order, every other card hidden below them. */
+export function railPresetLayout(preset: RailPresetId): RailLayout {
+  const shown: readonly RailCardId[] = RAIL_PRESETS[preset]
+  const rest = RAIL_CARD_IDS.filter(id => !shown.includes(id))
+
+  return normalizeRailLayout({ hidden: rest, order: [...shown, ...rest] })
+}
+
+export function applyRailPreset(preset: RailPresetId): void {
+  commit(railPresetLayout(preset))
+}
+
 export function resetRailLayout(): void {
   commit(normalizeRailLayout(null))
 }

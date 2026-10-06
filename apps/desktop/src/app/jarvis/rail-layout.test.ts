@@ -3,10 +3,13 @@ import { afterEach, describe, expect, it } from 'vitest'
 
 import {
   $railLayout,
+  applyRailPreset,
   applyVisibleOrder,
   moveRailCard,
   normalizeRailLayout,
   RAIL_CARD_IDS,
+  RAIL_PRESETS,
+  railPresetLayout,
   resetRailLayout,
   setRailCardHidden,
   setRailVisibleOrder
@@ -80,5 +83,25 @@ describe('the layout store', () => {
     resetRailLayout()
 
     expect($railLayout.get()).toEqual({ hidden: [], order: [...RAIL_CARD_IDS] })
+  })
+})
+
+describe('rail presets', () => {
+  it('show exactly their cards, in order, and hide every other card without dropping it', () => {
+    for (const id of Object.keys(RAIL_PRESETS) as (keyof typeof RAIL_PRESETS)[]) {
+      const { hidden, order } = railPresetLayout(id)
+      const shown = order.filter(card => !hidden.includes(card))
+
+      expect(shown).toEqual(RAIL_PRESETS[id])
+      expect([...order].sort()).toEqual([...RAIL_CARD_IDS].sort())
+    }
+  })
+
+  it('apply to the live layout and survive a reload', () => {
+    applyRailPreset('minimal')
+
+    expect(normalizeRailLayout(JSON.parse(window.localStorage.getItem('czesiek:rail-layout:v1') ?? 'null'))).toEqual(
+      $railLayout.get()
+    )
   })
 })
