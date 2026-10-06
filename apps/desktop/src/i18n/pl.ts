@@ -3354,7 +3354,7 @@ export const pl = defineLocale({
       telegram:
         'Najprościej: wybierz szybką konfigurację przez QR. Możesz też utworzyć bota przez @BotFather, wkleić token i dodać swój identyfikator użytkownika.',
       whatsapp:
-        'Uruchom mostek WhatsApp dołączony do Hermesa, zeskanuj kod QR przy pierwszym starcie i włącz kanał. Dostęp ogranicz do swoich numerów.',
+        'Uruchom mostek WhatsApp dołączony do Agenta Cześka, zeskanuj kod QR przy pierwszym starcie i włącz kanał. Dostęp ogranicz do swoich numerów.',
       bluebubbles:
         'iMessage wymaga komputera Mac z aplikacją BlueBubbles Server. Wklej adres serwera i hasło, zapisz ustawienia, a potem uruchom bramę ponownie.',
       signal:
@@ -3465,7 +3465,7 @@ export const pl = defineLocale({
       menuItem: 'Połącz ze zdalnym hostem…',
       badge: (host: string) => `Działa na ${host}`,
       title: (profile: string) => `Połącz profil ${profile} ze zdalnym hostem`,
-      description: 'Sesje w tym profilu będą działać na zdalnym Hermesie, który wskażesz, zamiast na tym komputerze.',
+      description: 'Sesje w tym profilu będą działać na zdalnym Agencie Cześku, którego wskażesz, zamiast na tym komputerze.',
       urlLabel: 'Adres zdalny',
       urlPlaceholder: 'https://hermes.example.com',
       urlInvalid: 'Wpisz pełny adres zaczynający się od http:// albo https://',

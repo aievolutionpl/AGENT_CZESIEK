@@ -6,12 +6,13 @@ import { createVaultNote, VAULT_RAIL_KEY } from '@/api/vault'
 import { Button } from '@/components/ui/button'
 import { getAiNews } from '@/hermes'
 import { useI18n } from '@/i18n'
-import { Bookmark, Checks, Loader2, RefreshCw, Sparkles, Zap } from '@/lib/icons'
+import { Bookmark, Checks, EyeOff, Loader2, RefreshCw, Sparkles, Zap } from '@/lib/icons'
 import { cn } from '@/lib/utils'
 import { notify, notifyError } from '@/store/notifications'
 
 import { requestComposerInsert } from '../chat/composer/focus'
 
+import { $newsMuted, setSourceMuted, unmuteAllSources, withoutMuted } from './news-muted'
 import { $newsRead, markNewsRead } from './news-read'
 import { RailCard } from './rail-card'
 
@@ -32,6 +33,8 @@ const COPY = {
       `Brief me on these AI headlines in a few sentences and tell me which one matters most for my work:\n${titles}`,
     less: 'Show less',
     markAll: 'Mark all as read',
+    mute: (name: string) => `Hide ${name}`,
+    muted: (n: number) => `${n} hidden source${n === 1 ? '' : 's'} · show`,
     more: (n: number) => `Show ${n} more`,
     saved: 'Saved to memory',
     savedAlready: 'Already in memory',
@@ -49,6 +52,8 @@ const COPY = {
       `Podsumuj te newsy AI w kilku zdaniach i powiedz, który jest najważniejszy dla mojej pracy:\n${titles}`,
     less: 'Pokaż mniej',
     markAll: 'Oznacz wszystko jako przeczytane',
+    mute: (name: string) => `Ukryj: ${name}`,
+    muted: (n: number) => `Ukryte źródła: ${n} · pokaż`,
     more: (n: number) => `Pokaż jeszcze ${n}`,
     saved: 'Zapisano w pamięci',
     savedAlready: 'Już jest w pamięci',
@@ -103,6 +108,7 @@ export function JarvisNewsLiveCard({ connected }: { connected: boolean }) {
   const [saving, setSaving] = useState<null | string>(null)
   const queryClient = useQueryClient()
   const read = useStore($newsRead)
+  const muted = useStore($newsMuted)
 
   const news = useQuery({
     enabled: connected,
@@ -112,7 +118,7 @@ export function JarvisNewsLiveCard({ connected }: { connected: boolean }) {
     staleTime: NEWS_REFRESH_MS
   })
 
-  const all = useMemo(() => news.data?.items ?? [], [news.data])
+  const all = useMemo(() => withoutMuted(news.data?.items ?? [], muted), [news.data, muted])
   const chips = useMemo(() => topSources(all), [all])
   const filtered = source && chips.includes(source) ? all.filter(item => item.source === source) : all
   const items = expanded ? filtered : filtered.slice(0, NEWS_SHOWN)
@@ -191,7 +197,14 @@ export function JarvisNewsLiveCard({ connected }: { connected: boolean }) {
           {state.error}
         </p>
       ) : all.length === 0 ? (
-        <p className="text-xs text-(--ui-text-secondary)">{state.empty}</p>
+        <>
+          <p className="text-xs text-(--ui-text-secondary)">{state.empty}</p>
+          {muted.length > 0 ? (
+            <Button className="mt-1" onClick={unmuteAllSources} size="sm" type="button" variant="text">
+              {copy.muted(muted.length)}
+            </Button>
+          ) : null}
+        </>
       ) : (
         <>
           {chips.length > 1 ? (
@@ -263,6 +276,19 @@ export function JarvisNewsLiveCard({ connected }: { connected: boolean }) {
                     <Sparkles />
                   </Button>
                   <Button
+                    aria-label={copy.mute(item.source)}
+                    onClick={() => {
+                      setSourceMuted(item.source, true)
+                      setSource(null)
+                    }}
+                    size="icon-sm"
+                    title={copy.mute(item.source)}
+                    type="button"
+                    variant="ghost"
+                  >
+                    <EyeOff />
+                  </Button>
+                  <Button
                     aria-label={copy.save}
                     disabled={saving === item.link}
                     onClick={() => void save(item)}
@@ -296,6 +322,11 @@ export function JarvisNewsLiveCard({ connected }: { connected: boolean }) {
             <Sparkles />
             {copy.brief}
           </Button>
+          {muted.length > 0 ? (
+            <Button className="mt-1" onClick={unmuteAllSources} size="sm" type="button" variant="text">
+              {copy.muted(muted.length)}
+            </Button>
+          ) : null}
           {filtered.length > NEWS_SHOWN ? (
             <Button className="mt-1" onClick={() => setExpanded(v => !v)} size="sm" type="button" variant="text">
               {expanded ? copy.less : copy.more(filtered.length - NEWS_SHOWN)}
