@@ -194,7 +194,7 @@ Instrukcja użytkownika: [własne umiejętności i role](SKILLS_AND_ASSISTANT.md
 
 ## Dashboard right rail: board, fold, stats, news
 
-- `app/jarvis/rail-layout.ts` — `$railLayout` (order + hidden cards, persisted `czesiek:rail-layout:v1`), `normalizeRailLayout` (a new card slots in after its default predecessor), `applyVisibleOrder`, `moveRailCard`; `$railHidden` remembers the whole rail folded away.
+- `app/jarvis/rail-layout.ts` — `$railLayout` (order + hidden cards, persisted `czesiek:rail-layout:v1`), `normalizeRailLayout` (a new card slots in after its default predecessor), `applyVisibleOrder`, `moveRailCard`, `RAIL_PRESETS` + `applyRailPreset` (Minimal / Work / News: the preset’s cards on top, the rest hidden, not lost); `$railHidden` remembers the whole rail folded away.
 - `rail-board.tsx` — `RailBoard` (dnd-kit sortable over `chat/sidebar/reorderable-list.tsx`; drag from a card header, Space/arrows on the grip; hidden cards are not mounted) and `RailCustomizeMenu` (show/hide, move up/down, reset). `rail-card.tsx` — `RailCard` (animated fold, content unmounted after the fold; grip via `RailSlotContext`); `rail-copy.ts` — pl/en words and screen-reader announcements.
 - `insights-stats.ts` + `insights-card.tsx` — stats card with metric (sessions/tokens/cost) and range (7/14/30 d) choice persisted, change vs the equal window before, scrubbable chart, top model/tool/skill. `news-read.ts` + `rail-news-card.tsx` — read/unread tracking, mark-all, "Brief me".
 

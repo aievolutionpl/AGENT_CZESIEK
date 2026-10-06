@@ -24,10 +24,13 @@ import { RailSlotContext, type RailSlotControls } from './rail-card'
 import { RAIL_CARD_COPY } from './rail-copy'
 import {
   $railLayout,
+  applyRailPreset,
   moveRailCard,
   normalizeRailLayout,
   RAIL_CARD_IDS,
+  RAIL_PRESETS,
   type RailCardId,
+  type RailPresetId,
   resetRailLayout,
   setRailCardHidden,
   setRailOrder,
@@ -133,6 +136,13 @@ export function RailCustomizeMenu({ className }: { className?: string }) {
       <PopoverContent align="end" className="w-72 p-3" data-testid="jarvis-rail-customize">
         <p className="mb-2 text-sm font-semibold text-(--ui-text-primary)">{copy.customize}</p>
         <p className="mb-3 text-xs text-(--ui-text-tertiary)">{copy.customizeHint}</p>
+        <div aria-label={copy.presetsLabel} className="mb-3 flex flex-wrap gap-1" role="group">
+          {(Object.keys(RAIL_PRESETS) as RailPresetId[]).map(id => (
+            <Button key={id} onClick={() => applyRailPreset(id)} size="xs" type="button" variant="secondary">
+              {copy.presets[id]}
+            </Button>
+          ))}
+        </div>
         <ul className="grid gap-1">
           {layout.order.map((id, index) => {
             const name = copy.cards[id]

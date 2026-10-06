@@ -11,6 +11,8 @@ export interface RailCardCopy {
   dragStart: (name: string) => string
   dragDropped: (name: string, position: number, total: number) => string
   grip: (name: string) => string
+  presets: Record<'minimal' | 'news' | 'work', string>
+  presetsLabel: string
   instructions: string
   reset: string
   show: (name: string) => string
@@ -36,6 +38,8 @@ const pl: RailCardCopy = {
   dragMoved: (name, position, total) => `${name}: pozycja ${position} z ${total}.`,
   dragStart: name => `Podniesiono kartę ${name}.`,
   grip: name => `Przesuń kartę: ${name}`,
+  presets: { minimal: 'Minimalny', news: 'Newsy', work: 'Praca' },
+  presetsLabel: 'Gotowe układy',
   instructions: 'Spacja podnosi kartę, strzałki w górę i w dół ją przesuwają, spacja upuszcza, Escape anuluje.',
   reset: 'Przywróć domyślny układ',
   show: name => `Pokaż kartę: ${name}`,
@@ -61,6 +65,8 @@ const en: RailCardCopy = {
   dragMoved: (name, position, total) => `${name}: position ${position} of ${total}.`,
   dragStart: name => `Picked up the ${name} card.`,
   grip: name => `Move card: ${name}`,
+  presets: { minimal: 'Minimal', news: 'News', work: 'Work' },
+  presetsLabel: 'Ready-made layouts',
   instructions: 'Space picks a card up, the up and down arrows move it, space drops it, Escape cancels.',
   reset: 'Restore the default layout',
   show: name => `Show card: ${name}`,
