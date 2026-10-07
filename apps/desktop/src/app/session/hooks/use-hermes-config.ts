@@ -3,6 +3,7 @@ import { type MutableRefObject, useCallback, useRef, useState } from 'react'
 import { setTerminalFontFamilyFromConfig } from '@/app/right-sidebar/terminal/terminal-font'
 import { getHermesConfig, getHermesConfigDefaults } from '@/hermes'
 import { BUILTIN_PERSONALITIES, normalizePersonalityValue, personalityNamesFromConfig } from '@/lib/chat-runtime'
+import { desktopEffort } from '@/lib/reasoning-effort'
 import { normalize } from '@/lib/text'
 import { setDisplayTimestampsFromConfig } from '@/store/display-timestamps'
 import {
@@ -95,7 +96,7 @@ export function useHermesConfig({ activeSessionIdRef }: HermesConfigOptions) {
           ])
         ])
 
-        const reasoning = normalizeConfigEffort(config.agent?.reasoning_effort)
+        const reasoning = desktopEffort(normalizeConfigEffort(config.agent?.reasoning_effort))
         const tier = (config.agent?.service_tier ?? '').trim()
 
         // Publish the profile default regardless of whether the composer is

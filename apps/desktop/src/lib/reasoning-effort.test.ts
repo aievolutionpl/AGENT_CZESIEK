@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   DEFAULT_REASONING_EFFORT,
+  desktopEffort,
   isReasoningEffort,
   isThinkingEnabled,
   REASONING_EFFORT_VALUES,
@@ -49,5 +50,16 @@ describe('reasoning-effort', () => {
     // Off selects nothing on the scale.
     expect(resolveReasoningEffort('none')).toBe('')
     expect(resolveReasoningEffort('bogus')).toBe(DEFAULT_REASONING_EFFORT)
+  })
+})
+
+describe('desktopEffort', () => {
+  it('starts quick when the profile sets nothing and keeps whatever the profile chose, thinking off included', () => {
+    expect(isReasoningEffort(desktopEffort(''))).toBe(true)
+    expect(desktopEffort('')).not.toBe(DEFAULT_REASONING_EFFORT)
+
+    for (const chosen of ['medium', 'high', 'none']) {
+      expect(desktopEffort(chosen)).toBe(chosen)
+    }
   })
 })
