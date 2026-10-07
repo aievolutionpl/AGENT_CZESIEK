@@ -17,7 +17,7 @@ fi
 rm -rf "$WORK" "$DESKTOP/build/runtime"
 mkdir -p "$WORK"
 
-echo "▸ Pobieram przenośnego Pythona $PYTHON_VERSION…"
+echo "▸ Pobieram przenośnego Pythona ${PYTHON_VERSION}…"
 export UV_PYTHON_INSTALL_DIR="$WORK/python"
 uv python install "$PYTHON_VERSION"
 PY_BIN="$(uv python find "$PYTHON_VERSION")"
