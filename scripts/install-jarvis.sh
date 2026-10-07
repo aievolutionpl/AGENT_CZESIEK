@@ -194,7 +194,7 @@ EOF
     next_steps
     if [ "$LAUNCH" = 1 ]; then
         nohup "$TARGET" >/dev/null 2>&1 &
-        say "Uruchamiam $APP_NAME…"
+        say "Uruchamiam ${APP_NAME}…"
     fi
 else
     MOUNT="$TMP/mount"
@@ -213,6 +213,6 @@ else
     next_steps
     if [ "$LAUNCH" = 1 ]; then
         open "$TARGET"
-        say "Uruchamiam $APP_NAME…"
+        say "Uruchamiam ${APP_NAME}…"
     fi
 fi
