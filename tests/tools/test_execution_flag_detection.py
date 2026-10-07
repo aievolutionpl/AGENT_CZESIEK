@@ -281,6 +281,9 @@ def test_benign_segment_scaling_benchmark():
     assert small_result == (False, None, None)
     assert large_result == (False, None, None)
     print(f"benign segment benchmark: 2k={small:.3f}s, 4k={large:.3f}s")
+    # Loose absolute bound, not a ratio: linear scanning takes ~2 s for 4k segments, the quadratic
+    # lookahead retry this once hid in took minutes, so 60 s catches the class without flaking on load.
+    assert large < 60.0, f"4k benign segments took {large:.1f}s"
 
 
 def test_max_accepted_separator_free_input_is_fast():

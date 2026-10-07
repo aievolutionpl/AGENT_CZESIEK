@@ -90,7 +90,15 @@ class _StalledSummaryWorker:
             fence.finish_commit()
 
 
-def _run(worker, *, chain, timeouts, messages, idle=0.05, ceiling=0.2):
+# The idle budget is measured from the moment the host submits the job, so it must outlast a cold
+# or loaded pool starting the worker thread: a worker that has not started when the budget lapses
+# is cancelled before it runs and never records an attempt, which reads as "no retry happened".
+# The worker hangs on `release` (10 s), so a longer budget only lengthens each stall test.
+IDLE_S = 2.0
+CEILING_S = 20.0
+
+
+def _run(worker, *, chain, timeouts, messages, idle=IDLE_S, ceiling=CEILING_S):
     with _patch_chain(chain):
         return run_compress_context_with_progress_timeout(
             worker=worker,
@@ -151,8 +159,8 @@ def test_retry_runs_on_a_host_published_fence():
                 worker=worker,
                 messages=original,
                 system_prompt_fallback="degraded-prompt",
-                idle_timeout_seconds=0.05,
-                total_ceiling_seconds=0.2,
+                idle_timeout_seconds=IDLE_S,
+                total_ceiling_seconds=CEILING_S,
                 new_fence=_new_fence,
             )
     finally:
@@ -181,8 +189,8 @@ def test_hard_interrupt_suppresses_the_fallback_attempt():
                 worker=worker,
                 messages=original,
                 system_prompt_fallback="degraded-prompt",
-                idle_timeout_seconds=0.05,
-                total_ceiling_seconds=0.2,
+                idle_timeout_seconds=IDLE_S,
+                total_ceiling_seconds=CEILING_S,
                 on_timeout=lambda *args: timeouts.append(args),
                 telemetry_agent=agent,
             )

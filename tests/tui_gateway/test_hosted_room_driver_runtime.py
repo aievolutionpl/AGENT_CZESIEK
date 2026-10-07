@@ -253,10 +253,13 @@ class FakeSessionRPC:
             if not current["active"] or current["task_id"] != expected_task_id:
                 self.calls.append(("interrupt_skipped", params))
                 return {"interrupted": False}
+            # Observe under the lock: the worker and cancel() both interrupt a stopping task, and a
+            # caller that loses the race returns "skipped" and may finish the cancellation at once.
+            # Reading the status after releasing the lock could see that "cancelled", not "stopping".
+            if self.on_interrupt is not None:
+                self.on_interrupt()
             current["active"] = False
         self.calls.append(("interrupt", params))
-        if self.on_interrupt is not None:
-            self.on_interrupt()
         return {"interrupted": True}
 
 
