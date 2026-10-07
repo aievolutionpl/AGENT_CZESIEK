@@ -37,6 +37,7 @@ import type { JarvisInsightsView } from './panel-copy'
 import { JarvisQuickAccess } from './quick-access'
 import { $railHidden, $workspacePanelView, openWorkspacePanel, setRailHidden } from './rail-layout'
 import { JarvisMemoryCard } from './rail-memory-card'
+import { ScreenLookingBadge } from './screen-looking-badge'
 import { JarvisStatusStrip } from './status-strip'
 import { JarvisTipsLauncher } from './tips'
 import type { JarvisUiState } from './types'
@@ -424,6 +425,7 @@ export function JarvisDashboard({
           <JarvisCore compact={compactCore && !voiceActive} live taskPhase={state.task.phase} voice={state.voice} />
         )}
         {home ? null : <VoiceWave active={voiceActive} />}
+        {home ? null : <ScreenLookingBadge />}
         {
           <>
             <HomeTopBar connected={connected} openTips={() => openTipsRef.current()} switcher={switcher} />

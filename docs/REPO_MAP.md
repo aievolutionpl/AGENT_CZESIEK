@@ -206,6 +206,7 @@ Instrukcja użytkownika: [własne umiejętności i role](SKILLS_AND_ASSISTANT.md
 
 ## Voice: voices, preview, bottom dock, fast default
 
+- `store/screen-looking.ts` (`whileLooking`, ≥1.5 s) + `app/jarvis/screen-looking-badge.tsx` — privacy cue "Czesiek patrzy na ekran" shown while `captureScreenDataUrl` runs; wired in `lib/screen-capture.ts`, rendered under the wave on the voice screen.
 - Defaults: male voices (`voice.realtime.voice: cedar`, Gemini `Puck`); `agent.reasoning_effort` is empty (CLI and messaging keep the engine level); the desktop starts at "low" (Szybki) when the profile sets none (`desktopEffort`, `lib/reasoning-effort.ts`).
 - `app/jarvis/live-voices.ts` — voices per provider (male first, character and feel); `app/settings/live-voice-picker.tsx` — the Voice settings picker with a play button per voice (replaces the two plain dropdowns; `voiceFieldVisible` hides them). Preview: `POST /api/voice/realtime/preview` (`voice_realtime.py`: OpenAI `audio/speech` or Gemini TTS, returned as a base64 WAV).
 - Home while live is only the orb; the dock (mic switch, voice mute, end) sits at the bottom (`dashboard.tsx`, `voice-controls.tsx`).
