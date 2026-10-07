@@ -50,8 +50,9 @@ DEFAULT_CONFIG = {
         # Turn cap. null = unlimited (default; caps caused silent mid-task truncation). Positive int
         # caps; "none"/"unlimited"/"inf"/0/-1 also mean unlimited (resolve_turn_limit).
         "max_turns": None,
-        # Quick answers by default ("low"); the desktop's Szybki / Zrównoważony / Głęboki switch changes it.
-        "reasoning_effort": "low",
+        # Empty = the engine's own level (medium) for CLI and messaging. The desktop shows "low"
+        # (Szybki) until the user picks one; see DESKTOP_FAST_EFFORT in apps/desktop/src/lib/reasoning-effort.ts.
+        "reasoning_effort": "",
         # Optional one-time model-visible checkpoint warning before a finite turn cap is exhausted.
         # null = off; set a ratio strictly between 0 and 1 (for example, 0.75).
         "budget_warning_ratio": None,

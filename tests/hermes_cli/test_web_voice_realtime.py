@@ -215,7 +215,8 @@ def test_new_installs_speak_with_a_male_voice_and_answer_fast():
 
     assert realtime["voice"] in male["openai"] and realtime["gemini"]["voice"] in male["gemini"]
     assert voice_realtime.DEFAULT_REALTIME_VOICE == realtime["voice"]
-    assert DEFAULT_CONFIG["agent"]["reasoning_effort"] == "low"
+    # CLI and messaging inherit the engine's own level; only the desktop defaults to quick answers.
+    assert DEFAULT_CONFIG["agent"]["reasoning_effort"] == ""
 
 
 def test_preview_returns_a_playable_wav_of_the_chosen_voice(client, monkeypatch):
