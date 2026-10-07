@@ -225,7 +225,16 @@ jobs:
           APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
         run: |
           npm run build
-          npm run builder -- ${{ matrix.leg['builder-args'] }}
+          # dmgbuild's `hdiutil detach` loses a race on hosted macOS runners ("Resource busy",
+          # run 37604959675). Retrying the same build is the fix there; other legs run once.
+          attempts=1
+          [ "${{ matrix.leg.platform }}" = mac ] && attempts=3
+          for attempt in $(seq 1 "$attempts"); do
+            npm run builder -- ${{ matrix.leg['builder-args'] }} && exit 0
+            [ "$attempt" -lt "$attempts" ] || exit 1
+            echo "::warning::electron-builder failed (attempt $attempt/$attempts); retrying in 20s"
+            sleep 20
+          done
 
       - name: Sign Windows artifacts
         if: matrix.leg.platform == 'win'
