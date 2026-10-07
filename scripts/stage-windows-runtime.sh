@@ -14,7 +14,7 @@ win() { cygpath -w "$1"; }
 rm -rf "$WORK" "$DESKTOP/build/runtime"
 mkdir -p "$WORK"
 
-echo "Python $PYTHON_VERSION…"
+echo "Python ${PYTHON_VERSION}…"
 export UV_PYTHON_INSTALL_DIR="$(win "$WORK/python")"
 uv python install "$PYTHON_VERSION"
 PY_BIN="$(uv python find "$PYTHON_VERSION")"
@@ -24,7 +24,7 @@ echo "Zależności (uv.lock)…"
 unset UV_PYTHON
 UV_PROJECT_ENVIRONMENT="$(win "$WORK/venv")" uv sync --project "$(win "$REPO")" --python "$(win "$PY_ROOT/python.exe")" --extra all --locked
 
-echo "Node.js $NODE_VERSION…"
+echo "Node.js ${NODE_VERSION}…"
 curl -fsSL -o "$WORK/node.zip" "https://nodejs.org/dist/$NODE_VERSION/node-$NODE_VERSION-win-x64.zip"
 7z x -y -o"$WORK" "$WORK/node.zip" >/dev/null
 NODE_ROOT="$WORK/node-$NODE_VERSION-win-x64"
