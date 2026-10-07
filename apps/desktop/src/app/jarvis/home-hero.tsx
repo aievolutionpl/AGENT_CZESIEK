@@ -9,6 +9,7 @@ import { $character } from '@/store/character'
 
 import { greetingFor } from './characters'
 import { JarvisCore } from './core'
+import { ScreenLookingBadge } from './screen-looking-badge'
 import { $jarvisUi } from './store'
 import type { JarvisVoiceState } from './types'
 import { useLiveAutostart } from './use-live-autostart'
@@ -129,6 +130,7 @@ export function JarvisHomeHero({
           <JarvisCore live taskPhase={state.task.phase} variant="hero" voice={orbVoice} />
         </div>
         {listening ? <VoiceWave active={orbVoice === 'listening' || orbVoice === 'speaking'} /> : null}
+        <ScreenLookingBadge />
 
         {/* One primary action. Briefing and the
             floating-orb switch live in the command palette and settings. */}
