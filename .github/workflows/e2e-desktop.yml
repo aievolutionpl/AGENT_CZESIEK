@@ -21,7 +21,9 @@ permissions:
   contents: read
 
 concurrency:
-  group: e2e-desktop-${{ github.ref }}
+  # github.workflow is the CALLER's name in a reusable call, so a release's E2E run is not in the
+  # same group as the push run on main and a merge during a release can no longer cancel its gate.
+  group: e2e-desktop-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
