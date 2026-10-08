@@ -122,7 +122,9 @@ describe('Gemini Live protocol', () => {
     const { handle, statuses, transcripts } = setup()
 
     await handle({ serverContent: { inputTranscription: { text: 'Cześć ' } } })
-    await handle({ serverContent: { inputTranscription: { text: 'Agent Czesiek' }, outputTranscription: { text: 'Hej!' } } })
+    await handle({
+      serverContent: { inputTranscription: { text: 'Agent Czesiek' }, outputTranscription: { text: 'Hej!' } }
+    })
     await handle({ toolCall: { functionCalls: [{ args: { request: 'r' }, id: 'c', name: 'ask_jarvis' }] } })
     await handle({ serverContent: { turnComplete: true } })
 

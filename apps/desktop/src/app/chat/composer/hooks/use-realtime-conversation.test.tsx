@@ -17,7 +17,7 @@ const mocks = vi.hoisted(() => ({
 }))
 
 vi.mock('@/lib/jarvis-intro-music', async importOriginal => ({
-  ...await importOriginal<typeof IntroMusic>(),
+  ...(await importOriginal<typeof IntroMusic>()),
   startJarvisIntroMusic: mocks.music
 }))
 
@@ -53,7 +53,14 @@ test('microphone peaks and assistant transcripts never trigger music; the user p
   await act(async () => {
     mocks.handlers!.onStatus('listening')
 
-    for (const [time, level] of [[0, 0.02], [80, 0.55], [140, 0.04], [370, 0.02], [420, 0.6], [485, 0.03]]) {
+    for (const [time, level] of [
+      [0, 0.02],
+      [80, 0.55],
+      [140, 0.04],
+      [370, 0.02],
+      [420, 0.6],
+      [485, 0.03]
+    ]) {
       vi.setSystemTime(time)
       vi.spyOn(performance, 'now').mockReturnValue(time)
       mocks.handlers!.onLevel!(level)
@@ -63,7 +70,9 @@ test('microphone peaks and assistant transcripts never trigger music; the user p
     mocks.handlers!.onTranscript?.('user', 'Witaj, Cześku')
   })
   expect(mocks.music).not.toHaveBeenCalled()
-  await act(async () => { mocks.handlers!.onTranscript?.('user', 'Tatuś wrócił!') })
+  await act(async () => {
+    mocks.handlers!.onTranscript?.('user', 'Tatuś wrócił!')
+  })
   expect(mocks.music).toHaveBeenCalledOnce()
   vi.restoreAllMocks()
 })

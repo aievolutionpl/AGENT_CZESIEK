@@ -36,14 +36,18 @@ function detailHeader({
 function parseFrontmatter(content: string): { body: string; meta: [string, string][] } {
   const match = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?/.exec(content)
 
-  if (!match) {return { body: content, meta: [] }}
+  if (!match) {
+    return { body: content, meta: [] }
+  }
 
   const meta: [string, string][] = []
   let currentKey: string | null = null
   let block: string[] = []
 
   const flush = () => {
-    if (currentKey !== null) {meta.push([currentKey, block.join('\n').trim()])}
+    if (currentKey !== null) {
+      meta.push([currentKey, block.join('\n').trim()])
+    }
     currentKey = null
     block = []
   }

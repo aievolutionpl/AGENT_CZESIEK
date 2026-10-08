@@ -112,14 +112,16 @@ export interface JarvisTipsAutoOpenInput {
  * nothing may be running, and the one auto-open this scope is entitled to must
  * still be unspent.
  */
-export function shouldAutoOpenJarvisTips({ busy = false, onboardingComplete, state }: JarvisTipsAutoOpenInput): boolean {
+export function shouldAutoOpenJarvisTips({
+  busy = false,
+  onboardingComplete,
+  state
+}: JarvisTipsAutoOpenInput): boolean {
   return onboardingComplete && !busy && state.autoOpen
 }
 
 export function dismissJarvisTip(state: JarvisTipsState, id: string): JarvisTipsState {
-  return state.dismissedIds.includes(id)
-    ? state
-    : { ...state, dismissedIds: [...state.dismissedIds, id] }
+  return state.dismissedIds.includes(id) ? state : { ...state, dismissedIds: [...state.dismissedIds, id] }
 }
 
 /** Bring back every tip this scope waved away — the "pokaż wszystkie

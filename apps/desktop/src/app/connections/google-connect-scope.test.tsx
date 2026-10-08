@@ -12,9 +12,20 @@ vi.mock('@/hooks/use-active-capability-scope', () => ({
 }))
 vi.mock('@/store/notifications', () => ({ notifyError: vi.fn() }))
 beforeEach(() => vi.stubGlobal('hermesDesktop', { api: vi.fn() }))
-afterEach(() => { cleanup(); owner.connectionId = 'alpha'; vi.restoreAllMocks(); vi.unstubAllGlobals() })
+afterEach(() => {
+  cleanup()
+  owner.connectionId = 'alpha'
+  vi.restoreAllMocks()
+  vi.unstubAllGlobals()
+})
 
-const view = () => <MemoryRouter><I18nProvider configClient={null} initialLocale="pl"><GoogleConnectDialog onClose={vi.fn()} open /></I18nProvider></MemoryRouter>
+const view = () => (
+  <MemoryRouter>
+    <I18nProvider configClient={null} initialLocale="pl">
+      <GoogleConnectDialog onClose={vi.fn()} open />
+    </I18nProvider>
+  </MemoryRouter>
+)
 const status = { client_secret: false, connected: false, token: false, services: [], can_send_mail: false }
 
 describe('Google setup', () => {
@@ -32,11 +43,26 @@ describe('Google setup', () => {
     const mounted = render(view())
     await screen.findByRole('button', { name: 'Wybierz plik JSON' })
     const input = mounted.container.ownerDocument.querySelector('input[type="file"]')!
-    fireEvent.change(input, { target: { files: [{ text: () => new Promise<string>(resolve => { finishRead = resolve }) }] } })
+    fireEvent.change(input, {
+      target: {
+        files: [
+          {
+            text: () =>
+              new Promise<string>(resolve => {
+                finishRead = resolve
+              })
+          }
+        ]
+      }
+    })
     owner.connectionId = 'beta'
     mounted.rerender(view())
     await act(async () => finishRead('{"installed":{"client_id":"test"}}'))
-    await waitFor(() => expect(api).toHaveBeenCalledWith(expect.objectContaining({ path: '/api/google/client-secret', connectionId: 'alpha', profile: 'default' })))
+    await waitFor(() =>
+      expect(api).toHaveBeenCalledWith(
+        expect.objectContaining({ path: '/api/google/client-secret', connectionId: 'alpha', profile: 'default' })
+      )
+    )
     expect(api.mock.calls.filter(([request]) => request.path === '/api/google/client-secret')).toHaveLength(1)
   })
 })

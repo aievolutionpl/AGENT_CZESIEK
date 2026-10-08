@@ -82,7 +82,11 @@ export function OpenRouterQuickConnect({
   }
 
   return (
-    <form className={cn('grid gap-2', className)} data-testid="openrouter-quick-connect" onSubmit={event => void submit(event)}>
+    <form
+      className={cn('grid gap-2', className)}
+      data-testid="openrouter-quick-connect"
+      onSubmit={event => void submit(event)}
+    >
       <p className={cn('text-xs leading-5', palette.hint)}>{copy.hint}</p>
       <div className="flex min-w-0 gap-2">
         <Input

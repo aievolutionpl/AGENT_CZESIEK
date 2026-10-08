@@ -9,7 +9,12 @@ export interface SecretsAudit {
 }
 
 const call = (profile: ProfileScope | undefined, path: string, body?: unknown) =>
-  window.hermesDesktop.api<SecretsAudit>({ ...capabilityScoped(profile), body, method: body === undefined ? undefined : 'POST', path })
+  window.hermesDesktop.api<SecretsAudit>({
+    ...capabilityScoped(profile),
+    body,
+    method: body === undefined ? undefined : 'POST',
+    path
+  })
 
 export const getSecretsAudit = (profile?: ProfileScope) => call(profile, '/api/secrets/audit')
 

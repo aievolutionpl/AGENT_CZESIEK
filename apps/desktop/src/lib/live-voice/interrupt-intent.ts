@@ -6,7 +6,8 @@ import type { InterruptIntent } from './types'
  * voice, "anuluj" cancels the task, "nie, jednak X" corrects it.
  */
 const CANCEL = /^(anuluj|przerwij zadanie|zatrzymaj zadanie|cancel( (it|that|the task))?|abort)\b/i
-const CORRECT = /^(nie[,.]?\s+(jednak|lepiej|raczej)\b|nie\s+\S+[,.]\s+tylko\b|nie\s+\S+[,.]\s+\S+|no[,.]?\s+(actually|instead|make it)\b|actually[,]?\s)/i
+const CORRECT =
+  /^(nie[,.]?\s+(jednak|lepiej|raczej)\b|nie\s+\S+[,.]\s+tylko\b|nie\s+\S+[,.]\s+\S+|no[,.]?\s+(actually|instead|make it)\b|actually[,]?\s)/i
 const STOP_TURN = /^(poczekaj|czekaj|wait|hold on|chwila)\b/i
 const STOP_SPEECH = /^(stop|cicho|dość|dosc|zamilcz|be quiet|shut up|enough)\b[.!]?$/i
 

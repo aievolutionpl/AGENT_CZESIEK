@@ -210,10 +210,7 @@ export function JarvisTipsWindow({
             const Icon = CATEGORY_ICONS[entry.category]
 
             return (
-              <li
-                className="jarvis-tips-card grid gap-2 p-3"
-                key={entry.id}
-              >
+              <li className="jarvis-tips-card grid gap-2 p-3" key={entry.id}>
                 <div className="flex items-start gap-2">
                   <Icon className="mt-0.5 size-4 shrink-0 text-(--ui-accent)" />
                   <div className="min-w-0 flex-1">
@@ -298,9 +295,12 @@ function CategoryChip({
 
 /** What is connected right now, asked once each time the window opens; a failed answer counts as "not connected". */
 function useConnectedCapabilities(open: boolean): ExtraTipContext {
-  const [context, setContext] = useState<ExtraTipContext>({ browserSignedIn: false, googleConnected: false, vaultExists: false })
+  const [context, setContext] = useState<ExtraTipContext>({
+    browserSignedIn: false,
+    googleConnected: false,
+    vaultExists: false
+  })
 
-   
   useEffect(() => {
     if (!open) {
       return
@@ -316,15 +316,17 @@ function useConnectedCapabilities(open: boolean): ExtraTipContext {
       }
     }
 
-    void Promise.all([ask(getConnectionStatus), ask(getVaultGraph), ask(getBrowserStatus)]).then(([status, vault, browser]) => {
-      if (!stale) {
-        setContext({
-          browserSignedIn: Boolean(browser?.own.google_signed_in || browser?.copy.google_signed_in),
-          googleConnected: status?.google === 'connected',
-          vaultExists: vault?.vault.exists === true
-        })
+    void Promise.all([ask(getConnectionStatus), ask(getVaultGraph), ask(getBrowserStatus)]).then(
+      ([status, vault, browser]) => {
+        if (!stale) {
+          setContext({
+            browserSignedIn: Boolean(browser?.own.google_signed_in || browser?.copy.google_signed_in),
+            googleConnected: status?.google === 'connected',
+            vaultExists: vault?.vault.exists === true
+          })
+        }
       }
-    })
+    )
 
     return () => {
       stale = true

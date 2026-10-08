@@ -117,7 +117,10 @@ export function VaultGraphCanvas({
     let userView = false
     let drag: { body?: Body; moved: boolean; px: number; py: number } | null = null
 
-    const toWorld = (px: number, py: number) => ({ x: (px - width / 2 - view.x) / view.k, y: (py - height / 2 - view.y) / view.k })
+    const toWorld = (px: number, py: number) => ({
+      x: (px - width / 2 - view.x) / view.k,
+      y: (py - height / 2 - view.y) / view.k
+    })
 
     const pick = (px: number, py: number) => {
       const p = toWorld(px, py)
@@ -222,7 +225,12 @@ export function VaultGraphCanvas({
 
       for (const b of bodies) {
         const id = b.node.id
-        const show = id === focus || near?.has(id) === true || bodies.length <= 40 || (view.k > 0.9 && b.node.links >= 3) || view.k > 1.8
+        const show =
+          id === focus ||
+          near?.has(id) === true ||
+          bodies.length <= 40 ||
+          (view.k > 0.9 && b.node.links >= 3) ||
+          view.k > 1.8
 
         if (show && (match === null || match.has(id) || id === focus)) {
           ctx.fillText(b.node.label.slice(0, 28), b.x, b.y + b.r + 13 / view.k)
@@ -249,7 +257,10 @@ export function VaultGraphCanvas({
         maxY = Math.max(maxY, b.y + b.r)
       }
 
-      const k = Math.min(1.6, Math.max(0.25, Math.min((width * 0.8) / (maxX - minX || 1), (height * 0.74) / (maxY - minY || 1))))
+      const k = Math.min(
+        1.6,
+        Math.max(0.25, Math.min((width * 0.8) / (maxX - minX || 1), (height * 0.74) / (maxY - minY || 1)))
+      )
       view.k += (k - view.k) * 0.12
       view.x += (-((minX + maxX) / 2) * view.k - view.x) * 0.12
       view.y += (-((minY + maxY) / 2) * view.k - view.y) * 0.12
@@ -399,5 +410,7 @@ export function VaultGraphCanvas({
     sim.current?.highlight({ matches, selected })
   }, [graph, matches, selected])
 
-  return <canvas aria-label="Vault graph" className="absolute inset-0 size-full touch-none" ref={canvasRef} role="img" />
+  return (
+    <canvas aria-label="Vault graph" className="absolute inset-0 size-full touch-none" ref={canvasRef} role="img" />
+  )
 }

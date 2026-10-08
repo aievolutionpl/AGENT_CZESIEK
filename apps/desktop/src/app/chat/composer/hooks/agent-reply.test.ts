@@ -35,11 +35,7 @@ describe('submitAndAwaitReply', () => {
   })
 
   it('reports an empty turn instead of re-reading an old reply', async () => {
-    const pending = submitAndAwaitReply(
-      { busy: () => false, messages: () => [msg('old')] },
-      () => undefined,
-      60_000
-    )
+    const pending = submitAndAwaitReply({ busy: () => false, messages: () => [msg('old')] }, () => undefined, 60_000)
 
     await vi.advanceTimersByTimeAsync(3_000)
 

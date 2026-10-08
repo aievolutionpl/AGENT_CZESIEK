@@ -3465,7 +3465,8 @@ export const pl = defineLocale({
       menuItem: 'Połącz ze zdalnym hostem…',
       badge: (host: string) => `Działa na ${host}`,
       title: (profile: string) => `Połącz profil ${profile} ze zdalnym hostem`,
-      description: 'Sesje w tym profilu będą działać na zdalnym Agencie Cześku, którego wskażesz, zamiast na tym komputerze.',
+      description:
+        'Sesje w tym profilu będą działać na zdalnym Agencie Cześku, którego wskażesz, zamiast na tym komputerze.',
       urlLabel: 'Adres zdalny',
       urlPlaceholder: 'https://hermes.example.com',
       urlInvalid: 'Wpisz pełny adres zaczynający się od http:// albo https://',
@@ -4585,7 +4586,8 @@ export const pl = defineLocale({
         'Włącz „Enable device code sign-in for Codex, Excel, PowerPoint, and Word”. Na koncie firmowym dostęp może włączyć administrator.',
         'Wróć tutaj, rozpocznij logowanie i wpisz jednorazowy kod na stronie OpenAI. Po zatwierdzeniu Czesiek połączy konto automatycznie.'
       ],
-      safety: 'Kod wpisuj tylko na stronie OpenAI — nie wysyłaj go w czacie. Subskrypcja służy modelowi pracy; rozmowa Gemini Live wymaga osobnego klucza Gemini API.',
+      safety:
+        'Kod wpisuj tylko na stronie OpenAI — nie wysyłaj go w czacie. Subskrypcja służy modelowi pracy; rozmowa Gemini Live wymaga osobnego klucza Gemini API.',
       docs: 'Oficjalna instrukcja logowania'
     },
     reopenVerification: 'Otwórz ponownie stronę weryfikacji',

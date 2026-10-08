@@ -5,11 +5,17 @@ import { initialJarvisUiState, reduceJarvisEvent } from './projector'
 describe('reduceAgent CzesiekEvent', () => {
   it('stops speaking without cancelling the active task', () => {
     const speaking = reduceJarvisEvent(initialJarvisUiState(), {
-      type: 'voice.speaking', sessionId: 's1', taskId: 't1', at: 1,
+      type: 'voice.speaking',
+      sessionId: 's1',
+      taskId: 't1',
+      at: 1
     })
 
     const stopped = reduceJarvisEvent(speaking, {
-      type: 'voice.stopped', sessionId: 's1', taskId: 't1', at: 2,
+      type: 'voice.stopped',
+      sessionId: 's1',
+      taskId: 't1',
+      at: 2
     })
 
     expect(stopped.voice).toBe('idle')
@@ -20,24 +26,31 @@ describe('reduceAgent CzesiekEvent', () => {
     const current = {
       ...initialJarvisUiState(),
       sessionId: 's1',
-      task: { id: 't2', phase: 'running' as const },
+      task: { id: 't2', phase: 'running' as const }
     }
 
     const next = reduceJarvisEvent(current, {
-      type: 'tool.completed', sessionId: 's1', taskId: 't1', at: 3, label: 'Old tool',
+      type: 'tool.completed',
+      sessionId: 's1',
+      taskId: 't1',
+      at: 3,
+      label: 'Old tool'
     })
 
     expect(next).toBe(current)
   })
 
   it('clears a verified result when a new task starts planning or running', () => {
-    const verified = reduceJarvisEvent({ ...initialJarvisUiState(), sessionId: 's1' }, {
-      type: 'task.verified',
-      sessionId: 's1',
-      taskId: 't1',
-      at: 1,
-      detail: 'Notatka została utworzona.',
-    })
+    const verified = reduceJarvisEvent(
+      { ...initialJarvisUiState(), sessionId: 's1' },
+      {
+        type: 'task.verified',
+        sessionId: 's1',
+        taskId: 't1',
+        at: 1,
+        detail: 'Notatka została utworzona.'
+      }
+    )
 
     expect(verified.result).toBe('Notatka została utworzona.')
 
@@ -45,7 +58,7 @@ describe('reduceAgent CzesiekEvent', () => {
       type: 'task.planning',
       sessionId: 's1',
       taskId: 't2',
-      at: 2,
+      at: 2
     })
 
     expect(planning.result).toBeUndefined()
@@ -56,14 +69,14 @@ describe('reduceAgent CzesiekEvent', () => {
       sessionId: 's1',
       taskId: 't2',
       at: 3,
-      label: 'Kalendarz zaktualizowany.',
+      label: 'Kalendarz zaktualizowany.'
     })
 
     const running = reduceJarvisEvent(verifiedAgain, {
       type: 'task.running',
       sessionId: 's1',
       taskId: 't3',
-      at: 4,
+      at: 4
     })
 
     expect(running.result).toBeUndefined()
@@ -71,32 +84,38 @@ describe('reduceAgent CzesiekEvent', () => {
   })
 
   it('does not treat a raw tool call id as the verified result headline', () => {
-    const verified = reduceJarvisEvent({ ...initialJarvisUiState(), sessionId: 's1' }, {
-      type: 'task.verified',
-      sessionId: 's1',
-      taskId: 't1',
-      toolCallId: 'call_technical_123',
-      at: 1,
-    })
+    const verified = reduceJarvisEvent(
+      { ...initialJarvisUiState(), sessionId: 's1' },
+      {
+        type: 'task.verified',
+        sessionId: 's1',
+        taskId: 't1',
+        toolCallId: 'call_technical_123',
+        at: 1
+      }
+    )
 
     expect(verified.result).toBeUndefined()
   })
 
   it('clears a verified result on terminal failure or cancellation', () => {
-    const verified = reduceJarvisEvent({ ...initialJarvisUiState(), sessionId: 's1' }, {
-      type: 'task.verified',
-      sessionId: 's1',
-      taskId: 't1',
-      at: 1,
-      detail: 'Gotowe.',
-    })
+    const verified = reduceJarvisEvent(
+      { ...initialJarvisUiState(), sessionId: 's1' },
+      {
+        type: 'task.verified',
+        sessionId: 's1',
+        taskId: 't1',
+        at: 1,
+        detail: 'Gotowe.'
+      }
+    )
 
     const failed = reduceJarvisEvent(verified, {
       type: 'task.failed',
       sessionId: 's1',
       taskId: 't1',
       at: 2,
-      detail: 'Backend failed.',
+      detail: 'Backend failed.'
     })
 
     expect(failed.result).toBeUndefined()
@@ -106,14 +125,14 @@ describe('reduceAgent CzesiekEvent', () => {
       sessionId: 's1',
       taskId: 't1',
       at: 3,
-      label: 'Gotowe ponownie.',
+      label: 'Gotowe ponownie.'
     })
 
     const cancelled = reduceJarvisEvent(verifiedAgain, {
       type: 'task.cancelled',
       sessionId: 's1',
       taskId: 't1',
-      at: 4,
+      at: 4
     })
 
     expect(cancelled.result).toBeUndefined()
@@ -125,21 +144,21 @@ describe('reduceAgent CzesiekEvent', () => {
       activity: [{ at: 10, detail: 'Aktualny wynik.', sessionId: 's1', taskId: 't2', type: 'task.verified' }],
       result: 'Aktualny wynik.',
       sessionId: 's1',
-      task: { id: 't2', phase: 'verified' as const },
+      task: { id: 't2', phase: 'verified' as const }
     }
 
     const oldSession = reduceJarvisEvent(current, {
       type: 'task.running',
       sessionId: 'old-session',
       taskId: 't2',
-      at: 1,
+      at: 1
     })
 
     const oldTask = reduceJarvisEvent(current, {
       type: 'task.running',
       sessionId: 's1',
       taskId: 'old-task',
-      at: 2,
+      at: 2
     })
 
     expect(oldSession).toBe(current)
@@ -155,7 +174,7 @@ describe('reduceAgent CzesiekEvent', () => {
       taskId: 't1',
       toolCallId: 'call-1',
       at: 3,
-      label: 'Read file',
+      label: 'Read file'
     })
 
     const completed = reduceJarvisEvent(started, {
@@ -164,7 +183,7 @@ describe('reduceAgent CzesiekEvent', () => {
       taskId: 't1',
       toolCallId: 'call-1',
       at: 4,
-      label: 'Read file',
+      label: 'Read file'
     })
 
     expect(started.activeTool).toEqual({ id: 'call-1', label: 'Read file' })
@@ -176,7 +195,7 @@ describe('reduceAgent CzesiekEvent', () => {
       type: 'task.running',
       sessionId: 's1',
       taskId: 't1',
-      at: index,
+      at: index
     })).reduce(reduceJarvisEvent, initialJarvisUiState())
 
     expect(next.activity).toHaveLength(50)

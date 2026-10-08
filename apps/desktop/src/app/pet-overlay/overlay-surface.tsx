@@ -22,7 +22,9 @@ export function OverlaySurface() {
     return off
   }, [])
 
-  if (orb === undefined) {return null}
+  if (orb === undefined) {
+    return null
+  }
 
   return orb ? <OrbOverlay state={orb} /> : <PetOverlayApp />
 }

@@ -17,7 +17,9 @@ it('starts with the model and moves on only as things become true', () => {
 })
 
 it('never counts an unknown answer as done, and completes only when everything is', () => {
-  expect(buildSetupChecklist({ ...fresh, googleConnected: undefined }).steps.find(s => s.id === 'google')?.done).toBe(false)
+  expect(buildSetupChecklist({ ...fresh, googleConnected: undefined }).steps.find(s => s.id === 'google')?.done).toBe(
+    false
+  )
 
   const all = buildSetupChecklist({
     briefingTried: true,

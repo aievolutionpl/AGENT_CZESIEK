@@ -122,7 +122,13 @@ export function evaluateRelease(
   const release = (payload ?? {}) as GithubRelease
   const tag = typeof release.tag_name === 'string' ? release.tag_name : ''
 
-  if (!tag || !NUMERIC.test(tag) || !isHttps(release.html_url) || release.draft === true || release.prerelease === true) {
+  if (
+    !tag ||
+    !NUMERIC.test(tag) ||
+    !isHttps(release.html_url) ||
+    release.draft === true ||
+    release.prerelease === true
+  ) {
     throw new Error('Latest release is missing, a draft, or has no version tag.')
   }
 

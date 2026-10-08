@@ -612,7 +612,8 @@ export const ru = defineLocale({
       introSplashTitle: 'Экран приветствия',
       introSplashDesc: 'Логотип и подсказка, показываемые на пустом чате.',
       reactionsTitle: 'Реакции на сообщения',
-      reactionsDesc: 'Эмодзи-тапбеки в стиле iMessage — реагируйте на сообщения, и Agent Czesiek сможет реагировать на ваши.',
+      reactionsDesc:
+        'Эмодзи-тапбеки в стиле iMessage — реагируйте на сообщения, и Agent Czesiek сможет реагировать на ваши.',
       composerPopoutTitle: 'Плавающий композер',
       composerPopoutDesc: 'Позволяет вытягивать композер из его док-зоны. Отключите, чтобы он был закреплён снизу.',
       embedsTitle: 'Встроенные превью',
@@ -1187,7 +1188,8 @@ export const ru = defineLocale({
       enterUrlFirst: 'Сначала введите удалённый URL.',
       restartingTitle: 'Перезапуск соединения шлюза',
       savedTitle: 'Настройки шлюза сохранены',
-      restartingMessage: 'Agent Czesiek Desktop переподключится с сохранёнными настройками — оболочка останется открытой.',
+      restartingMessage:
+        'Agent Czesiek Desktop переподключится с сохранёнными настройками — оболочка останется открытой.',
       savedMessage: 'Сохранено для следующего перезапуска.',
       connectedTo: (baseUrl, version) => `Подключено к ${baseUrl}${version ? ` · Agent Czesiek ${version}` : ''}`,
       reachableTitle: 'Удалённый шлюз доступен',
@@ -1400,7 +1402,8 @@ export const ru = defineLocale({
       noKeysMatch: 'Провайдеры, подходящие под поиск, не найдены.',
       localEndpoint: {
         title: 'Локальный / свой эндпоинт',
-        description: 'Направьте Agent Czesiek на любой OpenAI-совместимый эндпоинт (Zyphra, vLLM, llama.cpp, Ollama и т. д.).'
+        description:
+          'Направьте Agent Czesiek на любой OpenAI-совместимый эндпоинт (Zyphra, vLLM, llama.cpp, Ollama и т. д.).'
       },
       loading: 'Загрузка провайдеров…'
     },
@@ -2512,7 +2515,8 @@ export const ru = defineLocale({
       createFailed: 'Не удалось создать проект',
       staleBackend:
         'Обновите бэкенд Agent Czesiek, чтобы создавать проекты — ваш бэкенд старше этого desktop-приложения (Настройки → Обновления → Бэкенд).',
-      deleteConfirm: 'Это удалит сохранённый проект из Agent Czesiek. Файлы, git-репозитории и worktrees не пострадают.',
+      deleteConfirm:
+        'Это удалит сохранённый проект из Agent Czesiek. Файлы, git-репозитории и worktrees не пострадают.',
       startWork: 'Новый worktree',
       newWorktreeTitle: 'Новый worktree',
       newWorktreeDesc: 'Назовите ветку для этого worktree.',
@@ -3047,7 +3051,8 @@ export const ru = defineLocale({
       'Используйте удалённый бэкенд с сессионным токеном или входом через браузер. Локальная установка не начнётся.',
     installLocalTitle: 'Установить Agent Czesiek локально',
     installLocalDesc: 'Скачайте Agent Czesiek, создайте его Python-окружение и запустите бэкенд на этом компьютере.',
-    localStartUnavailable: 'Не удалось начать локальную установку. Перезапустите Agent Czesiek Desktop и попробуйте снова.',
+    localStartUnavailable:
+      'Не удалось начать локальную установку. Перезапустите Agent Czesiek Desktop и попробуйте снова.',
     remoteSetupTitle: 'Подключиться к существующему Agent Czesiek',
     remoteSetupDesc: 'Введите URL вашего шлюза. Agent Czesiek Desktop определит, нужен токен или вход через браузер.',
     remoteUrlTitle: 'URL шлюза',
@@ -3450,7 +3455,8 @@ export const ru = defineLocale({
       address: 'Адрес',
       addressPlaceholder: 'Введите адрес',
       blankPageBody: 'Введите адрес выше, чтобы просматривать, или попросите Agent Czesiek открыть страницу.',
-      finishedRestarting: message => `Agent Czesiek завершил перезапуск сервера предпросмотра${message ? `: ${message}` : ''}`,
+      finishedRestarting: message =>
+        `Agent Czesiek завершил перезапуск сервера предпросмотра${message ? `: ${message}` : ''}`,
       failedRestarting: message => `Перезапуск сервера не удался: ${message}`,
       unknownError: 'неизвестная ошибка',
       restartedTitle: 'Сервер предпросмотра перезапущен',

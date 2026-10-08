@@ -152,10 +152,14 @@ function queryString(query: CostsQuery): string {
   for (const key of ['provider', 'session_id', 'work_session_id', 'work_turn_id', 'cursor'] as const) {
     const value = query[key]
 
-    if (value) {params.set(key, value)}
+    if (value) {
+      params.set(key, value)
+    }
   }
 
-  if (query.limit !== undefined) {params.set('limit', String(query.limit))}
+  if (query.limit !== undefined) {
+    params.set('limit', String(query.limit))
+  }
 
   return params.toString()
 }

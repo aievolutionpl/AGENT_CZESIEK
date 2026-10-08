@@ -27,7 +27,12 @@ interface OpenRouterPresetSpec {
 const PRESETS: readonly OpenRouterPresetSpec[] = [
   {
     id: 'deepseek',
-    prefixes: ['deepseek/deepseek-v4.1-flash', 'deepseek/deepseek-v4-flash', 'deepseek/deepseek-v4', 'deepseek/deepseek']
+    prefixes: [
+      'deepseek/deepseek-v4.1-flash',
+      'deepseek/deepseek-v4-flash',
+      'deepseek/deepseek-v4',
+      'deepseek/deepseek'
+    ]
   },
   { id: 'gpt', prefixes: ['openai/gpt-6', 'openai/gpt-5.6', 'openai/gpt-5.5', 'openai/gpt-5', 'openai/gpt'] },
   { id: 'claude', prefixes: ['anthropic/claude-sonnet', 'anthropic/claude-opus', 'anthropic/claude'] },

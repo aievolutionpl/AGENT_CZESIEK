@@ -4172,7 +4172,8 @@ export const en: Translations = {
         'Enable “Enable device code sign-in for Codex, Excel, PowerPoint, and Word”. A workspace administrator may need to enable access for a work account.',
         'Return here, start sign-in and enter the one-time code on the OpenAI page. Czesiek connects automatically after you approve.'
       ],
-      safety: 'Enter the code only on the OpenAI page; never send it in chat. Your subscription powers the work model; Gemini Live conversation needs a separate Gemini API key.',
+      safety:
+        'Enter the code only on the OpenAI page; never send it in chat. Your subscription powers the work model; Gemini Live conversation needs a separate Gemini API key.',
       docs: 'Official sign-in instructions'
     },
     reopenVerification: 'Re-open verification page',

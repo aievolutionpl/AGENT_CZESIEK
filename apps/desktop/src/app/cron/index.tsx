@@ -632,7 +632,11 @@ export function CronView({ onClose, onOpenSession, setStatusbarItemGroup: _setSt
       notifyError(refreshError, c.failedLoad)
     }
 
-    notify({ kind: 'success', title: c.blueprints.scheduled, message: asText(job.schedule_display) || localizedBlueprint(blueprint, c.blueprints.catalog).title })
+    notify({
+      kind: 'success',
+      title: c.blueprints.scheduled,
+      message: asText(job.schedule_display) || localizedBlueprint(blueprint, c.blueprints.catalog).title
+    })
     setEditor({ mode: 'closed' })
   }
 
@@ -1233,7 +1237,9 @@ function CronEditorDialog({
                 ))}
               </SelectContent>
             </Select>
-            {blueprint?.description && <FieldHint>{localizedBlueprint(blueprint, c.blueprints.catalog).description}</FieldHint>}
+            {blueprint?.description && (
+              <FieldHint>{localizedBlueprint(blueprint, c.blueprints.catalog).description}</FieldHint>
+            )}
           </Field>
         )}
 

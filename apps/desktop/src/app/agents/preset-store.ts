@@ -1,10 +1,6 @@
 import { requestGatewayForAgent } from '@/store/gateway'
 
-import {
-  normalizePresetMetadata,
-  PRESET_METADATA_KEY,
-  type SubagentPresetMetadata
-} from './presets'
+import { normalizePresetMetadata, PRESET_METADATA_KEY, type SubagentPresetMetadata } from './presets'
 
 export interface PresetOwner {
   connectionId: string
@@ -58,9 +54,14 @@ function profileName(owner: PresetOwner): string {
 export async function loadPresetSnapshot(owner: PresetOwner): Promise<PresetSnapshot> {
   const captured = { connectionId: owner.connectionId || 'local', profile: profileName(owner) }
 
-  const result = await requestGatewayForAgent<ProfilesListResponse>(captured.connectionId, captured.profile, 'profiles.list', {
-    include_sessions: false
-  })
+  const result = await requestGatewayForAgent<ProfilesListResponse>(
+    captured.connectionId,
+    captured.profile,
+    'profiles.list',
+    {
+      include_sessions: false
+    }
+  )
 
   const row = (result.profiles ?? []).find(candidate => candidate.name === captured.profile)
   const revisions = row?.ui_meta_revisions
@@ -103,7 +104,11 @@ export async function savePresetMetadata(
     throw new PresetStoreError('Preset storage changed elsewhere. Reload before saving.', 'conflict')
   }
 
-  if (applied?.ui_meta !== true || !applied.ui_meta_revisions || typeof applied.ui_meta_revisions[PRESET_METADATA_KEY] !== 'number') {
+  if (
+    applied?.ui_meta !== true ||
+    !applied.ui_meta_revisions ||
+    typeof applied.ui_meta_revisions[PRESET_METADATA_KEY] !== 'number'
+  ) {
     throw new PresetStoreError('The backend did not confirm the preset update.', 'failed')
   }
 

@@ -161,10 +161,14 @@ describe('shortDuration', () => {
   })
 
   it('switches to seconds and then minutes at the unit boundaries', () => {
-    expect(shortDuration(SECOND, units)).toBe(`${new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 }).format(1)} s`)
+    expect(shortDuration(SECOND, units)).toBe(
+      `${new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 }).format(1)} s`
+    )
     expect(shortDuration(59 * SECOND, units)).toMatch(/ s$/)
     expect(shortDuration(MINUTE, units)).toMatch(/ min$/)
-    expect(shortDuration(90 * SECOND, units)).toBe(`${new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 }).format(1.5)} min`)
+    expect(shortDuration(90 * SECOND, units)).toBe(
+      `${new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 }).format(1.5)} min`
+    )
   })
 
   it('clamps a negative span instead of rendering a minus sign', () => {

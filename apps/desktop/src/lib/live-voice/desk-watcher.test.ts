@@ -28,7 +28,9 @@ describe('diffDesk', () => {
     expect(diffDesk(known, [item('a', 'done'), item('b', 'running')], 's1')).toEqual([])
     expect(diffDesk(known, [item('a', 'done'), item('b', 'done')], 's1')).toEqual(['- b: done'])
     expect(diffDesk(new Map(), [item('new', 'done')], 's1', true, new Set(['new']))).toEqual(['- new: done'])
-    expect(diffDesk(new Map([['new', 'done']]), [item('new', 'done')], 's1', false, new Set(['new']))).toEqual(['- new: done'])
+    expect(diffDesk(new Map([['new', 'done']]), [item('new', 'done')], 's1', false, new Set(['new']))).toEqual([
+      '- new: done'
+    ])
   })
 
   it('says each change once, and only for outcomes worth interrupting for', () => {
@@ -70,7 +72,10 @@ describe('startDeskWatcher', () => {
     const push = vi.fn()
 
     const stop = startDeskWatcher({
-      fetchDesk: async () => digest(item('a', verdict)), lang: () => 'pl', push, sessionId: () => 's1'
+      fetchDesk: async () => digest(item('a', verdict)),
+      lang: () => 'pl',
+      push,
+      sessionId: () => 's1'
     })
 
     await vi.advanceTimersByTimeAsync(19_999)
@@ -93,8 +98,13 @@ describe('startDeskWatcher', () => {
     const push = vi.fn()
 
     const stop = startDeskWatcher({
-      fetchDesk: () => new Promise<DeskDigest>(done => { resolve = done }),
-      lang: () => 'pl', push, sessionId: () => session
+      fetchDesk: () =>
+        new Promise<DeskDigest>(done => {
+          resolve = done
+        }),
+      lang: () => 'pl',
+      push,
+      sessionId: () => session
     })
 
     session = 's2'

@@ -388,7 +388,8 @@ export const ja = defineLocale({
       deleteAction: '保存済み項目を削除',
       otpField: '認証キー',
       otpPlaceholder: 'Base32 シークレットまたは otpauth:// リンク',
-      otpHint: '2FA を有効にするときにサイトが表示する「セットアップキー」。保存すると Agent Czesiek がコードを生成します。',
+      otpHint:
+        '2FA を有効にするときにサイトが表示する「セットアップキー」。保存すると Agent Czesiek がコードを生成します。',
       twoFactorBadge: '2FA 自動',
       deleteTitle: 'この項目を削除しますか？',
       deleteDescription: label => `「${label}」は暗号化ボールトから削除されます。元に戻せません。`,
@@ -403,7 +404,8 @@ export const ja = defineLocale({
         disabledDesc: '検出済みですが、Agent Czesiek では無効になっています。',
         lockedDesc:
           '検出済み。エージェントがログイン情報を必要とするときにロック解除を求めます。今すぐ解除することもできます。',
-        unlockedDesc: 'このセッションでロック解除済み。30分間操作がないか Agent Czesiek を閉じると自動的にロックされます。',
+        unlockedDesc:
+          'このセッションでロック解除済み。30分間操作がないか Agent Czesiek を閉じると自動的にロックされます。',
         statusLocked: 'ロック中',
         statusNotDetected: '未検出',
         statusOff: 'オフ',
@@ -1205,7 +1207,8 @@ export const ja = defineLocale({
       updateAction: 'エンジンを更新',
       updating: 'エンジンを更新中…',
       upToDateTitle: 'エンジンは最新です',
-      upToDateDetail: (tag, backend) => `llama.cpp ${tag}（${backend}）で動作中——Agent Czesiek が提供する最新ビルドです。`,
+      upToDateDetail: (tag, backend) =>
+        `llama.cpp ${tag}（${backend}）で動作中——Agent Czesiek が提供する最新ビルドです。`,
       updateToast: next =>
         `ローカルエンジンの新しいビルド（${next}）があります。設定 → ローカルモデル から更新できます。`,
       activeDetail: '新しいチャットはこのモデルを使用——最初のメッセージ送信時に読み込みます',
@@ -1866,7 +1869,8 @@ export const ja = defineLocale({
       menuItem: 'リモートホストに接続…',
       badge: (host: string) => `${host} で実行中`,
       title: (profile: string) => `${profile} をリモートホストに接続`,
-      description: 'このプロファイルのセッションは、このパソコンではなく指定したリモートの Agent Czesiek で実行されます。',
+      description:
+        'このプロファイルのセッションは、このパソコンではなく指定したリモートの Agent Czesiek で実行されます。',
       urlLabel: 'リモートアドレス',
       urlPlaceholder: 'https://hermes.example.com',
       urlInvalid: 'http:// または https:// で始まる完全なアドレスを入力してください',
@@ -2672,7 +2676,8 @@ export const ja = defineLocale({
     done: '完了',
     applyingBody:
       'Agent Czesiek アップデーターが独自のウィンドウで引き継ぎ、完了後に自動的に Agent Czesiek を再度開きます。更新中はご自分で Agent Czesiek を開き直さないでください。',
-    applyingBodyBackend: 'リモートバックエンドが更新を適用して再起動します。復帰すると Agent Czesiek が自動的に再接続します。',
+    applyingBodyBackend:
+      'リモートバックエンドが更新を適用して再起動します。復帰すると Agent Czesiek が自動的に再接続します。',
     applyingClose: 'このウィンドウは更新中に閉じ、その後 Agent Czesiek が自動的に再度開きます。',
     errorTitle: '更新が完了しませんでした',
     errorBody: 'ご安心ください。何も失われていません。今すぐ再試行できます。',
@@ -2734,7 +2739,8 @@ export const ja = defineLocale({
     connectExistingDesc:
       'セッショントークンまたはブラウザーサインインでリモートバックエンドを使用します。ローカルインストールは開始されません。',
     installLocalTitle: 'Agent Czesiek をローカルにインストール',
-    installLocalDesc: 'Agent Czesiek をダウンロードし、Python 環境を作成して、このコンピューターでバックエンドを実行します。',
+    installLocalDesc:
+      'Agent Czesiek をダウンロードし、Python 環境を作成して、このコンピューターでバックエンドを実行します。',
     localStartUnavailable:
       'ローカルインストールを開始できません。Agent Czesiek Desktop を再起動して、もう一度お試しください。',
     remoteSetupTitle: '既存の Agent Czesiek に接続',
@@ -3473,7 +3479,8 @@ export const ja = defineLocale({
     vaultCodeDesc: site =>
       `${site} がワンタイムコード（SMS、メール、または認証アプリ）を求めています。ここに入力すると Agent Czesiek がページに入力します。モデルはコードを一切見ません。`,
     vaultCodeLabel: 'コード',
-    vaultCodeFootnote: 'ヒント：「設定 → パスワードとログイン」でこのログインに認証キーを保存すると、Agent Czesiek がコードを自動入力します。',
+    vaultCodeFootnote:
+      'ヒント：「設定 → パスワードとログイン」でこのログインに認証キーを保存すると、Agent Czesiek がコードを自動入力します。',
     vaultCodeSkip: 'スキップ',
     vaultCodeConfirm: 'コードを入力'
   },

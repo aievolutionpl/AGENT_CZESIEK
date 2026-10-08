@@ -45,8 +45,14 @@ export function NodeContextMenu({ onClose, onNodeRemoved, source, target }: Node
   // Bumped on profile switch so an in-flight openEdit fetch from profile A can't
   // reopen the editor with A's node content after switching to B.
   const editEpoch = useRef(0)
-  const sourceKey = source?.kind === 'owned' ? `${source.owner.connectionId}::${source.owner.profile}::${source.generation}` : source?.kind === 'imported' ? source.import_id : 'read-only'
-  const mutationScope = source?.kind === 'owned' ? { connectionId: source.owner.connectionId, profile: source.owner.profile } : undefined
+  const sourceKey =
+    source?.kind === 'owned'
+      ? `${source.owner.connectionId}::${source.owner.profile}::${source.generation}`
+      : source?.kind === 'imported'
+        ? source.import_id
+        : 'read-only'
+  const mutationScope =
+    source?.kind === 'owned' ? { connectionId: source.owner.connectionId, profile: source.owner.profile } : undefined
 
   // eslint-disable-next-line no-restricted-syntax -- epoch bump on profile switch: invalidation, not a mirrored reactive value
   useEffect(() => {
@@ -78,7 +84,9 @@ export function NodeContextMenu({ onClose, onNodeRemoved, source, target }: Node
     setError(null)
 
     try {
-      if (!mutationScope) {return}
+      if (!mutationScope) {
+        return
+      }
       const detail = await getLearningNode(target.id, mutationScope)
 
       if (editEpoch.current !== epoch) {
@@ -103,7 +111,9 @@ export function NodeContextMenu({ onClose, onNodeRemoved, source, target }: Node
     setError(null)
 
     try {
-      if (!mutationScope || source?.kind !== 'owned') {return}
+      if (!mutationScope || source?.kind !== 'owned') {
+        return
+      }
       const res = await editLearningNode(editing.id, editing.content, mutationScope)
 
       if (!res.ok) {
@@ -134,24 +144,30 @@ export function NodeContextMenu({ onClose, onNodeRemoved, source, target }: Node
             style={{ left: target.x, top: target.y }}
           >
             <div className="truncate px-2 py-1 text-[0.68rem] text-muted-foreground">{target.label}</div>
-            {mutationScope ? <button
-              className="block w-full cursor-pointer rounded-md px-2 py-1 text-left text-xs hover:bg-(--ui-control-active-background) hover:text-foreground disabled:opacity-50"
-              disabled={loading}
-              onClick={() => void openEdit()}
-              type="button"
-            >
-              Edit {noun}…
-            </button> : null}
-            {mutationScope ? <button
-              className="block w-full cursor-pointer rounded-md px-2 py-1 text-left text-xs text-destructive hover:bg-destructive/10"
-              onClick={() => {
-                setDeleting({ id: target.id, kind: target.kind, label: target.label })
-                onClose()
-              }}
-              type="button"
-            >
-              {target.kind === 'skill' ? 'Archive skill' : 'Delete memory'}
-            </button> : <div className="px-2 py-1 text-xs text-muted-foreground">Imported memory is read-only</div>}
+            {mutationScope ? (
+              <button
+                className="block w-full cursor-pointer rounded-md px-2 py-1 text-left text-xs hover:bg-(--ui-control-active-background) hover:text-foreground disabled:opacity-50"
+                disabled={loading}
+                onClick={() => void openEdit()}
+                type="button"
+              >
+                Edit {noun}…
+              </button>
+            ) : null}
+            {mutationScope ? (
+              <button
+                className="block w-full cursor-pointer rounded-md px-2 py-1 text-left text-xs text-destructive hover:bg-destructive/10"
+                onClick={() => {
+                  setDeleting({ id: target.id, kind: target.kind, label: target.label })
+                  onClose()
+                }}
+                type="button"
+              >
+                {target.kind === 'skill' ? 'Archive skill' : 'Delete memory'}
+              </button>
+            ) : (
+              <div className="px-2 py-1 text-xs text-muted-foreground">Imported memory is read-only</div>
+            )}
           </div>
         </>
       ) : null}
@@ -191,7 +207,11 @@ export function NodeContextMenu({ onClose, onNodeRemoved, source, target }: Node
           onApply={() => {
             onNodeRemoved()
 
-            return evictStarmapNode(deleting.id, source?.kind === 'owned' ? source.owner : undefined, source?.kind === 'owned' ? source.generation : undefined)
+            return evictStarmapNode(
+              deleting.id,
+              source?.kind === 'owned' ? source.owner : undefined,
+              source?.kind === 'owned' ? source.generation : undefined
+            )
           }}
           onClose={() => setDeleting(null)}
           onFailure={(err, name) => notifyError(err, name)}
@@ -213,7 +233,11 @@ export function NodeContextMenu({ onClose, onNodeRemoved, source, target }: Node
             }
 
             const { id, label } = deleting
-            const rollback = evictStarmapNode(id, source?.kind === 'owned' ? source.owner : undefined, source?.kind === 'owned' ? source.generation : undefined)
+            const rollback = evictStarmapNode(
+              id,
+              source?.kind === 'owned' ? source.owner : undefined,
+              source?.kind === 'owned' ? source.generation : undefined
+            )
             onNodeRemoved()
 
             fireOptimistic(

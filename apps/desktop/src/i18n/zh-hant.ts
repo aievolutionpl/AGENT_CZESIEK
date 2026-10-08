@@ -566,7 +566,8 @@ export const zhHant = defineLocale({
         title: '寵物',
         intro:
           '領養一隻懸浮在應用上的 petdex 動畫寵物，它會根據 Agent Czesiek 的狀態做出反應——工具執行時奔跑、成功時歡呼、出錯時沮喪。',
-        restartHint: '寵物功能需要重新啟動——目前執行的應用在此功能加入前啟動。請結束並重新開啟 Agent Czesiek，然後回到此處。',
+        restartHint:
+          '寵物功能需要重新啟動——目前執行的應用在此功能加入前啟動。請結束並重新開啟 Agent Czesiek，然後回到此處。',
         scaleTitle: '大小',
         scaleDesc: '調整懸浮寵物的大小，所有介面即時生效。',
         roamTitle: '漫遊',
@@ -1073,7 +1074,8 @@ export const zhHant = defineLocale({
       disableTool: tool => `停用 ${tool}`,
       noOutput: '尚無輸出。',
       deepLinkTitle: '新增 MCP 伺服器？',
-      deepLinkDescription: '一個連結要求將此 MCP 伺服器加入 Agent Czesiek。請檢查下方的完整設定——它來自該連結，而非 Agent Czesiek。',
+      deepLinkDescription:
+        '一個連結要求將此 MCP 伺服器加入 Agent Czesiek。請檢查下方的完整設定——它來自該連結，而非 Agent Czesiek。',
       deepLinkStdioWarning: '此伺服器會使用下方所示指令在你的電腦上執行本機程序。僅在信任其來源時繼續。',
       deepLinkConfirm: '新增伺服器',
       deepLinkNameInvalid: '名稱須為 1-64 個字母、數字、點、連字號或底線。',
@@ -2741,7 +2743,8 @@ export const zhHant = defineLocale({
     copyAuthCode: '複製授權碼並貼到下方。',
     pasteAuthCode: '貼上授權碼',
     reopenAuthPage: '重新開啟授權頁面',
-    autoBrowser: provider => `已在瀏覽器中開啟 ${provider}。請在那裡授權 Agent Czesiek，連線會自動完成，無需複製或貼上。`,
+    autoBrowser: provider =>
+      `已在瀏覽器中開啟 ${provider}。請在那裡授權 Agent Czesiek，連線會自動完成，無需複製或貼上。`,
     reopenSignInPage: '重新開啟登入頁面',
     waitingAuthorize: '等待您授權...',
     externalPending: provider => `${provider} 透過自己的 CLI 登入。請在終端機執行此指令，然後回來選擇「我已登入」：`,

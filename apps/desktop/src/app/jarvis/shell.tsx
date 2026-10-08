@@ -27,9 +27,7 @@ export interface JarvisShellProps {
 }
 
 function isJarvisShellView(value: JarvisShellView | undefined): value is JarvisShellView {
-  return Boolean(
-    value && ([...JARVIS_MAIN_VIEWS, ...JARVIS_AUXILIARY_VIEWS] as readonly string[]).includes(value)
-  )
+  return Boolean(value && ([...JARVIS_MAIN_VIEWS, ...JARVIS_AUXILIARY_VIEWS] as readonly string[]).includes(value))
 }
 
 function JarvisHomeSurface() {
