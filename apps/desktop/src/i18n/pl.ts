@@ -1261,7 +1261,7 @@ export const pl = defineLocale({
           'Utrzymuj procesy agentów w tle, aby szybciej się między nimi przełączać. Każdy zajmuje około 60 MB pamięci. Zmiana działa od razu.',
         timeout: 'Czas bezczynności',
         timeoutHint:
-          'Po tym czasie nieużywany proces agenta zostanie zatrzymany. Dłuższy czas pozwala szybciej wrócić do pracy z agentem.',
+          'Po tym czasie nieużywane połączenie zdalne zostanie usunięte z pamięci podręcznej. Lokalne procesy agentów działają także w bezczynności, bo wykonują zadania cykliczne i rozmowy botów.',
         timeoutLabel: 'Czas bezczynności w milisekundach'
       },
       appearance: {

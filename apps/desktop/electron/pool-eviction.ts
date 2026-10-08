@@ -56,3 +56,15 @@ export function selectPoolEvictions<K>(
 
   return evictions
 }
+
+/**
+ * Which pool keys the idle reaper may reclaim: only process-less connection descriptors (remote or cloud
+ * routes) that have been idle past `idleMs`. A local `hermes serve` child is never reaped for being idle:
+ * it runs its profile's cron jobs and bot chats with nobody watching, so killing it left a bot "Backend
+ * offline" while its chat was open. Local children stay bounded by the slot cap and foreground reclaim.
+ */
+export function selectIdleReclaims<K>(entries: Iterable<[K, PoolEvictionEntry]>, now: number, idleMs: number): K[] {
+  return [...entries]
+    .filter(([, entry]) => !entry.process && now - (entry.lastActiveAt || 0) > idleMs)
+    .map(([key]) => key)
+}

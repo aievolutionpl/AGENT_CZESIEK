@@ -1247,7 +1247,7 @@ export const en: Translations = {
           'Keep these agent processes running for faster switching. Each uses about 60 MB of memory. Changes apply immediately.',
         timeout: 'Idle timeout',
         timeoutHint:
-          'After this time an unused agent process stops. A longer timeout makes returning to the agent faster.',
+          'After this time an unused remote connection is dropped from the cache. Local agent processes keep running while idle, because they run scheduled jobs and bot chats.',
         timeoutLabel: 'Idle timeout in milliseconds'
       },
       appearance: {

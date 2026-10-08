@@ -296,7 +296,7 @@ import {
   localRouteFallbackProfiles,
   undialedSshRouteSeeds
 } from './plugin-profile-routes'
-import { selectPoolEvictions } from './pool-eviction'
+import { selectIdleReclaims, selectPoolEvictions } from './pool-eviction'
 import { clampPoolLimits, parsePoolLimits, POOL_LIMITS_DEFAULTS } from './pool-limits'
 import {
   isBackgroundSlotWaitTimeout,
@@ -12921,11 +12921,9 @@ function startPoolIdleReaper() {
   poolIdleReaper = setInterval(() => {
     const now = Date.now()
 
-    for (const [profile, entry] of [...backendPool.entries()]) {
-      if (now - (entry.lastActiveAt || 0) > poolIdleMs()) {
-        rememberLog(`Reaping idle profile backend "${profile}" (idle > ${Math.round(poolIdleMs() / 1000)}s)`)
-        stopPoolBackend(profile)
-      }
+    for (const profile of selectIdleReclaims(backendPool.entries(), now, poolIdleMs())) {
+      rememberLog(`Reclaiming idle connection "${profile}" (idle > ${Math.round(poolIdleMs() / 1000)}s)`)
+      stopPoolBackend(profile)
     }
 
     if (backendPool.size === 0 && poolIdleReaper) {
