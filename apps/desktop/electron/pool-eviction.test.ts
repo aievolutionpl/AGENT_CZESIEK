@@ -11,7 +11,7 @@ import assert from 'node:assert/strict'
 
 import { test } from 'vitest'
 
-import { selectPoolEvictions } from './pool-eviction'
+import { selectIdleReclaims, selectPoolEvictions } from './pool-eviction'
 
 const NOW = 1_000_000
 // Mirrors main.ts POOL_KEEPALIVE_FRESH_MS (4 minutes — see #95189).
@@ -150,4 +150,17 @@ test('#95189: a backend genuinely idle for minutes IS evicted (#95189 long-windo
 
   // keep=1, idle is over the cap AND past the fresh window → evicted.
   assert.deepEqual(selectPoolEvictions(entries, 1, NOW, FRESH_MS), ['idle'])
+})
+
+test('idle reaper reclaims only idle connection descriptors, never a local child', () => {
+  const IDLE_MS = 10 * 60_000
+
+  const entries: [string, { lastActiveAt: number; process: null | { pid: number } }][] = [
+    ['local-old', { lastActiveAt: NOW - 3 * IDLE_MS, process: { pid: 1 } }],
+    ['remote-old', { lastActiveAt: NOW - 3 * IDLE_MS, process: null }],
+    ['remote-fresh', { lastActiveAt: NOW - 1_000, process: null }],
+    ['remote-never-touched', { lastActiveAt: 0, process: null }]
+  ]
+
+  assert.deepEqual(selectIdleReclaims(entries, NOW, IDLE_MS), ['remote-old', 'remote-never-touched'])
 })
