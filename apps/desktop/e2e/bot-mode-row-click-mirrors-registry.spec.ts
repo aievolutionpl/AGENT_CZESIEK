@@ -133,6 +133,9 @@ test('a bot row click lands on the Bot Chat the row previews, not a side thread'
 
   // A `+` side thread for alpha, with a real turn so it is a persisted tile.
   await page.keyboard.press('Control+t')
+  // The new thread wakes the bot's backend; the composer is swapped while it does, so a click made
+  // before the wake finishes lands on an element that is replaced under it.
+  await settle(page)
   const composer = page
     .locator('[data-composer-target]:not([data-pane-hidden] [data-composer-target])')
     .last()
