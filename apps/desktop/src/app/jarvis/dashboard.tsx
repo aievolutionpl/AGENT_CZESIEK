@@ -345,9 +345,10 @@ export function JarvisDashboard({
   const showRail = layout === 'desktop' && !focus && !railCollapsed
   const [activityOpen, setActivityOpen] = useState(layout === 'desktop')
   const [view, setView] = useState<JarvisInsightsView>('activity')
-  // The rail (desktop home cards) leaves the conversation column too narrow
-  // for the full-size status orb beside the status pills.
-  const compactCore = layout === 'mobile' && !BUSY_PHASES.has(state.task.phase)
+  // The orb stays compact while you read (the transcript needs the height; at a 1220x800 window the
+  // full-size orb and its controls left the messages ~80 px) and grows only while you talk (see
+  // `compact={compactCore && !voiceActive}` below). On a narrow layout it also grows while a task runs.
+  const compactCore = layout !== 'mobile' || !BUSY_PHASES.has(state.task.phase)
   const activityPanelId = useId()
   const activityTitleId = useId()
   const activityToggleRef = useRef<HTMLButtonElement>(null)
@@ -424,7 +425,7 @@ export function JarvisDashboard({
         {home ? null : (
           <JarvisCore compact={compactCore && !voiceActive} live taskPhase={state.task.phase} voice={state.voice} />
         )}
-        {home ? null : <VoiceWave active={voiceActive} />}
+        {home || !voiceActive ? null : <VoiceWave active />}
         {home ? null : <ScreenLookingBadge />}
         {
           <>
