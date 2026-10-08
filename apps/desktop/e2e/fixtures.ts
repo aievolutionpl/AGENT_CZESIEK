@@ -108,6 +108,13 @@ export function createSandbox(prefix: string): Sandbox {
   fs.mkdirSync(hermesHome, { recursive: true })
   fs.mkdirSync(userDataDir, { recursive: true })
 
+  // Pin the desktop's launch profile to "none" (the backend's own default). Without this file the
+  // app runs its first-run migration, which picks the "primary workspace" from the recency and size
+  // of each profile's state.db. Specs that seed bot profiles then start as whichever bot was written
+  // last, and that profile's own first-run welcome has no "Finish later" step, so the result depends
+  // on seeding timing and fails under parallel workers.
+  fs.writeFileSync(path.join(userDataDir, 'active-profile.json'), JSON.stringify({ profile: null }, null, 2), 'utf8')
+
   // Write a fixed window-state.json so the Electron window opens at a
   // consistent size — helps with visual regression screenshots.  The
   // exact size is also enforced right before each screenshot (see
