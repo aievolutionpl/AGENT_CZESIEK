@@ -6,12 +6,15 @@ import { createVaultNote, VAULT_RAIL_KEY } from '@/api/vault'
 import { Button } from '@/components/ui/button'
 import { getAiNews } from '@/hermes'
 import { useI18n } from '@/i18n'
-import { Bookmark, Checks, EyeOff, Loader2, RefreshCw, Sparkles, Zap } from '@/lib/icons'
+import { Bookmark, Checks, EyeOff, Loader2, RefreshCw, Sparkles, Volume2, VolumeX, Zap } from '@/lib/icons'
 import { cn } from '@/lib/utils'
+import { playSpeechText, stopVoicePlayback } from '@/lib/voice-playback'
 import { notify, notifyError } from '@/store/notifications'
+import { $voicePlayback } from '@/store/voice-playback'
 
 import { requestComposerInsert } from '../chat/composer/focus'
 
+import { newsReadingScript } from './news-brief'
 import { $newsMuted, setSourceMuted, unmuteAllSources, withoutMuted } from './news-muted'
 import { $newsRead, markNewsRead } from './news-read'
 import { RailCard } from './rail-card'
@@ -21,6 +24,7 @@ const NEWS_FETCH = 15
 const NEWS_SHOWN = 5
 const SOURCE_CHIPS = 4
 const NEWS_FOLDER = 'Newsy'
+const NEWS_BRIEF_ID = 'news-brief'
 
 const COPY = {
   en: {
@@ -33,6 +37,9 @@ const COPY = {
       `Brief me on these AI headlines in a few sentences and tell me which one matters most for my work:\n${titles}`,
     less: 'Show less',
     markAll: 'Mark all as read',
+    readAloud: 'Read the headlines aloud',
+    readFailed: 'Could not read the headlines',
+    stopReading: 'Stop reading',
     mute: (name: string) => `Hide ${name}`,
     muted: (n: number) => `${n} hidden source${n === 1 ? '' : 's'} · show`,
     more: (n: number) => `Show ${n} more`,
@@ -52,6 +59,9 @@ const COPY = {
       `Podsumuj te newsy AI w kilku zdaniach i powiedz, który jest najważniejszy dla mojej pracy:\n${titles}`,
     less: 'Pokaż mniej',
     markAll: 'Oznacz wszystko jako przeczytane',
+    readAloud: 'Przeczytaj nagłówki na głos',
+    readFailed: 'Nie udało się przeczytać nagłówków',
+    stopReading: 'Przerwij czytanie',
     mute: (name: string) => `Ukryj: ${name}`,
     muted: (n: number) => `Ukryte źródła: ${n} · pokaż`,
     more: (n: number) => `Pokaż jeszcze ${n}`,
@@ -109,6 +119,8 @@ export function JarvisNewsLiveCard({ connected }: { connected: boolean }) {
   const queryClient = useQueryClient()
   const read = useStore($newsRead)
   const muted = useStore($newsMuted)
+  const playback = useStore($voicePlayback)
+  const reading = playback.source === 'read-aloud' && playback.messageId === NEWS_BRIEF_ID ? playback.status : 'idle'
 
   const news = useQuery({
     enabled: connected,
@@ -152,6 +164,29 @@ export function JarvisNewsLiveCard({ connected }: { connected: boolean }) {
     }
   }
 
+  const readAloud = async () => {
+    if (reading !== 'idle') {
+      void stopVoicePlayback()
+
+      return
+    }
+
+    // The unread headlines first (what a morning brief is for), else whatever is shown.
+    const script = newsReadingScript(unread.length ? unread : filtered, locale === 'pl' ? 'pl' : 'en')
+
+    if (!script || $voicePlayback.get().status !== 'idle') {
+      return
+    }
+
+    try {
+      if (await playSpeechText(script, { messageId: NEWS_BRIEF_ID, source: 'read-aloud' })) {
+        markNewsRead((unread.length ? unread : filtered).slice(0, 5).map(item => item.link))
+      }
+    } catch (error) {
+      notifyError(error, copy.readFailed)
+    }
+  }
+
   return (
     <RailCard
       action={
@@ -169,6 +204,23 @@ export function JarvisNewsLiveCard({ connected }: { connected: boolean }) {
               {unread.length}
             </Button>
           ) : null}
+          <Button
+            aria-label={reading === 'idle' ? copy.readAloud : copy.stopReading}
+            disabled={!connected || all.length === 0 || reading === 'preparing'}
+            onClick={() => void readAloud()}
+            size="icon-sm"
+            title={reading === 'idle' ? copy.readAloud : copy.stopReading}
+            type="button"
+            variant="ghost"
+          >
+            {reading === 'preparing' ? (
+              <Loader2 className="animate-spin" />
+            ) : reading === 'speaking' ? (
+              <VolumeX />
+            ) : (
+              <Volume2 />
+            )}
+          </Button>
           <Button
             aria-label={state.refresh}
             disabled={!connected || news.isFetching}
