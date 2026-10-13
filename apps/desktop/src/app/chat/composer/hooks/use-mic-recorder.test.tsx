@@ -22,17 +22,18 @@ describe('useMicRecorder cancellation', () => {
     const stream = { getTracks: () => [track] } as unknown as MediaStream
     const getUserMedia = vi.fn(() => new Promise<MediaStream>(resolve => (resolveStream = resolve)))
 
-    vi.stubGlobal('MediaRecorder', class {
-      static isTypeSupported() {
-        return false
+    vi.stubGlobal(
+      'MediaRecorder',
+      class {
+        static isTypeSupported() {
+          return false
+        }
       }
-    })
+    )
     Object.defineProperty(navigator, 'mediaDevices', { configurable: true, value: { getUserMedia } })
     let resolvePermission!: (allowed: boolean) => void
 
-    const requestMicrophoneAccess = vi.fn(
-      () => new Promise<boolean>(resolve => (resolvePermission = resolve))
-    )
+    const requestMicrophoneAccess = vi.fn(() => new Promise<boolean>(resolve => (resolvePermission = resolve)))
 
     Object.defineProperty(window, 'hermesDesktop', {
       configurable: true,

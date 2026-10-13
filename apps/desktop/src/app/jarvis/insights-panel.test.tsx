@@ -187,7 +187,9 @@ describe('Agent CzesiekInsightsPanel', () => {
   it('offers no update action when the shell cannot open one', () => {
     render(
       <Harness
-        news={[{ action: 'update-client', id: 'c1', kind: 'release', title: 'Nowa wersja Agenta Cześka', tone: 'accent' }]}
+        news={[
+          { action: 'update-client', id: 'c1', kind: 'release', title: 'Nowa wersja Agenta Cześka', tone: 'accent' }
+        ]}
       />
     )
 

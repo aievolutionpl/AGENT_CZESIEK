@@ -46,6 +46,7 @@ describe('mock-only bounded OpenRouter connection', () => {
       if (stage !== 'setDefaultModel') {
         expect(deps.setDefaultModel).not.toHaveBeenCalled()
       }
+
       expect(vi.getTimerCount()).toBe(0)
     }
   )

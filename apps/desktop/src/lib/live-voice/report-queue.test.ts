@@ -31,7 +31,9 @@ describe('VoiceReportQueue', () => {
     expect(queue.pending).toBe(true)
     notify.mockReturnValue(true)
 
-    for (const now of [1, 12_001, 24_001, 36_001]) {queue.drain(notify, now)}
+    for (const now of [1, 12_001, 24_001, 36_001]) {
+      queue.drain(notify, now)
+    }
     expect(failed).toHaveBeenCalledExactlyOnceWith('result')
     expect(queue.pending).toBe(false)
   })

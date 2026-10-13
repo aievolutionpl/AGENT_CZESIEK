@@ -18,7 +18,16 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { getComputerUseStatus, grantComputerUsePermissions } from '@/hermes'
 import type { Translations } from '@/i18n'
-import { AlertTriangle, Check, ExternalLink, FolderOpen, Loader2, MessageSquareText, Monitor, RefreshCw } from '@/lib/icons'
+import {
+  AlertTriangle,
+  Check,
+  ExternalLink,
+  FolderOpen,
+  Loader2,
+  MessageSquareText,
+  Monitor,
+  RefreshCw
+} from '@/lib/icons'
 import type { ActionResponse, ComputerUseStatus } from '@/types/hermes'
 
 import {
@@ -193,7 +202,10 @@ function DesktopControlStatus({
   const ready = readiness === 'ready'
 
   return (
-    <div className="grid gap-3 rounded-md border border-(--ui-stroke-tertiary) bg-(--ui-bg-tertiary) p-4" data-testid="jarvis-computer-status">
+    <div
+      className="grid gap-3 rounded-md border border-(--ui-stroke-tertiary) bg-(--ui-bg-tertiary) p-4"
+      data-testid="jarvis-computer-status"
+    >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="flex items-center gap-2 text-sm font-semibold">
           {checking ? (

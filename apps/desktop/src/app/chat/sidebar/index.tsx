@@ -1477,7 +1477,10 @@ export function ChatSidebar({
         <SidebarGroup className="shrink-0 p-0 pb-2 pt-[calc(var(--titlebar-height)+0.375rem)]">
           <SidebarGroupContent>
             <SidebarMenu className="gap-px">
-              {[...(productShellNav ? SIDEBAR_NAV.filter(item => item.id === 'new-session') : SIDEBAR_NAV), ...contributedNav].map(item => {
+              {[
+                ...(productShellNav ? SIDEBAR_NAV.filter(item => item.id === 'new-session') : SIDEBAR_NAV),
+                ...contributedNav
+              ].map(item => {
                 const isInteractive = Boolean(item.action) || Boolean(item.route)
 
                 const active =

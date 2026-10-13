@@ -8,7 +8,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { I18nProvider } from '@/i18n'
 
-const render = (ui: ReactElement) => rtlRender(<I18nProvider configClient={null} initialLocale="en">{ui}</I18nProvider>)
+const render = (ui: ReactElement) =>
+  rtlRender(
+    <I18nProvider configClient={null} initialLocale="en">
+      {ui}
+    </I18nProvider>
+  )
 
 import type * as HermesApi from '@/hermes'
 import { queryClient } from '@/lib/query-client'

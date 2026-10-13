@@ -26,7 +26,12 @@ export function normalizeSiteRule(input: string): null | string {
     }
   }
 
-  const host = value.split(/[/?#]/, 1)[0]?.replace(/^\*\./, '').replace(/^www\./, '').replace(/\.$/, '') ?? ''
+  const host =
+    value
+      .split(/[/?#]/, 1)[0]
+      ?.replace(/^\*\./, '')
+      .replace(/^www\./, '')
+      .replace(/\.$/, '') ?? ''
 
   return /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/.test(host) ? host : null
 }

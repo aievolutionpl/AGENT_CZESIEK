@@ -53,10 +53,14 @@ function ScopedPromptLibrary({ scope }: { scope: string }) {
   }
 
   const remove = () => {
-    if (!draft.id) {return}
+    if (!draft.id) {
+      return
+    }
     const removed = items.find(item => item.id === draft.id)
 
-    if (!removed) {return}
+    if (!removed) {
+      return
+    }
 
     try {
       removePrompt(scope, removed.id)

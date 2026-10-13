@@ -17,8 +17,14 @@ let inflight: { key: string; promise: Promise<void> } | null = null
 
 function captureScope(scope?: ProfileScope): { key: string; owner: MemoryOwner; request: ProfileScope } {
   const explicit = scope && typeof scope === 'object' ? scope : null
-  const connectionId = (explicit?.connectionId ?? (typeof scope === 'string' ? getApiRequestConnection() : getApiRequestConnection()) ?? 'local').trim() || 'local'
-  const profile = (explicit?.profile ?? (typeof scope === 'string' ? scope : getApiRequestProfile()) ?? 'default').trim() || 'default'
+  const connectionId =
+    (
+      explicit?.connectionId ??
+      (typeof scope === 'string' ? getApiRequestConnection() : getApiRequestConnection()) ??
+      'local'
+    ).trim() || 'local'
+  const profile =
+    (explicit?.profile ?? (typeof scope === 'string' ? scope : getApiRequestProfile()) ?? 'default').trim() || 'default'
   const request: ProfileScope = { connectionId, profile }
 
   return { key: `${connectionId}::${profile}`, owner: { connectionId, profile }, request }
@@ -28,9 +34,16 @@ export async function loadStarmapGraph(force = false, scope?: ProfileScope): Pro
   const captured = captureScope(scope)
   const currentOwner = $starmapOwner.get()
 
-  if (inflight?.key === captured.key && !force) {return inflight.promise}
+  if (inflight?.key === captured.key && !force) {
+    return inflight.promise
+  }
 
-  if ($starmapGraph.get() && !force && currentOwner?.connectionId === captured.owner.connectionId && currentOwner.profile === captured.owner.profile) {
+  if (
+    $starmapGraph.get() &&
+    !force &&
+    currentOwner?.connectionId === captured.owner.connectionId &&
+    currentOwner.profile === captured.owner.profile
+  ) {
     return
   }
 
@@ -45,16 +58,22 @@ export async function loadStarmapGraph(force = false, scope?: ProfileScope): Pro
     try {
       const graph = await getStarmapGraph(captured.request)
 
-      if ($starmapGeneration.get() !== generation) {return}
+      if ($starmapGeneration.get() !== generation) {
+        return
+      }
       $starmapGraph.set(graph)
       $starmapOwner.set(captured.owner)
     } catch (err) {
-      if ($starmapGeneration.get() === generation) {$starmapError.set(err instanceof Error ? err.message : String(err))}
+      if ($starmapGeneration.get() === generation) {
+        $starmapError.set(err instanceof Error ? err.message : String(err))
+      }
     } finally {
       if ($starmapGeneration.get() === generation) {
         $starmapLoading.set(false)
 
-        if (inflight?.promise === promise) {inflight = null}
+        if (inflight?.promise === promise) {
+          inflight = null
+        }
       }
     }
   })()
@@ -68,7 +87,11 @@ export function evictStarmapNode(id: string, owner?: MemoryOwner, generation?: n
   const prev = $starmapGraph.get()
   const currentOwner = $starmapOwner.get()
 
-  if (!prev || (owner && (currentOwner?.connectionId !== owner.connectionId || currentOwner.profile !== owner.profile)) || (generation !== undefined && $starmapGeneration.get() !== generation)) {
+  if (
+    !prev ||
+    (owner && (currentOwner?.connectionId !== owner.connectionId || currentOwner.profile !== owner.profile)) ||
+    (generation !== undefined && $starmapGeneration.get() !== generation)
+  ) {
     return () => {}
   }
 
@@ -83,7 +106,10 @@ export function evictStarmapNode(id: string, owner?: MemoryOwner, generation?: n
   return () => {
     const nowOwner = $starmapOwner.get()
 
-    if ((!owner || (nowOwner?.connectionId === owner.connectionId && nowOwner.profile === owner.profile)) && (generation === undefined || $starmapGeneration.get() === generation)) {
+    if (
+      (!owner || (nowOwner?.connectionId === owner.connectionId && nowOwner.profile === owner.profile)) &&
+      (generation === undefined || $starmapGeneration.get() === generation)
+    ) {
       $starmapGraph.set(prev)
     }
   }

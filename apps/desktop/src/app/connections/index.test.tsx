@@ -98,7 +98,9 @@ describe('ConnectionsView', () => {
 
     const email = screen.getByText(pl.jarvisConnections.entries.email.name).closest('article')!
     const phone = screen.getByText(pl.jarvisConnections.entries.phone.name).closest('article')!
-    expect(within(email as HTMLElement).getByRole('button', { name: pl.jarvisConnections.setupWithJarvis })).toBeTruthy()
+    expect(
+      within(email as HTMLElement).getByRole('button', { name: pl.jarvisConnections.setupWithJarvis })
+    ).toBeTruthy()
     expect(within(phone as HTMLElement).getByRole('button', { name: pl.jarvisConnections.openSettings })).toBeTruthy()
     expect(screen.getByText(pl.jarvisConnections.entries.google.name)).toBeTruthy()
     expect(screen.getByText(pl.jarvisConnections.entries.github.name)).toBeTruthy()

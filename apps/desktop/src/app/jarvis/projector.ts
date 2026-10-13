@@ -20,7 +20,7 @@ const EVENT_PATCHES: Record<string, JarvisEventPatch> = {
   'task.failed': { taskPhase: 'failed' },
   'task.verified': { taskPhase: 'verified' },
   'tool.started': { activeTool: 'event' },
-  'tool.completed': { activeTool: null },
+  'tool.completed': { activeTool: null }
 }
 
 export function initialJarvisUiState(): JarvisUiState {
@@ -29,7 +29,7 @@ export function initialJarvisUiState(): JarvisUiState {
     voice: 'idle',
     task: { id: null, phase: 'idle' },
     activeTool: null,
-    activity: [],
+    activity: []
   }
 }
 
@@ -58,9 +58,8 @@ export function reduceJarvisEvent(state: JarvisUiState, event: JarvisEvent): Jar
   const taskId = event.taskId ?? state.task.id
   const taskPhase = patch?.taskPhase ?? state.task.phase
 
-  const nextTask = taskId === state.task.id && taskPhase === state.task.phase
-    ? state.task
-    : { id: taskId, phase: taskPhase }
+  const nextTask =
+    taskId === state.task.id && taskPhase === state.task.phase ? state.task : { id: taskId, phase: taskPhase }
 
   const nextActiveTool = activeToolFromPatch(state, event, patch)
   const result = resultFromEvent(state, event, nextTask)
@@ -73,7 +72,7 @@ export function reduceJarvisEvent(state: JarvisUiState, event: JarvisEvent): Jar
     task: nextTask,
     activeTool: nextActiveTool,
     result,
-    activity: nextActivity,
+    activity: nextActivity
   }
 }
 
@@ -90,7 +89,7 @@ function isTaskStartEvent(event: JarvisEvent): boolean {
 function resultFromEvent(
   state: JarvisUiState,
   event: JarvisEvent,
-  nextTask: JarvisUiState['task'],
+  nextTask: JarvisUiState['task']
 ): string | undefined {
   if (event.type === 'task.verified') {
     return verifiedResult(event)
@@ -110,7 +109,7 @@ function resultFromEvent(
 function activeToolFromPatch(
   state: JarvisUiState,
   event: JarvisEvent,
-  patch: JarvisEventPatch | undefined,
+  patch: JarvisEventPatch | undefined
 ): JarvisUiState['activeTool'] {
   if (patch?.activeTool === null) {
     return null

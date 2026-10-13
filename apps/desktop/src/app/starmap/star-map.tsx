@@ -153,7 +153,16 @@ export function StarMap({
   const selectedIdRef = useRef<null | string>(null)
   const sizeRef = useRef({ h: 0, w: 0 })
   const dprRef = useRef(1)
-  const cameraRef = useRef<MemoryCamera>({ yaw: 0, pitch: 0, distance: 600, focal_length: 600, near: 80, zoom: 1, pan_x: 0, pan_y: 0 })
+  const cameraRef = useRef<MemoryCamera>({
+    yaw: 0,
+    pitch: 0,
+    distance: 600,
+    focal_length: 600,
+    near: 80,
+    zoom: 1,
+    pan_x: 0,
+    pan_y: 0
+  })
   const projectionRef = useRef<ReturnType<typeof projectMemoryGraph> | null>(null)
   const dirtyRef = useRef(true)
   // Scrub = direct manipulation (snap the fades to the pointer); Play = the
@@ -603,7 +612,12 @@ export function StarMap({
             z: (node.id.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0) % 240) - 120,
             radius: nodeRadius(node) * nodeK + 6
           })),
-          { ...cameraRef.current, zoom: viewportRef.current.k, pan_x: viewportRef.current.x, pan_y: viewportRef.current.y },
+          {
+            ...cameraRef.current,
+            zoom: viewportRef.current.k,
+            pan_x: viewportRef.current.x,
+            pan_y: viewportRef.current.y
+          },
           { width: sizeRef.current.w, height: sizeRef.current.h }
         )
 
@@ -735,7 +749,7 @@ export function StarMap({
   const pickNode = (cssX: number, cssY: number): null | SimNode => {
     const id = projectionRef.current ? hitTestMemoryProjection(projectionRef.current, cssX, cssY) : null
 
-    return id ? byIdRef.current.get(id) ?? null : null
+    return id ? (byIdRef.current.get(id) ?? null) : null
   }
 
   // Nearest link within ~5px of the cursor (screen space), or null.
@@ -971,11 +985,41 @@ export function StarMap({
       />
 
       <div className="pointer-events-auto absolute right-2 top-12 z-20 flex gap-1 [-webkit-app-region:no-drag]">
-        <button aria-label="Reset view" className="rounded border px-1.5 text-xs" onClick={resetView} type="button">Reset</button>
-        <button aria-label="Rotate left" className="rounded border px-1.5 text-xs" onClick={() => rotateCamera(-0.18, 0)} type="button">↶</button>
-        <button aria-label="Rotate right" className="rounded border px-1.5 text-xs" onClick={() => rotateCamera(0.18, 0)} type="button">↷</button>
-        <button aria-label="Tilt up" className="rounded border px-1.5 text-xs" onClick={() => rotateCamera(0, -0.12)} type="button">↑</button>
-        <button aria-label="Tilt down" className="rounded border px-1.5 text-xs" onClick={() => rotateCamera(0, 0.12)} type="button">↓</button>
+        <button aria-label="Reset view" className="rounded border px-1.5 text-xs" onClick={resetView} type="button">
+          Reset
+        </button>
+        <button
+          aria-label="Rotate left"
+          className="rounded border px-1.5 text-xs"
+          onClick={() => rotateCamera(-0.18, 0)}
+          type="button"
+        >
+          ↶
+        </button>
+        <button
+          aria-label="Rotate right"
+          className="rounded border px-1.5 text-xs"
+          onClick={() => rotateCamera(0.18, 0)}
+          type="button"
+        >
+          ↷
+        </button>
+        <button
+          aria-label="Tilt up"
+          className="rounded border px-1.5 text-xs"
+          onClick={() => rotateCamera(0, -0.12)}
+          type="button"
+        >
+          ↑
+        </button>
+        <button
+          aria-label="Tilt down"
+          className="rounded border px-1.5 text-xs"
+          onClick={() => rotateCamera(0, 0.12)}
+          type="button"
+        >
+          ↓
+        </button>
       </div>
 
       <NodeContextMenu

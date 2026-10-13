@@ -110,7 +110,9 @@ describe('localizedBlueprint', () => {
   const base = { description: 'A short daily briefing.', key: 'morning-brief', title: 'Morning briefing' }
 
   it('reads the catalog entry for the UI language and falls back to the backend text', () => {
-    expect(localizedBlueprint(base, pl.cron.blueprints.catalog).title).toBe(pl.cron.blueprints.catalog['morning-brief'].title)
+    expect(localizedBlueprint(base, pl.cron.blueprints.catalog).title).toBe(
+      pl.cron.blueprints.catalog['morning-brief'].title
+    )
     expect(localizedBlueprint(base, en.cron.blueprints.catalog)).toEqual({
       description: 'A short daily briefing.',
       title: 'Morning briefing'

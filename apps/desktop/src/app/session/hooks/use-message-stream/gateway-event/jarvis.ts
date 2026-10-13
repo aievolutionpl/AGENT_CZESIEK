@@ -12,7 +12,7 @@ const JARVIS_EVENT_TYPES: Record<string, JarvisEvent['type']> = {
   'tool.complete': 'tool.completed',
   'tool.start': 'tool.started',
   'voice.interrupted': 'voice.stopped',
-  'voice.transcript': 'voice.stopped',
+  'voice.transcript': 'voice.stopped'
 }
 
 export function isJarvisVoiceGatewayEvent(eventType: string): boolean {
@@ -43,7 +43,7 @@ export function publishJarvisGatewayEvent(ctx: GatewayEventContext): void {
     label: typeof payload?.name === 'string' ? payload.name : undefined,
     detail: jarvisEventDetail(ctx),
     taskId: typeof payload?.task_id === 'string' ? payload.task_id : undefined,
-    toolCallId: typeof payload?.tool_id === 'string' ? payload.tool_id : undefined,
+    toolCallId: typeof payload?.tool_id === 'string' ? payload.tool_id : undefined
   })
 }
 

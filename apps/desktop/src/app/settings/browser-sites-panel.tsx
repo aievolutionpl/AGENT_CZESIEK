@@ -8,7 +8,13 @@ import { notifyError } from '@/store/notifications'
 
 import { hermesConfigCacheWriter, useHermesConfigRecord } from '../hooks/use-config-record'
 
-import { normalizeSiteRule, readBlocklist, type WebsiteBlocklist, withSiteAdded, withSiteRemoved } from './browser-sites'
+import {
+  normalizeSiteRule,
+  readBlocklist,
+  type WebsiteBlocklist,
+  withSiteAdded,
+  withSiteRemoved
+} from './browser-sites'
 import { setNested } from './helpers'
 import { ToggleRow } from './primitives'
 
@@ -55,7 +61,11 @@ export function BrowserSitesPanel({ profile }: { profile?: ProfileScope }) {
         return
       }
 
-      const record = setNested(setNested(config, 'security.website_blocklist.enabled', next.enabled), 'security.website_blocklist.domains', next.domains)
+      const record = setNested(
+        setNested(config, 'security.website_blocklist.enabled', next.enabled),
+        'security.website_blocklist.domains',
+        next.domains
+      )
 
       setBusy(true)
       setConfig(record)

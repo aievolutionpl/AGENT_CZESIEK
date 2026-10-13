@@ -421,7 +421,12 @@ export function SkillsView({
   })
 
   const visibleSkills = useMemo(
-    () => (skills ? filteredSkills(skills, query, skillsSortDesc).filter(skill => skillCategory === 'all' || categoryFor(skill) === skillCategory) : []),
+    () =>
+      skills
+        ? filteredSkills(skills, query, skillsSortDesc).filter(
+            skill => skillCategory === 'all' || categoryFor(skill) === skillCategory
+          )
+        : [],
     [query, skills, skillsSortDesc, skillCategory]
   )
 
@@ -825,7 +830,10 @@ export function SkillsView({
           <span className="text-[0.7rem] font-medium text-(--ui-text-tertiary)">{t.skills.configuringProfile}</span>
         )}
         <Select onValueChange={changeScope} value={scopeSelectValue}>
-          <SelectTrigger aria-label={t.skills.configuringProfile} className={cn('text-xs', compactSelector ? 'h-6 w-full max-w-64 px-2' : 'h-7 w-56')}>
+          <SelectTrigger
+            aria-label={t.skills.configuringProfile}
+            className={cn('text-xs', compactSelector ? 'h-6 w-full max-w-64 px-2' : 'h-7 w-56')}
+          >
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -866,8 +874,27 @@ export function SkillsView({
             plugins on that page belong to the app, not to any profile, and
             must not sit under a "Configuring: <profile>" header. */}
         {mode !== 'plugins' && profileScopeSelector}
-        {mode === 'skills' && <SkillCreate key={scopeKey} onCreated={refreshCapabilities} profile={scopeProfile} scopeLabel={scopeLabel} />}
-        {mode === 'skills' && <div className="flex items-center gap-3 px-4 py-2 text-sm"><label htmlFor="skill-category">Kategoria</label><select className="rounded-md border border-input bg-background px-3 py-1.5" id="skill-category" onChange={event => setSkillCategory(event.target.value)} value={skillCategory}><option value="all">Wszystkie umiejętności</option>{[...new Set((skills ?? []).map(categoryFor))].sort().map(category => <option key={category} value={category}>{category}</option>)}</select></div>}
+        {mode === 'skills' && (
+          <SkillCreate key={scopeKey} onCreated={refreshCapabilities} profile={scopeProfile} scopeLabel={scopeLabel} />
+        )}
+        {mode === 'skills' && (
+          <div className="flex items-center gap-3 px-4 py-2 text-sm">
+            <label htmlFor="skill-category">Kategoria</label>
+            <select
+              className="rounded-md border border-input bg-background px-3 py-1.5"
+              id="skill-category"
+              onChange={event => setSkillCategory(event.target.value)}
+              value={skillCategory}
+            >
+              <option value="all">Wszystkie umiejętności</option>
+              {[...new Set((skills ?? []).map(categoryFor))].sort().map(category => (
+                <option key={category} value={category}>
+                  {category}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
         <div className="flex min-h-0 flex-1 flex-col">
           <div className={mode === 'skills' ? 'min-h-40 flex-1 overflow-hidden' : 'min-h-0 flex-1'}>
             {mode === 'plugins' ? (
@@ -1060,9 +1087,7 @@ export function SkillsView({
               on purpose — the picker fetches nothing; scope rides the
               `profile` prop into each install call, and remounting on scope
               change would reload the whole site for no data benefit. */}
-          {hubMounted && (
-            <EmbeddedHubPicker hidden={mode !== 'skills'} profile={scopeProfile} />
-          )}
+          {hubMounted && <EmbeddedHubPicker hidden={mode !== 'skills'} profile={scopeProfile} />}
         </div>
       </div>
       {archiveTarget && (

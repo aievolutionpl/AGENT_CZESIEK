@@ -52,7 +52,9 @@ export function personalityPrompt(value: CzesiekPersonality): string {
 export function withPersonality(existing: unknown, value?: CzesiekPersonality): string {
   const current = typeof existing === 'string' ? existing : ''
 
-  if (!value) {return current}
+  if (!value) {
+    return current
+  }
   const start = current.indexOf(START)
   const end = start < 0 ? -1 : current.indexOf(END, start)
   const preserved = end < 0 ? current : current.slice(0, start) + current.slice(end + END.length)

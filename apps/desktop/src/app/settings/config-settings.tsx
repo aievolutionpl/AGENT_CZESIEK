@@ -240,7 +240,6 @@ function ConfigSettingsInner({
               ) {
                 await setAutoSpeakReplies(true)
               }
-
             }
 
             if (scopeProfile == null) {
