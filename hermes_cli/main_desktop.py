@@ -135,7 +135,7 @@ def _desktop_packaged_executable_in(release_dir: Path) -> Optional[Path]:
     """
     # Staging and release directories are siblings of the builder manifest.
     pkg_path = release_dir.parent / "package.json"
-    pkg = json.loads(pkg_path.read_text()) if pkg_path.is_file() else {}
+    pkg = json.loads(pkg_path.read_text(encoding="utf-8")) if pkg_path.is_file() else {}
     build = pkg.get("build", {})
     product = build.get("productName", pkg.get("productName", "Hermes"))
     executable = build.get("executableName", product)

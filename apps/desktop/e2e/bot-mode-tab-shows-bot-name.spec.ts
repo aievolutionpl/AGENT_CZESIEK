@@ -6,6 +6,7 @@ import { MOCK_REPLY, startMockServer } from '../../../tests-js/scripts/mock-serv
 import {
   buildAppEnv,
   createSandbox,
+  deferConfiguredProfileWelcome,
   launchDesktop,
   type MockBackendFixture,
   waitForAppReady,
@@ -97,6 +98,7 @@ test.beforeAll(async () => {
     }
   }
   await waitForAppReady(fixture, 120_000)
+  await deferConfiguredProfileWelcome(page, ['alpha', 'beta'])
 })
 
 test.afterAll(async () => {
