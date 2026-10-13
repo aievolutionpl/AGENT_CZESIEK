@@ -1007,3 +1007,28 @@ describe('Agent CzesiekOnboarding OpenRouter quick start', () => {
     await waitFor(() => expect(readStoredOnboardingState()?.skipped).toBe(true))
   })
 })
+
+it('lets all nine steps skip during a hung initial load without claiming completion or losing choices', async () => {
+  const onDismiss = vi.fn()
+  const saveConfig = vi.fn()
+  writeJarvisOnboardingState(
+    {
+      version: JARVIS_ONBOARDING_VERSION,
+      currentStep: 'welcome',
+      completedSteps: [],
+      selections: { engine: 'openrouter', model: 'keep-model', voiceMode: 'quiet' }
+    },
+    window.localStorage,
+    TEST_SCOPE
+  )
+  renderOnboarding({ loadConfig: () => new Promise(() => {}), onDismiss, saveConfig })
+  for (const step of JARVIS_ONBOARDING_STEPS) {
+    expect(readStoredOnboardingState()?.currentStep).toBe(step)
+    fireEvent.click(screen.getByRole('button', { name: 'Pomiń ten krok' }))
+    expect(readStoredOnboardingState()?.completedSteps).toEqual([])
+    expect(readStoredOnboardingState()?.selections?.model).toBe('keep-model')
+  }
+  expect(onDismiss).toHaveBeenCalledOnce()
+  expect(readStoredOnboardingState()?.skipped).toBe(true)
+  expect(saveConfig).not.toHaveBeenCalled()
+})

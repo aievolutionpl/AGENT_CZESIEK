@@ -3,7 +3,13 @@ import { defineFieldCopy } from '@/app/settings/field-copy'
 import { defineLocale } from './define-locale'
 
 export const zhHant = defineLocale({
-  jarvisShell: { views: { prompts: '我的提示詞' } },
+  jarvisShell: {
+    views: { prompts: '我的提示詞' },
+    openRouterConnect: {
+      savedIncomplete: '金鑰已儲存，但連線或模型設定尚未確認。請重試或在設定中完成。',
+      saveUnknown: '無法確認金鑰是否已儲存。可能已儲存，請重試或檢查設定。'
+    }
+  },
   sessionImport: {
     title: '從其他應用程式繼續',
     subtitle: '將對話匯入 Agent Czesiek，接著上次的進度繼續。',

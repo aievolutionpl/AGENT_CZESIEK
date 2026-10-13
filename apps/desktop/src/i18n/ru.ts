@@ -24,7 +24,13 @@ const RU_NOUN = (count: number | string, one: string, few: string, many: string)
 }
 
 export const ru = defineLocale({
-  jarvisShell: { views: { prompts: 'Мои промпты' } },
+  jarvisShell: {
+    views: { prompts: 'Мои промпты' },
+    openRouterConnect: {
+      savedIncomplete: 'Ключ сохранён. Подключение или настройка модели не подтверждены. Повторите попытку или завершите настройку в Настройках.',
+      saveUnknown: 'Не удалось подтвердить сохранение ключа. Возможно, он сохранён; повторите попытку или проверьте Настройки.'
+    }
+  },
   sessionImport: {
     title: 'Продолжить из другого приложения',
     subtitle: 'Перенесите разговор в Agent Czesiek и продолжите с того места, где остановились.',

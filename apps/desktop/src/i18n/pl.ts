@@ -490,6 +490,10 @@ export const pl = defineLocale({
       empty: 'Najpierw wklej klucz OpenRouter.',
       rejected: 'OpenRouter odrzucił ten klucz. Sprawdź go i spróbuj ponownie.',
       failed: 'Nie udało się połączyć z OpenRouter. Spróbuj za chwilę.',
+      savedIncomplete:
+        'Klucz zapisany. Połączenie lub wybór modelu nie zostały potwierdzone. Spróbuj ponownie lub dokończ w Ustawieniach.',
+      saveUnknown:
+        'Nie udało się potwierdzić zapisu klucza. Mógł zostać zapisany; spróbuj ponownie lub sprawdź Ustawienia.',
       connected: model => `OpenRouter połączony — pracuję na ${model}.`,
       connectedNoModel: 'OpenRouter połączony. Wybierz model w menu modelu.'
     },

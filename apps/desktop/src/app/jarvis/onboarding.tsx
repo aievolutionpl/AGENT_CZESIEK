@@ -513,8 +513,25 @@ export function JarvisOnboarding({
   // + profile so the wizard does not come back on the next launch, and Settings
   // remains the place to add a provider key or a model afterwards.
   const close = () => {
-    dismissJarvisOnboarding(undefined, scope)
+    if (!dismissJarvisOnboarding(undefined, scope)) {
+      setSaveError(copy.errors.save)
+      return
+    }
+    requestToken.current += 1
+    loadToken.current += 1
+    setCompleted(true)
     onDismiss?.()
+  }
+
+  const skipStep = () => {
+    requestToken.current += 1
+    setConfigurationStatus(status => (status === 'checking' ? 'idle' : status))
+    setAccessStatus(status => (status === 'checking' ? 'idle' : status))
+    if (currentIndex === JARVIS_ONBOARDING_STEPS.length - 1) {
+      close()
+      return
+    }
+    persistState(updatedState(stateRef.current, { currentStep: JARVIS_ONBOARDING_STEPS[currentIndex + 1] }))
   }
 
   const chooseProvider = (slug: string) => {
@@ -1349,11 +1366,9 @@ export function JarvisOnboarding({
               {saveError}
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              {optional ? (
-                <Button onClick={goNext} variant="text">
-                  {guide.skip}
-                </Button>
-              ) : null}
+              <Button onClick={skipStep} variant="text">
+                {guide.skip}
+              </Button>
               <button
                 className="min-h-11 rounded-md px-2 text-sm text-(--ui-text-tertiary) underline-offset-4 transition hover:text-(--ui-text-primary) hover:underline focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-[#00B7FF]/50"
                 onClick={close}

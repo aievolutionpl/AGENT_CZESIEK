@@ -476,6 +476,8 @@ export interface Translations {
       >
     }
     openRouterConnect: {
+      savedIncomplete: string
+      saveUnknown: string
       hint: string
       label: string
       submit: string
