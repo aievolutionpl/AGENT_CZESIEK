@@ -560,13 +560,13 @@ Lista celowo uczciwa — to, czego nie należy zakładać:
 
 ## Co nowego
 
-### Aktualny kod i przygotowywana wersja testowa 0.17.6-rc.1
+### Aktualny kod i przygotowywana wersja testowa 0.17.6-rc.2
 
 Workspace z czytelniejszym menu, biuro sześciu firmowych specjalistów, edytor własnych agentów i animowane avatary. Nowa sekcja Nauka AI, szybkie style współpracy w onboardingu oraz ustawienia profilu zapisane dla konkretnego połączenia i profilu. README zawiera nowe screenshoty i przewodnik po modelach pracy, głosie oraz integracjach.
 
 Liquid Glass jest domyślnym wyglądem. Tapeta wypełnia całe okno, panele i przyciski mają szklane powierzchnie, a ustawienia pozwalają wrócić do klasycznego stylu. Wybór zapisuje się na komputerze.
 
-Instalator 0.17.6-rc.1 nie został jeszcze opublikowany: pełna kontrola wydania wykryła problemy w scenariuszach rozmów z botami. Dostępne wersje i ich rzeczywisty status sprawdzaj w [Releases](https://github.com/aievolutionpl/AGENT_CZESIEK/releases). Bez firmowego certyfikatu instalator Windows może wyświetlić ostrzeżenie SmartScreen. Wersja testowa nie jest podpisanym wydaniem produkcyjnym.
+Instalator 0.17.6-rc.2 czeka jako szkic wydania i nie został jeszcze opublikowany. Zawiera poprawkę pierwszego uruchomienia: połączenie z OpenRouter ma limity czasu, a każdy krok konfiguracji można pominąć. Dostępne wersje i ich rzeczywisty status sprawdzaj w [Releases](https://github.com/aievolutionpl/AGENT_CZESIEK/releases). Bez firmowego certyfikatu instalator Windows może wyświetlić ostrzeżenie SmartScreen. Wersja testowa nie jest podpisanym wydaniem produkcyjnym.
 
 Najnowszy [przegląd interfejsu i integracji](docs/product/POLISH_BRAND_EXPERIENCE.md) opisuje nowe tła jasne i ciemne, branding AI Evolution Polska, czytelniejsze ustawienia, wyszukiwanie modeli pracy i izolację synchronizacji Dysku. Polecane modele pojawiają się tylko wtedy, gdy udostępnia je podłączony dostawca. Wcześniej poprawiliśmy [zapis pamięci i orb](docs/product/PRODUCT_POLISH_2026_10.md). Pełna historia: [git log](https://github.com/aievolutionpl/AGENT_CZESIEK/commits/main) i [Releases](https://github.com/aievolutionpl/AGENT_CZESIEK/releases).
 
