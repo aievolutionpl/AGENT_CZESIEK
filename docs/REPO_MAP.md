@@ -225,3 +225,10 @@ Wyniki testów i granice odbioru: [CLEAR_DESKTOP_VALIDATION.md](product/CLEAR_DE
 - ElevenLabs: "src/api/elevenlabs.ts" → "hermes_cli/web_routers/audio.py"; klucze tylko w backendzie, profilowe.
 - Google: "src/app/connections/google-service-status.tsx", "google-connect-dialog.tsx" → "agent/google_connect.py" → "skills/productivity/google-workspace/scripts/google_api.py check" (minimalne metadane trzech usług).
 - Odbiór wyglądu i sesji: "apps/desktop/e2e/jarvis-shell-vertical.spec.ts"; obrazy: "docs/assets/czesiek/acceptance/".
+
+### Wybór dostawcy głosu
+
+- `apps/desktop/src/app/settings/voice-provider-connection.tsx`: wybór dostawcy, zapis klucza w zakresie profilu, bezpieczne otwarcie panelu API.
+- `apps/desktop/src/app/settings/voice-provider-choice.ts`: przełączenie rzeczywistego silnika Live / klasycznego, niezależnie od modeli pracowników.
+- `apps/desktop/src/app/settings/config-settings.tsx`: katalogi głosów oraz synchronizacja preferencji po udanym zapisie.
+- `docs/GLOS_I_DOSTAWCY.md`: instrukcja dla użytkownika; `apps/desktop/e2e/voice-provider-settings.spec.ts`: zapis dostawcy i ponowne otwarcie ekranu w Electron.

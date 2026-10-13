@@ -599,3 +599,9 @@ Najnowszy [przegląd interfejsu i integracji](docs/product/POLISH_BRAND_EXPERIEN
 **Ważne rozróżnienie.** Te warunki dotyczą autorskiego logo i materiałów AI Evolution Polska, a nie zmieniają uprawnień przyznanych przez licencje komponentów zewnętrznych. Kod Hermes Agent © 2025 Nous Research jest na [licencji MIT](LICENSE), która zachowuje własne warunki, w tym prawo do użycia komercyjnego. Pozostałe komponenty zachowują swoje licencje. Wszystkie prawa do autorskich elementów nieudzielone wprost są zastrzeżone.
 
 Agent Czesiek jest rozwijany i dystrybuowany przez **AI Evolution Polska — [aievolutionpolska.pl](https://aievolutionpolska.pl)**. W sprawie licencji i korzystania komercyjnego napisz na **[kontakt@aievolutionpolska.pl](mailto:kontakt@aievolutionpolska.pl)**. Błędy i propozycje: [GitHub Issues](https://github.com/aievolutionpl/AGENT_CZESIEK/issues).
+
+## Podłączenie głosu Cześka
+
+W **Ustawienia → Głos** wybierz Gemini Live, OpenAI Realtime albo głosy ElevenLabs, zapisz swój klucz API i posłuchaj próbek. Wybór przełącza też odpowiedni tryb rozmowy. ChatGPT do zadań oraz API do głosu konfiguruje się osobno. Szczegółowa instrukcja: [Głos i dostawcy](docs/GLOS_I_DOSTAWCY.md).
+
+![Wybór dostawcy rozmowy, klucz API i próbki głosów Cześka](docs/assets/czesiek/voice-providers.png)

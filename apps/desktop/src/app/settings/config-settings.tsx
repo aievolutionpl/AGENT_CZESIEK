@@ -28,6 +28,7 @@ import { notify, notifyError } from '@/store/notifications'
 import { $activeGatewayProfile } from '@/store/profile'
 import { repoDiscoveryPolicyFromConfig, repoDiscoveryPolicySignature, scanAndRecordRepos } from '@/store/projects'
 import { $settingsRequestProfile } from '@/store/settings-scope'
+import { applyVoiceEngineFromConfig, setAutoSpeakReplies } from '@/store/voice-prefs'
 import type { ConfigFieldSchema, HermesConfigRecord } from '@/types/hermes'
 
 import { hermesConfigCacheWriter, useHermesConfigRecord } from '../hooks/use-config-record'
@@ -55,6 +56,8 @@ import { PoolLimitsSetting } from './pool-limits-setting'
 import { EmptyState, ListRow, SettingsContent, SettingsSkeleton, ToggleRow } from './primitives'
 import { SettingsProfileScope } from './profile-scope'
 import { QuickEntrySettings } from './quick-entry-settings'
+import { selectedVoiceProvider, withVoiceProvider } from './voice-provider-choice'
+import { VoiceProviderConnection } from './voice-provider-connection'
 
 export function ConfigSettings({
   activeSectionId,
@@ -107,7 +110,6 @@ function ConfigSettingsInner({
 
   const voiceScope = requestScope
 
-  const [voiceTab, setVoiceTab] = useState<'live' | 'elevenlabs'>('live')
   const c = t.settings.config
   const keepAwake = useStore($keepAwake)
   const disableF12 = useStore($disableF12)
@@ -229,6 +231,18 @@ function ConfigSettingsInner({
           ) {
             // The repo-discovery scan reads the ACTIVE profile's workspace
             // policy; skip it when this page is editing another profile.
+            if (scopeProfile == null || scopeProfile === $activeGatewayProfile.get()) {
+              applyVoiceEngineFromConfig(snapshot)
+
+              if (
+                selectedVoiceProvider(snapshot) === 'elevenlabs' &&
+                (getNested(patch, 'voice.engine') === 'classic' || getNested(patch, 'tts.provider') === 'elevenlabs')
+              ) {
+                await setAutoSpeakReplies(true)
+              }
+
+            }
+
             if (scopeProfile == null) {
               const discoverySignature = repoDiscoveryPolicySignature(repoDiscoveryPolicyFromConfig(snapshot))
 
@@ -434,25 +448,13 @@ function ConfigSettingsInner({
       {activeSectionId === 'chat' ? <AttachmentSizeSetting /> : null}
       {activeSectionId === 'voice' ? (
         <div className="jarvis-glass mb-5 grid gap-4 rounded-2xl p-4">
-          <div aria-label={locale === 'pl' ? 'Źródło głosu' : 'Voice source'} className="flex gap-2" role="group">
-            <Button
-              aria-pressed={voiceTab === 'live'}
-              onClick={() => setVoiceTab('live')}
-              size="sm"
-              variant={voiceTab === 'live' ? 'secondary' : 'ghost'}
-            >
-              Gemini Live / Realtime
-            </Button>
-            <Button
-              aria-pressed={voiceTab === 'elevenlabs'}
-              onClick={() => setVoiceTab('elevenlabs')}
-              size="sm"
-              variant={voiceTab === 'elevenlabs' ? 'secondary' : 'ghost'}
-            >
-              ElevenLabs
-            </Button>
-          </div>
-          {voiceTab === 'live' ? (
+          <VoiceProviderConnection
+            key={JSON.stringify(voiceScope) + selectedVoiceProvider(config)}
+            onChange={provider => updateConfig(withVoiceProvider(config, provider))}
+            provider={selectedVoiceProvider(config)}
+            scope={voiceScope}
+          />
+          {selectedVoiceProvider(config) !== 'elevenlabs' ? (
             <LiveVoicePicker
               config={config}
               onChange={(key, value) => updateConfig(setNested(config, key, value))}
