@@ -463,6 +463,8 @@ export const zh: Translations = {
       empty: '请先粘贴 OpenRouter 密钥。',
       rejected: 'OpenRouter 拒绝了此密钥。请检查后重试。',
       failed: '无法连接 OpenRouter。请稍后重试。',
+      savedIncomplete: '密钥已保存，但连接或模型设置尚未确认。请重试或在设置中完成。',
+      saveUnknown: '无法确认密钥是否保存。可能已保存，请重试或检查设置。',
       connected: model => `OpenRouter 已连接 — 正在使用 ${model}。`,
       connectedNoModel: 'OpenRouter 已连接。请在模型菜单中选择模型。'
     },

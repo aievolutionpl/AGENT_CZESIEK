@@ -41,7 +41,8 @@ describe('connectOpenRouter', () => {
   it('still saves when the probe cannot reach OpenRouter', async () => {
     const d = deps(['deepseek/deepseek-v4.1-flash'], { ok: false, reachable: false })
 
-    expect((await connectOpenRouter('sk-or-2', d)).ok).toBe(true)
+    expect(await connectOpenRouter('sk-or-2', d)).toMatchObject({ ok: false, reason: 'unverified', keySaved: true })
+    expect(d.setDefaultModel).not.toHaveBeenCalled()
     expect(d.saveKey).toHaveBeenCalledWith('sk-or-2')
   })
 

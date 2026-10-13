@@ -1,7 +1,13 @@
 import { defineLocale } from './define-locale'
 
 export const ar = defineLocale({
-  jarvisShell: { views: { prompts: 'مطالباتي' } },
+  jarvisShell: {
+    views: { prompts: 'مطالباتي' },
+    openRouterConnect: {
+      savedIncomplete: 'تم حفظ المفتاح. لم يتم تأكيد الاتصال أو إعداد النموذج. أعد المحاولة أو أكمل الإعداد من الإعدادات.',
+      saveUnknown: 'تعذر تأكيد حفظ المفتاح. ربما تم حفظه؛ أعد المحاولة أو تحقق من الإعدادات.'
+    }
+  },
   sessionImport: {
     title: 'المتابعة من تطبيق آخر',
     subtitle: 'انقل محادثة إلى Agent Czesiek وتابع من حيث توقفت.',

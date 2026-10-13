@@ -3,7 +3,13 @@ import { defineFieldCopy } from '@/app/settings/field-copy'
 import { defineLocale } from './define-locale'
 
 export const ja = defineLocale({
-  jarvisShell: { views: { prompts: 'マイプロンプト' } },
+  jarvisShell: {
+    views: { prompts: 'マイプロンプト' },
+    openRouterConnect: {
+      savedIncomplete: 'キーは保存されました。接続またはモデル設定は確認できていません。再試行するか、設定で完了してください。',
+      saveUnknown: 'キーの保存を確認できませんでした。保存されている可能性があります。再試行するか、設定を確認してください。'
+    }
+  },
   sessionImport: {
     title: '別のアプリから続ける',
     subtitle: '会話をAgent Czesiekに取り込み、続きを始めましょう。',

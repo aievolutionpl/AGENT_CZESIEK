@@ -16,6 +16,8 @@ import type {
 
 import { capabilityScoped, hermesApi, type ProfileScope, profileScoped, STARTUP_REQUEST_TIMEOUT_MS } from './client'
 
+const CREDENTIAL_REQUEST_TIMEOUT_MS = 15_000
+
 export function getStatus(): Promise<StatusResponse> {
   return hermesApi<StatusResponse>({
     ...profileScoped(),
@@ -123,6 +125,7 @@ export function setEnvVar(key: string, value: string, profile?: ProfileScope): P
     ...capabilityScoped(profile),
     path: '/api/env',
     method: 'PUT',
+    timeoutMs: CREDENTIAL_REQUEST_TIMEOUT_MS,
     body: { key, value }
   })
 }
@@ -155,6 +158,7 @@ export function validateProviderCredential(
     ...capabilityScoped(profile),
     path: '/api/providers/validate',
     method: 'POST',
+    timeoutMs: CREDENTIAL_REQUEST_TIMEOUT_MS,
     body: { key, value, api_key: apiKey ?? '' }
   })
 }

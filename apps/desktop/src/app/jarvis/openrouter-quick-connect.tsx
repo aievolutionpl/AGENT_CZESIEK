@@ -1,6 +1,6 @@
-import { type FormEvent, useState } from 'react'
+import { type FormEvent, useEffect, useRef, useState } from 'react'
 
-import type { ProfileScope } from '@/api/client'
+import { type ProfileScope, profileScopeKey } from '@/api/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useI18n } from '@/i18n'
@@ -55,6 +55,23 @@ export function OpenRouterQuickConnect({
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
 
+  const scopeKey = profileScopeKey(scope)
+  const currentScopeKey = useRef(scopeKey)
+  currentScopeKey.current = scopeKey
+  const attempt = useRef<AbortController | null>(null)
+
+  // Scope changes cancel the old attempt and release the form for the new target.
+  // eslint-disable-next-line no-restricted-syntax
+  useEffect(() => {
+    setBusy(false)
+    setError('')
+
+    return () => {
+      attempt.current?.abort()
+      attempt.current = null
+    }
+  }, [scopeKey])
+
   const submit = async (event: FormEvent) => {
     event.preventDefault()
 
@@ -62,27 +79,49 @@ export function OpenRouterQuickConnect({
       return
     }
 
+    const controller = new AbortController()
+    attempt.current = controller
     setBusy(true)
     setError('')
 
     try {
-      const result = await connectOpenRouter(key, deps, scope)
+      const result = await connectOpenRouter(key, deps, scope, { signal: controller.signal })
+
+      if (attempt.current !== controller || controller.signal.aborted || currentScopeKey.current !== scopeKey) {
+        return
+      }
 
       if (result.ok) {
         setKey('')
         onConnected(result)
       } else {
-        setError(result.reason === 'empty' ? copy.empty : result.message || copy.rejected)
+        const persistenceMessage =
+          result.keySaved === true
+            ? copy.savedIncomplete
+            : result.keySaved === 'unknown'
+              ? copy.saveUnknown
+              : copy.failed
+        const reasons: Partial<Record<typeof result.reason, string>> = { empty: copy.empty, rejected: copy.rejected }
+        setError(reasons[result.reason] ?? persistenceMessage)
       }
-    } catch (failure) {
-      setError(failure instanceof Error && failure.message ? failure.message : copy.failed)
+    } catch {
+      if (attempt.current === controller) {
+        setError(copy.failed)
+      }
     } finally {
-      setBusy(false)
+      if (attempt.current === controller) {
+        attempt.current = null
+        setBusy(false)
+      }
     }
   }
 
   return (
-    <form className={cn('grid gap-2', className)} data-testid="openrouter-quick-connect" onSubmit={event => void submit(event)}>
+    <form
+      className={cn('grid gap-2', className)}
+      data-testid="openrouter-quick-connect"
+      onSubmit={event => void submit(event)}
+    >
       <p className={cn('text-xs leading-5', palette.hint)}>{copy.hint}</p>
       <div className="flex min-w-0 gap-2">
         <Input
@@ -99,6 +138,20 @@ export function OpenRouterQuickConnect({
           {busy ? copy.connecting : copy.submit}
         </Button>
       </div>
+      {busy ? (
+        <Button
+          onClick={() => {
+            attempt.current?.abort()
+            attempt.current = null
+            setBusy(false)
+            setError(copy.saveUnknown)
+          }}
+          type="button"
+          variant="text"
+        >
+          {t.common.cancel}
+        </Button>
+      ) : null}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <button
           className={cn(

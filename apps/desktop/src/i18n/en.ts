@@ -474,6 +474,8 @@ export const en: Translations = {
       empty: 'Paste your OpenRouter key first.',
       rejected: 'OpenRouter rejected this key. Check it and try again.',
       failed: 'Could not connect OpenRouter. Try again in a moment.',
+      savedIncomplete: 'Key saved. Connection or model setup is not confirmed. Retry or finish in Settings.',
+      saveUnknown: 'Key save could not be confirmed. It may have been saved; retry or check Settings.',
       connected: model => `OpenRouter connected — working on ${model}.`,
       connectedNoModel: 'OpenRouter connected. Pick a model in the model menu.'
     },
