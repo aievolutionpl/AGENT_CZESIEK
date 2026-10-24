@@ -12,6 +12,29 @@
  * the backend's task phase. At rest the core breathes and nothing else moves.
  */
 
+.jarvis-chat-frame {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 72rem;
+  margin-inline: auto;
+  padding: 12px clamp(10px, 1.5vw, 24px) 20px;
+}
+
+.jarvis-chat-frame > [data-chat-surface] {
+  border: 1px solid var(--ui-stroke-tertiary);
+  border-radius: 24px;
+}
+
+@media (max-width: 640px) {
+  .jarvis-chat-frame {
+    padding: 8px 8px 12px;
+  }
+
+  .jarvis-chat-frame > [data-chat-surface] {
+    border-radius: 18px;
+  }
+}
+
 .jarvis-core {
   /* A sphere, whatever the row around it: as a flex item it must not be
      squeezed narrower than it is tall. */

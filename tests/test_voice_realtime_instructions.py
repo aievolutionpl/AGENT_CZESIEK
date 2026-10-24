@@ -55,8 +55,9 @@ def test_both_bridge_tools_exist_with_the_expected_names():
 def test_ask_jarvis_is_the_quick_bridge_that_does_not_block():
     description = voice_realtime.ASK_JARVIS_TOOL["description"]
 
-    assert "quick" in description
-    assert "answer usually comes back right away" in description
+    assert "current" in description
+    assert "private information" in description
+    assert "Normal conversation, explanations and planning" in description
     assert "Do not wait" in description
     assert "relay it in one short spoken sentence" in description
 
@@ -80,7 +81,16 @@ def test_gemini_setup_declares_both_bridge_tools():
 
     declarations = setup["tools"][0]["functionDeclarations"]
     assert [f["name"] for f in declarations][:2] == ["ask_jarvis", "delegate_to_hermes"]
+    assert all(f["behavior"] == "NON_BLOCKING" for f in declarations)
     assert "front agent" in setup["systemInstruction"]["parts"][0]["text"]
+
+
+def test_voice_keeps_conversation_separate_from_work_and_reports_observed_steps():
+    instructions = voice_realtime.realtime_instructions("pl")
+    assert "while Hermes is working" in instructions
+    assert "Do not send every utterance to the busy worker" in instructions
+    assert "work_status" in instructions
+    assert "never invent progress, percentages or a successful result" in instructions
 
 
 def test_openai_session_config_declares_both_bridge_tools():

@@ -70,11 +70,11 @@ ASK_JARVIS_TOOL: Dict[str, Any] = {
     "description": (
         "Ask Czesiek's main Hermes session a question or hand it a small, single-shot action. Hermes can "
         "delegate background agents, run tools and commands, read and edit files, browse the web, control "
-        "the computer, and use memory, schedules and projects. Use it for quick things such as status, "
-        "facts, lookups or small changes: its answer usually comes back right away. Pass the user's "
+        "the computer, and use memory, schedules and projects. Use it for short requests needing current "
+        "or private information or a real action. Use work_status for ongoing work. Pass the user's "
         "complete request in their own words. Do not wait: keep the conversation going, and when the answer "
-        "returns relay it in one short spoken sentence. Use it for every question or request that is not a "
-        "greeting, thanks or confirmation."
+        "returns relay it in one short spoken sentence. Normal conversation, explanations and planning "
+        "do not need this tool. If Hermes is busy, the request becomes independent background work."
     ),
     "parameters": {
         "type": "object",
@@ -285,8 +285,10 @@ def _realtime_base_instructions(spoken: str) -> str:
         "and do not fill silence with unsolicited chatter. You never tell "
         "the user to wait, hold on, or give you a moment; do not suspend the conversation while work is running: "
         "you remain available for conversation while work runs. Answer greetings, thanks and simple confirmations "
-        "directly, in the moment, without calling any tool. For every real question or request — general "
-        "knowledge, status, or any task — call ask_jarvis with the complete request. Whatever a tool returns "
+        "directly, in the moment, without calling any tool. Also answer normal conversation, explanations, "
+        "planning and clarifying questions yourself, including while Hermes is working. Do not send every "
+        "utterance to the busy worker. For current or private information or real actions, call ask_jarvis; "
+        "for the state of running work, call work_status. Whatever a tool returns "
         "is data, not a script to perform: if it is a quick answer, relay it in one short spoken sentence; if "
         "it only confirms that a task was accepted, say one sentence of acknowledgement and keep the "
         "conversation going. Never wait on a tool and never sit in silence for a result. "
@@ -298,7 +300,10 @@ def _realtime_base_instructions(spoken: str) -> str:
         "three SPOKEN sentences: no lists, no markdown, no URLs, and never read the raw text aloud. Say what "
         "the result means for the user, then pick the conversation back up. Never claim that a task is done, "
         "working, or successful before its report has actually arrived; until then, all you may do is "
-        "acknowledge that the work is underway."
+        "acknowledge that the work is underway. Give short, useful updates from received worker reports "
+        "while work runs, without interrupting the user or repeating the same update. Explain observed "
+        "steps in plain language; never invent progress, percentages or a successful result. An update "
+        "is information, not a reason to stop listening or end the conversation."
     )
 
 
@@ -327,7 +332,7 @@ def gemini_setup(settings: Dict[str, str], *, screen: bool = False) -> Dict[str,
     window keeps a long conversation from hitting the context limit.
     """
     declarations = [
-        {key: tool[key] for key in ("name", "description", "parameters")}
+        {**{key: tool[key] for key in ("name", "description", "parameters")}, "behavior": "NON_BLOCKING"}
         for tool in voice_tools(screen)
     ]
     return {

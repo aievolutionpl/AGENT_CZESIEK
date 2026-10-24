@@ -1,4 +1,5 @@
 interface VoiceReport {
+  offeredAt: number | null
   attempts: number
   sentAt: number | null
   text: string
@@ -18,7 +19,7 @@ export class VoiceReportQueue {
     }
 
     if (!this.reports.some(report => report.text === text)) {
-      this.reports.push({ attempts: 0, sentAt: null, text, onSpoken, progress })
+      this.reports.push({ attempts: 0, offeredAt: null, sentAt: null, text, onSpoken, progress })
     }
   }
 
@@ -41,6 +42,21 @@ export class VoiceReportQueue {
 
   drain(notify: (text: string) => boolean, now: number) {
     const report = this.reports[0]
+
+    if (report) {
+      report.offeredAt ??= now
+
+      // A permanently busy or disconnected provider must not hide a final report forever.
+      if (now - report.offeredAt >= 90_000) {
+        this.reports.shift()
+
+        if (!report.progress) {
+          this.failed(report.text)
+        }
+
+        return
+      }
+    }
 
     if (!report || (report.sentAt !== null && now - report.sentAt < 12_000)) {
       return

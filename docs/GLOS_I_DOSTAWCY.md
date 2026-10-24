@@ -20,3 +20,14 @@ Otwórz **Ustawienia → Głos**. Ten ekran zawiera wybór dostawcy, zapis klucz
 **Subskrypcja ChatGPT nie zastępuje OpenAI API do rozmowy Realtime.** Możesz podłączyć logowanie ChatGPT do wykonywania zadań w sekcji „Dostawcy”, a osobno używać Gemini lub OpenAI API do głosu. Korzystanie z API jest rozliczane przez danego dostawcę.
 
 Model do wykonywania zadań i współpracownicy pozostają niezależni od wybranego głosu. Nie trzeba podłączać osobnego agenta ElevenLabs Conversational AI ani podawać Agent ID.
+
+## Rozmawiasz, a Hermes pracuje
+
+W rozmowie Live Czesiek sam prowadzi dialog, wyjaśnia i planuje. Informacje wymagające sprawdzenia oraz wykonanie zadań przekazuje Hermesowi. Jeśli zadanie trwa dłużej, głos dostaje krótkie potwierdzenie i rozmowa toczy się dalej. Kolejne zlecenie podczas zajętego czatu trafia na tablicę pracy jako osobne zadanie.
+
+- Tablica jest sprawdzana co 4 sekundy. Krótkie aktualizacje są przygotowywane co około 15–20 sekund na podstawie rzeczywistych statusów i zdarzeń narzędzi. Pod przyciskami głosu widać bieżącą aktywność.
+- Raporty czekają na przerwę w mówieniu. Możesz dalej zadawać pytania i przerywać wypowiedź. Aktualizacja nie wymusza przerwania Twojej rozmowy.
+- Po zakończeniu pracy Czesiek otrzymuje potwierdzony wynik lub informację o błędzie. Sama cisza albo brak raportu nie oznacza ukończenia zadania.
+- Gdy dostawca przyjmie raport bez odpowiedzi głosowej, aplikacja próbuje ponownie. Po trzech cichych próbach lub 90 sekundach bez przyjęcia wynik pojawia się jako powiadomienie.
+
+Te mechanizmy dotyczą Gemini Live i OpenAI Realtime. Odczytywanie odpowiedzi przez ElevenLabs pozostaje trybem klasycznym. Testy automatyczne korzystają z symulowanych zdarzeń dostawców; działanie konkretnego mikrofonu i płatnego konta trzeba sprawdzić w panelu diagnostyki.

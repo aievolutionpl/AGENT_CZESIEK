@@ -61,6 +61,7 @@ export function diffDesk(
 }
 
 export interface DeskWatcherDeps {
+  onActivity?: (items: readonly DeskItem[]) => void
   assigned?: () => ReadonlySet<string>
   fetchDesk: (lang: DeskLang) => Promise<DeskDigest>
   intervalMs?: number
@@ -75,6 +76,7 @@ export function startDeskWatcher({
   fetchDesk,
   intervalMs = DESK_POLL_MS,
   lang,
+  onActivity,
   push,
   sessionId
 }: DeskWatcherDeps) {
@@ -108,6 +110,7 @@ export function startDeskWatcher({
 
         const freshAssignments = new Set([...(assigned?.() || [])].filter(id => !seenAssignments.has(id)))
         const changes = diffDesk(known, digest.items, requestedSession, !seeded, freshAssignments)
+        onActivity?.(digest.items.filter(item => isMine(item, requestedSession)))
 
         for (const item of digest.items) {
           if (freshAssignments.has(item.id)) {

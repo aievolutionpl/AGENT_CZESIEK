@@ -48,13 +48,15 @@ export interface DeskToolDeps {
   lang: () => DeskLang
   /** Called right before the screen is captured, so the user sees that a look is happening. */
   onLook?: () => void
+  /** Activity of the current chat, which can run independently of board jobs. */
+  localProgress?: () => string | null
   sessionId: () => null | string
 }
 
 const text = (value: unknown) => (typeof value === 'string' ? value.trim() : '')
 
 /** `onTool` for the Live providers: one handler per desk tool, each answering with text for the model. */
-export function createDeskTools({ capture, lang, onAssigned, onLook, sessionId }: DeskToolDeps) {
+export function createDeskTools({ capture, lang, localProgress, onAssigned, onLook, sessionId }: DeskToolDeps) {
   const handlers: Record<string, (args: VoiceToolArgs) => Promise<string>> = {
     assign_work: async args => {
       const priority = Number(args.priority)
@@ -105,7 +107,9 @@ export function createDeskTools({ capture, lang, onAssigned, onLook, sessionId }
     work_status: async args => {
       const id = text(args.task_id)
 
-      return (id ? await getVoiceTask(id, lang()) : await getVoiceDesk(lang())).text
+      const report = (id ? await getVoiceTask(id, lang()) : await getVoiceDesk(lang())).text
+
+      return id ? report : [localProgress?.(), report].filter(Boolean).join('\n')
     }
   }
 

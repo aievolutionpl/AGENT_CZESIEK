@@ -452,7 +452,9 @@ export function JarvisDashboard({
         <div className="mx-auto w-full max-w-2xl shrink-0 px-4 pt-3 md:px-5">{voiceControls}</div>
       ) : null}
       {home ? null : <ResultHeader copy={copy} profileDisplayName={profileDisplayName} state={state} />}
-      <div className="min-h-0 flex-1 overflow-hidden">{children}</div>
+      <div className="jarvis-chat-frame min-h-0 flex-1 overflow-hidden" data-jarvis-chat-frame="">
+        {children}
+      </div>
       {voiceControls && home && (busy || state.voice !== 'idle') ? (
         <div className="mx-auto w-full max-w-2xl shrink-0 px-4 pb-5 pt-2 md:px-5" data-testid="jarvis-voice-bottom">
           {voiceControls}

@@ -32,6 +32,7 @@ export interface ChatBarState {
 }
 
 export interface ChatBarVoiceConversationState {
+  workProgress?: null | string
   active: boolean
   /** True while the conversation runs with the microphone muted. Muting is not
    *  cancelling: the task keeps running (Jarvis design doc §7). */

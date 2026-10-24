@@ -3,6 +3,15 @@ import { describe, expect, it, vi } from 'vitest'
 import { VoiceReportQueue } from './report-queue'
 
 describe('VoiceReportQueue', () => {
+  it('shows a final report when the provider never accepts delivery', () => {
+    const failed = vi.fn()
+    const queue = new VoiceReportQueue(failed)
+    queue.push('Verified result')
+    queue.drain(() => false, 0)
+    queue.drain(() => false, 90_000)
+    expect(failed).toHaveBeenCalledExactlyOnceWith('Verified result')
+    expect(queue.pending).toBe(false)
+  })
   it('keeps a silent report pending, retries it, and advances only after speech starts', () => {
     const failed = vi.fn()
     const queue = new VoiceReportQueue(failed)
@@ -31,7 +40,10 @@ describe('VoiceReportQueue', () => {
     expect(queue.pending).toBe(true)
     notify.mockReturnValue(true)
 
-    for (const now of [1, 12_001, 24_001, 36_001]) {queue.drain(notify, now)}
+    for (const now of [1, 12_001, 24_001, 36_001]) {
+      queue.drain(notify, now)
+    }
+
     expect(failed).toHaveBeenCalledExactlyOnceWith('result')
     expect(queue.pending).toBe(false)
   })

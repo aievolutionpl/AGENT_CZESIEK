@@ -11,14 +11,20 @@ import { useRealtimeConversation } from './use-realtime-conversation'
 
 const mocks = vi.hoisted(() => ({
   music: vi.fn(),
+  dispatch: vi.fn(async () => ({ task_id: 'parallel', text: 'Przekazano zadanie parallel.' })),
   handlers: null as RealtimeVoiceHandlers | null,
   notify: vi.fn((_text: string) => true),
   request: vi.fn(async () => ({ found: true, status: 'queued' }))
 }))
 
 vi.mock('@/lib/jarvis-intro-music', async importOriginal => ({
-  ...await importOriginal<typeof IntroMusic>(),
+  ...(await importOriginal<typeof IntroMusic>()),
   startJarvisIntroMusic: mocks.music
+}))
+
+vi.mock('@/api/voice-desk', () => ({
+  getVoiceDesk: async () => ({ items: [], text: 'Tablica bez zadań' }),
+  dispatchVoiceWork: mocks.dispatch
 }))
 
 vi.mock('@/lib/live-voice/start', () => ({
@@ -53,7 +59,14 @@ test('microphone peaks and assistant transcripts never trigger music; the user p
   await act(async () => {
     mocks.handlers!.onStatus('listening')
 
-    for (const [time, level] of [[0, 0.02], [80, 0.55], [140, 0.04], [370, 0.02], [420, 0.6], [485, 0.03]]) {
+    for (const [time, level] of [
+      [0, 0.02],
+      [80, 0.55],
+      [140, 0.04],
+      [370, 0.02],
+      [420, 0.6],
+      [485, 0.03]
+    ]) {
       vi.setSystemTime(time)
       vi.spyOn(performance, 'now').mockReturnValue(time)
       mocks.handlers!.onLevel!(level)
@@ -63,7 +76,9 @@ test('microphone peaks and assistant transcripts never trigger music; the user p
     mocks.handlers!.onTranscript?.('user', 'Witaj, Cześku')
   })
   expect(mocks.music).not.toHaveBeenCalled()
-  await act(async () => { mocks.handlers!.onTranscript?.('user', 'Tatuś wrócił!') })
+  await act(async () => {
+    mocks.handlers!.onTranscript?.('user', 'Tatuś wrócił!')
+  })
   expect(mocks.music).toHaveBeenCalledOnce()
   vi.restoreAllMocks()
 })
@@ -97,6 +112,17 @@ function render(args: {
   )
 }
 
+test('reports foreground work started before the voice conversation and keeps its controls available', async () => {
+  vi.useFakeTimers()
+  const onSubmit = vi.fn()
+  const { result } = render({ busy: () => true, messages: () => [], onSubmit })
+  await flush(15_600)
+
+  expect(mocks.notify).toHaveBeenCalledWith(expect.stringContaining('Hermes'))
+  expect(result.current.workProgress).toContain('Hermes')
+  expect(onSubmit).not.toHaveBeenCalled()
+})
+
 test('answers ask_jarvis inline when the reply lands inside the budget', async () => {
   vi.useFakeTimers()
   const messages: ReplyMessage[] = []
@@ -127,8 +153,11 @@ test('releases the model right away when Hermes is slow, then voices the answer 
   vi.useFakeTimers()
   const messages: ReplyMessage[] = []
   const markSpoken = vi.fn()
-  let busy = true
-  const onSubmit = vi.fn()
+  let busy = false
+
+  const onSubmit = vi.fn(() => {
+    busy = true
+  })
 
   render({ busy: () => busy, messages: () => messages, markSpoken, onSubmit })
   await flush(0)
@@ -144,7 +173,7 @@ test('releases the model right away when Hermes is slow, then voices the answer 
   await flush(1_000)
 
   expect(markSpoken).not.toHaveBeenCalled()
-  mocks.handlers!.onStatus('speaking')
+  mocks.handlers!.onReportSpoken?.()
   expect(markSpoken).toHaveBeenCalledWith('late')
   expect(mocks.notify).toHaveBeenCalledWith('Raport gotowy: trzy pliki.')
 })
@@ -152,9 +181,15 @@ test('releases the model right away when Hermes is slow, then voices the answer 
 test('hands the tool answer back at the inline budget, never at the five-minute ceiling', async () => {
   vi.useFakeTimers()
   const messages: ReplyMessage[] = []
-  const onSubmit = vi.fn(() => new Promise<void>(() => undefined))
+  let busy = false
 
-  render({ busy: () => true, messages: () => messages, onSubmit })
+  const onSubmit = vi.fn(() => {
+    busy = true
+
+    return new Promise<void>(() => undefined)
+  })
+
+  render({ busy: () => busy, messages: () => messages, onSubmit })
   await flush(0)
 
   let settled = false
@@ -218,7 +253,7 @@ test('keeps a report queued while the model speaks and delivers it, once, when i
   mocks.notify.mockClear()
   await flush(400)
   expect(mocks.notify).toHaveBeenCalledWith(report)
-  mocks.handlers!.onStatus('speaking')
+  mocks.handlers!.onReportSpoken?.()
   expect(markSpoken).toHaveBeenCalledWith('answer')
 
   mocks.notify.mockClear()
@@ -246,14 +281,78 @@ test('acknowledges delegated work in one short, jargon-free sentence', async () 
   expect(acknowledgement).not.toMatch(/backend|zlecenie|ukończenia/i)
 })
 
+test('queues a second request independently instead of dropping it into the busy composer', async () => {
+  vi.useFakeTimers()
+  const onSubmit = vi.fn()
+  render({ busy: () => true, messages: () => [], onSubmit })
+  await flush(0)
+  await expect(mocks.handlers!.onAsk('Sprawdź jeszcze kalendarz')).resolves.toContain('parallel')
+  await expect(mocks.handlers!.onDelegate('Przygotuj drugą analizę')).resolves.toContain('parallel')
+  expect(onSubmit).not.toHaveBeenCalled()
+  expect(mocks.dispatch).toHaveBeenCalledWith(
+    expect.objectContaining({ session_id: 's1', details: 'Sprawdź jeszcze kalendarz' })
+  )
+  expect(mocks.dispatch).toHaveBeenCalledTimes(2)
+})
+
+test('adopts the first slow reply when the chat is created before the inline budget expires', async () => {
+  vi.useFakeTimers()
+  const messages: ReplyMessage[] = []
+  let busy = false
+
+  const { rerender } = render({
+    busy: () => busy,
+    messages: () => messages,
+    onSubmit: () => {
+      busy = true
+    },
+    sessionId: null
+  })
+
+  await flush(0)
+  const result = mocks.handlers!.onAsk('Pierwsze zadanie')
+  await flush(500)
+  rerender({ sessionId: 'created-early' })
+  await flush(3_500)
+  await expect(result).resolves.toContain('Sprawdzam')
+  messages.push(answer('first-result', 'Wynik pierwszego zadania'))
+  busy = false
+  await flush(1_000)
+  expect(mocks.notify).toHaveBeenCalledWith('Wynik pierwszego zadania')
+})
+
+test('ordinary speech never acknowledges a pending report; only report audio does', async () => {
+  vi.useFakeTimers()
+  const messages: ReplyMessage[] = []
+  const markSpoken = vi.fn()
+  let busy = false
+  render({
+    busy: () => busy,
+    messages: () => messages,
+    markSpoken,
+    onSubmit: () => {
+      busy = true
+    }
+  })
+  await flush(0)
+  await mocks.handlers!.onDelegate('Praca w tle')
+  messages.push(answer('verified', 'Potwierdzony wynik'))
+  busy = false
+  await flush(800)
+  mocks.handlers!.onStatus('speaking')
+  expect(markSpoken).not.toHaveBeenCalled()
+  mocks.handlers!.onReportSpoken?.()
+  expect(markSpoken).toHaveBeenCalledWith('verified')
+})
+
 test('reports waiting work and eventually times out even when submission never resolves', async () => {
   vi.useFakeTimers()
   render({ busy: () => false, messages: () => [], onSubmit: () => new Promise<void>(() => undefined) })
   await flush(0)
   await mocks.handlers!.onDelegate('Przygotuj analizę')
   await flush(20_400)
-  expect(mocks.notify).toHaveBeenCalledWith(expect.stringContaining('No confirmed result yet'))
-  mocks.handlers!.onStatus('speaking')
+  expect(mocks.notify).toHaveBeenCalledWith(expect.stringContaining('confirmed result'))
+  mocks.handlers!.onReportSpoken?.()
   mocks.notify.mockClear()
   await flush(280_600)
   expect(mocks.notify).toHaveBeenCalledWith(expect.stringContaining('Nie otrzymałem jeszcze potwierdzonego wyniku'))
@@ -262,8 +361,11 @@ test('reports waiting work and eventually times out even when submission never r
 test('adopts a slow answer when the conversation is created, but never voices one from another', async () => {
   vi.useFakeTimers()
   const messages: ReplyMessage[] = []
-  let busy = true
-  const onSubmit = vi.fn()
+  let busy = false
+
+  const onSubmit = vi.fn(() => {
+    busy = true
+  })
 
   const { rerender } = render({ busy: () => busy, messages: () => messages, onSubmit, sessionId: null })
   await flush(0)
@@ -282,7 +384,7 @@ test('adopts a slow answer when the conversation is created, but never voices on
 
   // A second slow answer, but this time the conversation is switched away.
   mocks.notify.mockClear()
-  busy = true
+  busy = false
   const other = mocks.handlers!.onAsk('Kolejny raport')
 
   await flush(7_000)

@@ -505,16 +505,27 @@ function JarvisDashboardFrame({
       state={dashboardState}
       switcher={<ModelSwitcher connected={connected} onSelectModel={onSelectModel} providers={modelProviders} />}
       voiceControls={
-        <VoiceControls
-          disabled={!connected}
-          listening={listening}
-          muted={mainVoiceConversation?.muted === true}
-          speaking={speaking}
-          startListening={requestVoiceConversationStart}
-          stopListening={() => mainVoiceConversation?.stop()}
-          stopPlayback={stopVoicePlayback}
-          toggleMute={mainVoiceConversation ? () => mainVoiceConversation.toggleMute() : undefined}
-        />
+        <div className="grid justify-items-center gap-2">
+          <VoiceControls
+            disabled={!connected}
+            listening={listening}
+            muted={mainVoiceConversation?.muted === true}
+            speaking={speaking}
+            startListening={requestVoiceConversationStart}
+            stopListening={() => mainVoiceConversation?.stop()}
+            stopPlayback={stopVoicePlayback}
+            toggleMute={mainVoiceConversation ? () => mainVoiceConversation.toggleMute() : undefined}
+          />
+          {listening && mainVoiceConversation?.workProgress ? (
+            <p
+              className="line-clamp-2 max-w-xl whitespace-pre-line text-center text-sm text-(--ui-text-secondary)"
+              data-testid="jarvis-work-progress"
+              role="status"
+            >
+              {mainVoiceConversation.workProgress}
+            </p>
+          ) : null}
+        </div>
       }
     >
       {children}
@@ -646,7 +657,8 @@ const ChatViewContent = memo(function ChatViewContent({
           previous &&
           previous.active === state.active &&
           previous.muted === state.muted &&
-          previous.status === state.status
+          previous.status === state.status &&
+          (previous.workProgress ?? null) === (state.workProgress ?? null)
         ) {
           return previous
         }
@@ -655,6 +667,7 @@ const ChatViewContent = memo(function ChatViewContent({
           active: state.active,
           muted: state.muted,
           status: state.status,
+          workProgress: state.workProgress ?? null,
           stop: stopMainVoiceConversation,
           stopTurn: stopMainVoiceTurn,
           toggleMute: toggleMainVoiceMute
