@@ -30,6 +30,40 @@ function setup(onAsk: (request: string) => Promise<string> = async () => 'Masz j
 const audioChunk = (samples: number[]) => bytesToBase64(floatToInt16LE(new Float32Array(samples)))
 
 describe('Gemini Live protocol', () => {
+  it('waits for pending progress audio before accepting a different final report', async () => {
+    vi.useFakeTimers()
+
+    try {
+      const onReportSpoken = vi.fn()
+
+      const handle = createGeminiLiveHandler(
+        { send: vi.fn() },
+        { play: vi.fn(), flush: vi.fn(), whenIdle: done => done() },
+        { onAsk: async () => '', onDelegate: async () => '', onError: vi.fn(), onStatus: vi.fn(), onReportSpoken }
+      )
+
+      expect(handle.notify('Postęp pracy')).toBe(true)
+      expect(handle.notify('Wynik końcowy')).toBe(false)
+      vi.advanceTimersByTime(5_000)
+      expect(handle.notify('Wynik końcowy')).toBe(false)
+
+      const content = {
+        serverContent: {
+          modelTurn: { parts: [{ inlineData: { data: audioChunk([0.25]), mimeType: 'audio/pcm;rate=24000' } }] }
+        }
+      }
+
+      await handle(content)
+      expect(onReportSpoken).toHaveBeenCalledExactlyOnceWith('Postęp pracy')
+      await handle({ serverContent: { turnComplete: true } })
+      expect(handle.notify('Wynik końcowy')).toBe(true)
+      await handle(content)
+      expect(onReportSpoken).toHaveBeenLastCalledWith('Wynik końcowy')
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
   it('keeps handling speech while a tool is in flight and schedules its answer for idle', async () => {
     let finish!: (text: string) => void
 

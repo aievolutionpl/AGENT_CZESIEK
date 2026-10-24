@@ -31,10 +31,10 @@ export class VoiceReportQueue {
     return this.reports.length > 0
   }
 
-  spoken() {
+  spoken(text: string) {
     const report = this.reports[0]
 
-    if (report && report.sentAt !== null) {
+    if (report && report.sentAt !== null && report.text === text) {
       this.reports.shift()
       report.onSpoken?.()
     }

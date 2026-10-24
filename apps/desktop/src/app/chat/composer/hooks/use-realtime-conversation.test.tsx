@@ -173,7 +173,7 @@ test('releases the model right away when Hermes is slow, then voices the answer 
   await flush(1_000)
 
   expect(markSpoken).not.toHaveBeenCalled()
-  mocks.handlers!.onReportSpoken?.()
+  mocks.handlers!.onReportSpoken?.('Raport gotowy: trzy pliki.')
   expect(markSpoken).toHaveBeenCalledWith('late')
   expect(mocks.notify).toHaveBeenCalledWith('Raport gotowy: trzy pliki.')
 })
@@ -253,7 +253,7 @@ test('keeps a report queued while the model speaks and delivers it, once, when i
   mocks.notify.mockClear()
   await flush(400)
   expect(mocks.notify).toHaveBeenCalledWith(report)
-  mocks.handlers!.onReportSpoken?.()
+  mocks.handlers!.onReportSpoken?.(report)
   expect(markSpoken).toHaveBeenCalledWith('answer')
 
   mocks.notify.mockClear()
@@ -341,7 +341,7 @@ test('ordinary speech never acknowledges a pending report; only report audio doe
   await flush(800)
   mocks.handlers!.onStatus('speaking')
   expect(markSpoken).not.toHaveBeenCalled()
-  mocks.handlers!.onReportSpoken?.()
+  mocks.handlers!.onReportSpoken?.('Potwierdzony wynik')
   expect(markSpoken).toHaveBeenCalledWith('verified')
 })
 
@@ -352,7 +352,7 @@ test('reports waiting work and eventually times out even when submission never r
   await mocks.handlers!.onDelegate('Przygotuj analizę')
   await flush(20_400)
   expect(mocks.notify).toHaveBeenCalledWith(expect.stringContaining('confirmed result'))
-  mocks.handlers!.onReportSpoken?.()
+  mocks.handlers!.onReportSpoken?.(mocks.notify.mock.calls.at(-1)![0])
   mocks.notify.mockClear()
   await flush(280_600)
   expect(mocks.notify).toHaveBeenCalledWith(expect.stringContaining('Nie otrzymałem jeszcze potwierdzonego wyniku'))

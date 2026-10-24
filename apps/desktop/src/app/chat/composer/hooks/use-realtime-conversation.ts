@@ -484,7 +484,7 @@ export function useRealtimeConversation({
         onAsk: ask,
         onDelegate: delegate,
         onTool: deskTools,
-        onReportSpoken: () => announcements.current.spoken(),
+        onReportSpoken: report => announcements.current.spoken(report),
         onTranscript: (role, text) => {
           if (role === 'user' && isJarvisMusicPhrase(text)) {
             startJarvisIntroMusic(true)

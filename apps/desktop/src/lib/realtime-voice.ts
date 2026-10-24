@@ -37,7 +37,7 @@ export function canInjectReport(status: RealtimeVoiceStatus, blockedSince: numbe
 
 export interface RealtimeVoiceHandlers extends VoiceToolHandlers {
   /** Audio for an injected worker report actually started, not an unrelated reply. */
-  onReportSpoken?: () => void
+  onReportSpoken?: (report: string) => void
   onStatus: (status: RealtimeVoiceStatus) => void
   onError: (message: string) => void
   onTranscript?: (role: 'assistant' | 'user', text: string) => void
@@ -67,7 +67,7 @@ export function createRealtimeEventHandler(sink: RealtimeEventSink, handlers: Re
   let needsResponse = false
   let userSpeaking = false
   let awaitingUserResponse = false
-  let reportAwaitingAudio = false
+  let reportAwaitingAudio: string | null = null
   let status: RealtimeVoiceStatus = 'listening'
 
   const setStatus = (next: RealtimeVoiceStatus) => {
@@ -129,7 +129,7 @@ export function createRealtimeEventHandler(sink: RealtimeEventSink, handlers: Re
     'input_audio_buffer.speech_started': () => {
       userSpeaking = true
       awaitingUserResponse = true
-      reportAwaitingAudio = false
+      reportAwaitingAudio = null
       needsResponse = false
       setStatus('listening')
     },
@@ -152,13 +152,14 @@ export function createRealtimeEventHandler(sink: RealtimeEventSink, handlers: Re
       }
     },
     'output_audio_buffer.cleared': () => {
-      reportAwaitingAudio = false
+      reportAwaitingAudio = null
       setStatus('listening')
     },
     'output_audio_buffer.started': () => {
       if (reportAwaitingAudio) {
-        reportAwaitingAudio = false
-        handlers.onReportSpoken?.()
+        const report = reportAwaitingAudio
+        reportAwaitingAudio = null
+        handlers.onReportSpoken?.(report)
       }
 
       setStatus('speaking')
@@ -175,6 +176,7 @@ export function createRealtimeEventHandler(sink: RealtimeEventSink, handlers: Re
         activeResponse ||
         responseRequested ||
         needsResponse ||
+        (reportAwaitingAudio !== null && reportAwaitingAudio !== report) ||
         userSpeaking ||
         awaitingUserResponse ||
         status === 'speaking'
@@ -182,7 +184,7 @@ export function createRealtimeEventHandler(sink: RealtimeEventSink, handlers: Re
         return false
       }
 
-      reportAwaitingAudio = true
+      reportAwaitingAudio = report
       sink.send({
         type: 'conversation.item.create',
         item: {
