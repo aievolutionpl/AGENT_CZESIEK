@@ -31,6 +31,41 @@ const call = (callId: string, request: string) => ({
 })
 
 describe('createRealtimeEventHandler', () => {
+  it('does not attribute delayed ordinary reply audio to a worker report', async () => {
+    const { handlers } = setup()
+    const onReportSpoken = vi.fn()
+    const voice = createRealtimeEventHandler({ send: vi.fn() }, { ...handlers, onReportSpoken })
+    await voice({ type: 'response.created' })
+    await voice({ type: 'response.done', response: { output: [{ type: 'message', content: [{ type: 'audio' }] }] } })
+    expect(voice.notify('worker result')).toBe(false)
+    await voice({ type: 'output_audio_buffer.started' })
+    expect(onReportSpoken).not.toHaveBeenCalled()
+    await voice({ type: 'output_audio_buffer.stopped' })
+    expect(voice.notify('worker result')).toBe(true)
+    await voice({ type: 'output_audio_buffer.started' })
+    expect(onReportSpoken).toHaveBeenCalledExactlyOnceWith('worker result')
+  })
+
+  it('does not reopen playback after audio already stopped before response.done', async () => {
+    const { handle } = setup()
+    await handle({ type: 'response.created' })
+    await handle({ type: 'output_audio_buffer.started' })
+    await handle({ type: 'output_audio_buffer.stopped' })
+    await handle({ type: 'response.done', response: { output: [{ type: 'message', content: [{ type: 'audio' }] }] } })
+    expect(handle.notify('worker result')).toBe(true)
+  })
+
+  it('defers tool continuation until earlier response audio has finished', async () => {
+    const { handle, sent } = setup()
+    await handle({ type: 'response.created' })
+    await handle(call('worker-after-audio', 'Sprawdź wynik'))
+    await handle({ type: 'response.done', response: { output: [{ type: 'message', content: [{ type: 'audio' }] }] } })
+    expect(sent.filter(event => event.type === 'response.create')).toHaveLength(0)
+    await handle({ type: 'output_audio_buffer.started' })
+    await handle({ type: 'output_audio_buffer.stopped' })
+    expect(sent.filter(event => event.type === 'response.create')).toHaveLength(1)
+  })
+
   it('releases a silent response before delivering the next final report', async () => {
     const { handlers } = setup()
     const onReportSpoken = vi.fn()

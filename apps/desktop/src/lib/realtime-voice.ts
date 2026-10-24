@@ -67,6 +67,8 @@ export function createRealtimeEventHandler(sink: RealtimeEventSink, handlers: Re
   let needsResponse = false
   let userSpeaking = false
   let awaitingUserResponse = false
+  let pendingPlayback = false
+  let responseAudioEnded = false
   let reportAwaitingAudio: string | null = null
   let status: RealtimeVoiceStatus = 'listening'
 
@@ -78,7 +80,7 @@ export function createRealtimeEventHandler(sink: RealtimeEventSink, handlers: Re
   const requestResponse = () => {
     needsResponse = true
 
-    if (activeResponse || responseRequested || userSpeaking || awaitingUserResponse) {
+    if (activeResponse || responseRequested || userSpeaking || awaitingUserResponse || pendingPlayback) {
       return
     }
 
@@ -129,6 +131,8 @@ export function createRealtimeEventHandler(sink: RealtimeEventSink, handlers: Re
     'input_audio_buffer.speech_started': () => {
       userSpeaking = true
       awaitingUserResponse = true
+      pendingPlayback = false
+      responseAudioEnded = true
       reportAwaitingAudio = null
       needsResponse = false
       setStatus('listening')
@@ -140,38 +144,47 @@ export function createRealtimeEventHandler(sink: RealtimeEventSink, handlers: Re
       activeResponse = true
       responseRequested = false
       awaitingUserResponse = false
+      responseAudioEnded = false
     },
     'response.done': event => {
       activeResponse = false
       responseRequested = false
       const output = (event.response as { output?: unknown[] } | undefined)?.output ?? []
 
-      const hasPendingAudioOrTool = output.some(item => {
+      const hasOutputAudio = output.some(item => {
         const part = item as { type?: string; content?: { type?: string }[] }
 
-        return (
-          part.type === 'function_call' ||
-          part.content?.some(content => content.type === 'audio' || content.type === 'output_audio')
-        )
+        return part.content?.some(content => content.type === 'audio' || content.type === 'output_audio')
       })
+
+      const hasToolContinuation = output.some(item => (item as { type?: string }).type === 'function_call')
+      pendingPlayback ||= hasOutputAudio && !responseAudioEnded
 
       // response.done can precede WebRTC playback. Retain attribution for
       // generated audio and tool continuations, but release a truly silent turn.
-      if (!needsResponse && !hasPendingAudioOrTool) {
+      if (!needsResponse && !hasOutputAudio && !hasToolContinuation) {
         reportAwaitingAudio = null
       }
 
       if (needsResponse) {
         requestResponse()
       } else if (status !== 'speaking') {
-        setStatus('listening')
+        setStatus(pendingPlayback ? 'thinking' : 'listening')
       }
     },
     'output_audio_buffer.cleared': () => {
       reportAwaitingAudio = null
+      pendingPlayback = false
+      responseAudioEnded = true
       setStatus('listening')
+
+      if (needsResponse) {
+        requestResponse()
+      }
     },
     'output_audio_buffer.started': () => {
+      pendingPlayback = true
+
       if (reportAwaitingAudio) {
         const report = reportAwaitingAudio
         reportAwaitingAudio = null
@@ -182,7 +195,13 @@ export function createRealtimeEventHandler(sink: RealtimeEventSink, handlers: Re
     },
     'output_audio_buffer.stopped': () => {
       reportAwaitingAudio = null
+      pendingPlayback = false
+      responseAudioEnded = true
       setStatus('listening')
+
+      if (needsResponse) {
+        requestResponse()
+      }
     },
     'response.function_call_arguments.done': answerCall,
     'response.output_audio_transcript.done': event =>
@@ -195,6 +214,7 @@ export function createRealtimeEventHandler(sink: RealtimeEventSink, handlers: Re
         activeResponse ||
         responseRequested ||
         needsResponse ||
+        pendingPlayback ||
         (reportAwaitingAudio !== null && reportAwaitingAudio !== report) ||
         userSpeaking ||
         awaitingUserResponse ||
