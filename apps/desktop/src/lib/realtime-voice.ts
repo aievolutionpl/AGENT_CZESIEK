@@ -141,9 +141,25 @@ export function createRealtimeEventHandler(sink: RealtimeEventSink, handlers: Re
       responseRequested = false
       awaitingUserResponse = false
     },
-    'response.done': () => {
+    'response.done': event => {
       activeResponse = false
       responseRequested = false
+      const output = (event.response as { output?: unknown[] } | undefined)?.output ?? []
+
+      const hasPendingAudioOrTool = output.some(item => {
+        const part = item as { type?: string; content?: { type?: string }[] }
+
+        return (
+          part.type === 'function_call' ||
+          part.content?.some(content => content.type === 'audio' || content.type === 'output_audio')
+        )
+      })
+
+      // response.done can precede WebRTC playback. Retain attribution for
+      // generated audio and tool continuations, but release a truly silent turn.
+      if (!needsResponse && !hasPendingAudioOrTool) {
+        reportAwaitingAudio = null
+      }
 
       if (needsResponse) {
         requestResponse()
@@ -164,7 +180,10 @@ export function createRealtimeEventHandler(sink: RealtimeEventSink, handlers: Re
 
       setStatus('speaking')
     },
-    'output_audio_buffer.stopped': () => setStatus('listening'),
+    'output_audio_buffer.stopped': () => {
+      reportAwaitingAudio = null
+      setStatus('listening')
+    },
     'response.function_call_arguments.done': answerCall,
     'response.output_audio_transcript.done': event =>
       handlers.onTranscript?.('assistant', text(event.transcript).trim())

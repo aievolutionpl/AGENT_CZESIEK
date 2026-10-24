@@ -164,6 +164,10 @@ export function createGeminiLiveHandler(sink: GeminiLiveSink, player: GeminiAudi
     }
 
     if (content.turnComplete) {
+      // A silent turn is not an acknowledgement. Release its ownership so the
+      // queue can retry it or deliver a newer final result instead.
+      reportAwaitingAudio = null
+
       if (userText.trim()) {
         events.onTranscript?.('user', userText.trim())
       }

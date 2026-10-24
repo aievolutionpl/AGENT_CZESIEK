@@ -31,6 +31,33 @@ const call = (callId: string, request: string) => ({
 })
 
 describe('createRealtimeEventHandler', () => {
+  it('releases a silent response before delivering the next final report', async () => {
+    const { handlers } = setup()
+    const onReportSpoken = vi.fn()
+    const voice = createRealtimeEventHandler({ send: vi.fn() }, { ...handlers, onReportSpoken })
+    expect(voice.notify('progress')).toBe(true)
+    await voice({ type: 'response.created' })
+    await voice({ type: 'response.done', response: { output: [] } })
+    expect(onReportSpoken).not.toHaveBeenCalled()
+    expect(voice.notify('final')).toBe(true)
+    await voice({ type: 'output_audio_buffer.started' })
+    expect(onReportSpoken).toHaveBeenCalledExactlyOnceWith('final')
+  })
+
+  it('retains report attribution when generated audio starts after response.done', async () => {
+    const { handlers } = setup()
+    const onReportSpoken = vi.fn()
+    const voice = createRealtimeEventHandler({ send: vi.fn() }, { ...handlers, onReportSpoken })
+    expect(voice.notify('progress')).toBe(true)
+    await voice({ type: 'response.created' })
+    await voice({ type: 'response.done', response: { output: [{ type: 'message', content: [{ type: 'audio' }] }] } })
+    expect(voice.notify('final')).toBe(false)
+    await voice({ type: 'output_audio_buffer.started' })
+    expect(onReportSpoken).toHaveBeenCalledExactlyOnceWith('progress')
+    await voice({ type: 'output_audio_buffer.stopped' })
+    expect(voice.notify('final')).toBe(true)
+  })
+
   it('defers a tool continuation until the active response has ended', async () => {
     const { handle, sent } = setup()
     await handle({ type: 'response.created' })
