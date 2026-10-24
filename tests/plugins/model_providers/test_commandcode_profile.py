@@ -246,6 +246,26 @@ class TestCommandCodeFetchModelsPickerContract:
     was swallowed, leaving the provider with zero models.
     """
 
+    @pytest.mark.parametrize("catalog_available", [False, True])
+    def test_catalog_keeps_both_api_key_names(self, monkeypatch, catalog_available):
+        from types import SimpleNamespace
+        from hermes_cli import providers as cli_providers
+
+        catalog = SimpleNamespace(
+            name="CommandCode", env=("CMD_API_KEY",),
+            api="https://api.commandcode.ai/provider/v1", doc="",
+        ) if catalog_available else None
+        monkeypatch.setattr(cli_providers, "_models_dev_info", lambda *args, **kwargs: catalog)
+
+        resolved = cli_providers.resolve_provider_full("commandcode", {}, [])
+        assert resolved is not None
+        assert resolved.name == "CommandCode"
+        assert resolved.transport == "openai_chat"
+        assert "CMD_API_KEY" in resolved.api_key_env_vars
+        assert "COMMANDCODE_API_KEY" in resolved.api_key_env_vars
+        assert resolved.base_url == "https://api.commandcode.ai/provider/v1"
+        assert resolved.base_url_env_var == "COMMANDCODE_BASE_URL"
+
     @pytest.mark.parametrize("profile_name", ["commandcode", "commandcode-anthropic"])
     def test_accepts_base_url_kwarg(self, profile_name):
         import inspect

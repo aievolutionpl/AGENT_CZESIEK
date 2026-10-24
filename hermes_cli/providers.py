@@ -29,6 +29,11 @@ class HermesOverlay:
 HERMES_OVERLAYS: Dict[str, HermesOverlay] = {
     "moa": HermesOverlay(auth_type="virtual", base_url_override="moa://local"),
     "openrouter": HermesOverlay(is_aggregator=True, base_url_env_var="OPENROUTER_BASE_URL"),
+    # models.dev uses CMD_API_KEY; existing CommandCode profiles store the long
+    # name. Keep both credentials and a usable endpoint when the catalog is offline.
+    "commandcode": HermesOverlay(extra_env_vars=("CMD_API_KEY", "COMMANDCODE_API_KEY"),
+                                  base_url_override="https://api.commandcode.ai/provider/v1",
+                                  base_url_env_var="COMMANDCODE_BASE_URL"),
     "nous": HermesOverlay(auth_type="oauth_device_code", base_url_override="https://inference-api.nousresearch.com/v1"),
     "openai-codex": HermesOverlay(transport="codex_responses", auth_type="oauth_external",
                                   base_url_override="https://chatgpt.com/backend-api/codex"),
@@ -148,6 +153,7 @@ _LABEL_OVERRIDES: Dict[str, str] = {
     "nebius-token-factory": "Nebius Token Factory", "tencent-tokenplan": "Tencent TokenPlan", "lmstudio": "LM Studio",
     "local": "Local endpoint", "bedrock": "AWS Bedrock", "vertex": "Google Vertex AI", "ollama-cloud": "Ollama Cloud",
     "xai-oauth": "xAI Grok OAuth (SuperGrok / Premium+)", "opencode-free": "OpenCode Free",
+    "commandcode": "CommandCode",
 }
 
 
