@@ -30,6 +30,115 @@ function setup(onAsk: (request: string) => Promise<string> = async () => 'Masz j
 const audioChunk = (samples: number[]) => bytesToBase64(floatToInt16LE(new Float32Array(samples)))
 
 describe('Gemini Live protocol', () => {
+  it('releases a silent progress turn so a replacement final report can be spoken', async () => {
+    const onReportSpoken = vi.fn()
+
+    const handle = createGeminiLiveHandler(
+      { send: vi.fn() },
+      { play: vi.fn(), flush: vi.fn(), whenIdle: done => done() },
+      { onAsk: async () => '', onDelegate: async () => '', onError: vi.fn(), onStatus: vi.fn(), onReportSpoken }
+    )
+
+    expect(handle.notify('Postęp pracy')).toBe(true)
+    expect(handle.notify('Wynik końcowy')).toBe(false)
+    await handle({ serverContent: { turnComplete: true } })
+    expect(onReportSpoken).not.toHaveBeenCalled()
+    expect(handle.notify('Wynik końcowy')).toBe(true)
+    await handle({
+      serverContent: {
+        modelTurn: { parts: [{ inlineData: { data: audioChunk([0.25]), mimeType: 'audio/pcm;rate=24000' } }] }
+      }
+    })
+    expect(onReportSpoken).toHaveBeenCalledExactlyOnceWith('Wynik końcowy')
+  })
+
+  it('waits for pending progress audio before accepting a different final report', async () => {
+    vi.useFakeTimers()
+
+    try {
+      const onReportSpoken = vi.fn()
+
+      const handle = createGeminiLiveHandler(
+        { send: vi.fn() },
+        { play: vi.fn(), flush: vi.fn(), whenIdle: done => done() },
+        { onAsk: async () => '', onDelegate: async () => '', onError: vi.fn(), onStatus: vi.fn(), onReportSpoken }
+      )
+
+      expect(handle.notify('Postęp pracy')).toBe(true)
+      expect(handle.notify('Wynik końcowy')).toBe(false)
+      vi.advanceTimersByTime(5_000)
+      expect(handle.notify('Wynik końcowy')).toBe(false)
+
+      const content = {
+        serverContent: {
+          modelTurn: { parts: [{ inlineData: { data: audioChunk([0.25]), mimeType: 'audio/pcm;rate=24000' } }] }
+        }
+      }
+
+      await handle(content)
+      expect(onReportSpoken).toHaveBeenCalledExactlyOnceWith('Postęp pracy')
+      await handle({ serverContent: { turnComplete: true } })
+      expect(handle.notify('Wynik końcowy')).toBe(true)
+      await handle(content)
+      expect(onReportSpoken).toHaveBeenLastCalledWith('Wynik końcowy')
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('keeps handling speech while a tool is in flight and schedules its answer for idle', async () => {
+    let finish!: (text: string) => void
+
+    const { handle, player, sent } = setup(
+      () =>
+        new Promise(resolve => {
+          finish = resolve
+        })
+    )
+
+    const work = handle({
+      toolCall: { functionCalls: [{ id: 'pending-work', name: 'ask_jarvis', args: { request: 'Praca' } }] }
+    })
+
+    await handle({
+      serverContent: {
+        modelTurn: { parts: [{ inlineData: { data: audioChunk([0.25]), mimeType: 'audio/pcm;rate=24000' } }] }
+      }
+    })
+    expect(player.play).toHaveBeenCalledOnce()
+    finish('Przyjęto w tle')
+    await work
+    expect(JSON.stringify(sent)).toContain('WHEN_IDLE')
+  })
+
+  it('does not confuse a user interruption or ordinary reply with the report being voiced', async () => {
+    const onReportSpoken = vi.fn()
+    const player = { play: vi.fn(), flush: vi.fn(), whenIdle: (done: () => void) => done() }
+
+    const handle = createGeminiLiveHandler({ send: vi.fn() }, player, {
+      onAsk: async () => '',
+      onDelegate: async () => '',
+      onError: vi.fn(),
+      onStatus: vi.fn(),
+      onReportSpoken
+    })
+
+    expect(handle.notify('Wynik pracy')).toBe(true)
+    await handle({ serverContent: { interrupted: true, inputTranscription: { text: 'Jeszcze pytanie' } } })
+
+    const content = {
+      serverContent: {
+        modelTurn: { parts: [{ inlineData: { data: audioChunk([0.25]), mimeType: 'audio/pcm;rate=24000' } }] }
+      }
+    }
+
+    await handle(content)
+    expect(onReportSpoken).not.toHaveBeenCalled()
+    await handle({ serverContent: { turnComplete: true } })
+    expect(handle.notify('Wynik pracy')).toBe(true)
+    await handle(content)
+    expect(onReportSpoken).toHaveBeenCalledOnce()
+  })
   it('plays model speech at the rate it declares and shows that Agent Czesiek is speaking', async () => {
     const { handle, player, statuses } = setup()
 
@@ -77,7 +186,13 @@ describe('Gemini Live protocol', () => {
     expect(sent).toEqual([
       {
         toolResponse: {
-          functionResponses: [{ id: 'call-1', name: 'ask_jarvis', response: { output: 'Masz jutro dwa spotkania.' } }]
+          functionResponses: [
+            {
+              id: 'call-1',
+              name: 'ask_jarvis',
+              response: { output: 'Masz jutro dwa spotkania.', scheduling: 'WHEN_IDLE' }
+            }
+          ]
         }
       }
     ])
@@ -96,7 +211,11 @@ describe('Gemini Live protocol', () => {
       {
         toolResponse: {
           functionResponses: [
-            { id: 'delegate-1', name: 'delegate_to_hermes', response: { output: 'Przyjęto: Zrób raport' } }
+            {
+              id: 'delegate-1',
+              name: 'delegate_to_hermes',
+              response: { output: 'Przyjęto: Zrób raport', scheduling: 'WHEN_IDLE' }
+            }
           ]
         }
       }
@@ -122,7 +241,9 @@ describe('Gemini Live protocol', () => {
     const { handle, statuses, transcripts } = setup()
 
     await handle({ serverContent: { inputTranscription: { text: 'Cześć ' } } })
-    await handle({ serverContent: { inputTranscription: { text: 'Agent Czesiek' }, outputTranscription: { text: 'Hej!' } } })
+    await handle({
+      serverContent: { inputTranscription: { text: 'Agent Czesiek' }, outputTranscription: { text: 'Hej!' } }
+    })
     await handle({ toolCall: { functionCalls: [{ args: { request: 'r' }, id: 'c', name: 'ask_jarvis' }] } })
     await handle({ serverContent: { turnComplete: true } })
 

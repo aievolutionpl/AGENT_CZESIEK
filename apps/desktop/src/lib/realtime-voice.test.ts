@@ -1,6 +1,11 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import { canInjectReport, createRealtimeEventHandler, NOTIFY_GRACE_MS, type RealtimeVoiceHandlers } from './realtime-voice'
+import {
+  canInjectReport,
+  createRealtimeEventHandler,
+  NOTIFY_GRACE_MS,
+  type RealtimeVoiceHandlers
+} from './realtime-voice'
 
 function setup(onAsk: RealtimeVoiceHandlers['onAsk'] = async request => `answer to ${request}`) {
   const sent: Record<string, unknown>[] = []
@@ -26,6 +31,106 @@ const call = (callId: string, request: string) => ({
 })
 
 describe('createRealtimeEventHandler', () => {
+  it('does not attribute delayed ordinary reply audio to a worker report', async () => {
+    const { handlers } = setup()
+    const onReportSpoken = vi.fn()
+    const voice = createRealtimeEventHandler({ send: vi.fn() }, { ...handlers, onReportSpoken })
+    await voice({ type: 'response.created' })
+    await voice({ type: 'response.done', response: { output: [{ type: 'message', content: [{ type: 'audio' }] }] } })
+    expect(voice.notify('worker result')).toBe(false)
+    await voice({ type: 'output_audio_buffer.started' })
+    expect(onReportSpoken).not.toHaveBeenCalled()
+    await voice({ type: 'output_audio_buffer.stopped' })
+    expect(voice.notify('worker result')).toBe(true)
+    await voice({ type: 'output_audio_buffer.started' })
+    expect(onReportSpoken).toHaveBeenCalledExactlyOnceWith('worker result')
+  })
+
+  it('does not reopen playback after audio already stopped before response.done', async () => {
+    const { handle } = setup()
+    await handle({ type: 'response.created' })
+    await handle({ type: 'output_audio_buffer.started' })
+    await handle({ type: 'output_audio_buffer.stopped' })
+    await handle({ type: 'response.done', response: { output: [{ type: 'message', content: [{ type: 'audio' }] }] } })
+    expect(handle.notify('worker result')).toBe(true)
+  })
+
+  it('defers tool continuation until earlier response audio has finished', async () => {
+    const { handle, sent } = setup()
+    await handle({ type: 'response.created' })
+    await handle(call('worker-after-audio', 'Sprawdź wynik'))
+    await handle({ type: 'response.done', response: { output: [{ type: 'message', content: [{ type: 'audio' }] }] } })
+    expect(sent.filter(event => event.type === 'response.create')).toHaveLength(0)
+    await handle({ type: 'output_audio_buffer.started' })
+    await handle({ type: 'output_audio_buffer.stopped' })
+    expect(sent.filter(event => event.type === 'response.create')).toHaveLength(1)
+  })
+
+  it('releases a silent response before delivering the next final report', async () => {
+    const { handlers } = setup()
+    const onReportSpoken = vi.fn()
+    const voice = createRealtimeEventHandler({ send: vi.fn() }, { ...handlers, onReportSpoken })
+    expect(voice.notify('progress')).toBe(true)
+    await voice({ type: 'response.created' })
+    await voice({ type: 'response.done', response: { output: [] } })
+    expect(onReportSpoken).not.toHaveBeenCalled()
+    expect(voice.notify('final')).toBe(true)
+    await voice({ type: 'output_audio_buffer.started' })
+    expect(onReportSpoken).toHaveBeenCalledExactlyOnceWith('final')
+  })
+
+  it('retains report attribution when generated audio starts after response.done', async () => {
+    const { handlers } = setup()
+    const onReportSpoken = vi.fn()
+    const voice = createRealtimeEventHandler({ send: vi.fn() }, { ...handlers, onReportSpoken })
+    expect(voice.notify('progress')).toBe(true)
+    await voice({ type: 'response.created' })
+    await voice({ type: 'response.done', response: { output: [{ type: 'message', content: [{ type: 'audio' }] }] } })
+    expect(voice.notify('final')).toBe(false)
+    await voice({ type: 'output_audio_buffer.started' })
+    expect(onReportSpoken).toHaveBeenCalledExactlyOnceWith('progress')
+    await voice({ type: 'output_audio_buffer.stopped' })
+    expect(voice.notify('final')).toBe(true)
+  })
+
+  it('defers a tool continuation until the active response has ended', async () => {
+    const { handle, sent } = setup()
+    await handle({ type: 'response.created' })
+    await handle({ ...call('async-worker', 'Zrób analizę'), name: 'delegate_to_hermes' })
+    expect(sent.filter(event => event.type === 'response.create')).toHaveLength(0)
+    await handle({ type: 'response.done' })
+    expect(sent.filter(event => event.type === 'response.create')).toHaveLength(1)
+  })
+
+  it('keeps reports queued during conversation and acknowledges only report speech', async () => {
+    const { handle, handlers } = setup()
+    const onReportSpoken = vi.fn()
+    const voice = createRealtimeEventHandler({ send: vi.fn() }, { ...handlers, onReportSpoken })
+    await voice({ type: 'response.created' })
+    expect(voice.notify('report')).toBe(false)
+    await voice({ type: 'response.done' })
+    expect(voice.notify('report')).toBe(true)
+    await voice({ type: 'input_audio_buffer.speech_started' })
+    await voice({ type: 'output_audio_buffer.started' })
+    expect(onReportSpoken).not.toHaveBeenCalled()
+    await voice({ type: 'input_audio_buffer.speech_stopped' })
+    await voice({ type: 'response.created' })
+    await voice({ type: 'response.done' })
+    await voice({ type: 'output_audio_buffer.stopped' })
+    expect(voice.notify('report')).toBe(true)
+    await voice({ type: 'output_audio_buffer.started' })
+    expect(onReportSpoken).toHaveBeenCalledOnce()
+    // Keep the ordinary protocol handler usable as well.
+    await handle({ type: 'output_audio_buffer.stopped' })
+  })
+
+  it('recovers an overlapping-response error without closing the conversation', async () => {
+    const { handle, handlers, sent } = setup()
+    await handle({ type: 'error', error: { code: 'conversation_already_has_active_response' } })
+    expect(handlers.onError).not.toHaveBeenCalled()
+    await handle({ type: 'response.done' })
+    expect(sent.at(-1)).toEqual({ type: 'response.create' })
+  })
   it('runs ask_jarvis through the agent and hands the answer back before asking for speech', async () => {
     const { handle, handlers, sent } = setup()
 
@@ -94,10 +199,10 @@ describe('canInjectReport', () => {
     expect(canInjectReport('listening', 0, 1_000)).toBe(true)
   })
 
-  it('retries while the model speaks, then forces the report in after the grace window', () => {
+  it('never forces a report over the person or an ongoing spoken reply', () => {
     expect(canInjectReport('speaking', 0, 1_000)).toBe(false)
     expect(canInjectReport('speaking', 1_000, 1_000 + NOTIFY_GRACE_MS - 1)).toBe(false)
-    expect(canInjectReport('speaking', 1_000, 1_000 + NOTIFY_GRACE_MS)).toBe(true)
+    expect(canInjectReport('speaking', 1_000, 1_000 + NOTIFY_GRACE_MS)).toBe(false)
   })
 
   it('never leaves a report stuck behind a model that stays in thinking', () => {

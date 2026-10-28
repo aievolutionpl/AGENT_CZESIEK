@@ -978,6 +978,7 @@ export function ChatBar({
     startConversation,
     voiceActivityState,
     voiceConversationActive,
+    voiceWorkProgress,
     voiceStatus
   } = useComposerVoice({
     busy,
@@ -1000,6 +1001,7 @@ export function ChatBar({
     }
 
     onVoiceConversationStateChange({
+      workProgress: voiceWorkProgress,
       active: voiceConversationActive,
       muted: conversation.muted,
       status: conversation.status,
@@ -1015,6 +1017,7 @@ export function ChatBar({
     endConversation,
     onVoiceConversationStateChange,
     scope.target,
+    voiceWorkProgress,
     voiceConversationActive
   ])
 

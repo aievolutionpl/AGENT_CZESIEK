@@ -8,6 +8,7 @@ import { createDeskTools } from '@/lib/live-voice/desk-tools'
 import { startDeskWatcher } from '@/lib/live-voice/desk-watcher'
 import { VoiceReportQueue } from '@/lib/live-voice/report-queue'
 import { startLiveVoice } from '@/lib/live-voice/start'
+import { describeDeskActivity, describeWorkProgress } from '@/lib/live-voice/work-progress'
 import type { RealtimeVoiceSession, RealtimeVoiceStatus } from '@/lib/realtime-voice'
 import { canCaptureScreen, captureScreenDataUrl } from '@/lib/screen-capture'
 import { notify, notifyError } from '@/store/notifications'
@@ -90,6 +91,7 @@ export function useRealtimeConversation({
   const [status, setStatus] = useState<ConversationStatus>('idle')
   const [muted, setMuted] = useState(false)
   const [level, setLevel] = useState(0)
+  const [workProgress, setWorkProgress] = useState<string | null>(null)
   const sessionRef = useRef<null | RealtimeVoiceSession>(null)
   const args = useRef({ busy, failureLabel, markSpoken, messages, onFatalError, onSubmit, onInterrupt })
   args.current = { busy, failureLabel, markSpoken, messages, onFatalError, onSubmit, onInterrupt }
@@ -149,6 +151,14 @@ export function useRealtimeConversation({
   const deskTools = useMemo(
     () =>
       createDeskTools({
+        localProgress: () =>
+          describeWorkProgress({
+            busy: args.current.busy(),
+            pending: Boolean(pending.current || slowAsks.current.length),
+            messages: args.current.messages(),
+            workers: $subagentsBySession.get()[currentSession.current || ''] || [],
+            lang: lang.current
+          }),
         onAssigned: (id, owner) => {
           if (owner === currentSession.current) {
             assignedTasks.current.add(id)
@@ -180,6 +190,17 @@ export function useRealtimeConversation({
       assigned: () => assignedTasks.current,
       fetchDesk: getVoiceDesk,
       lang: () => lang.current,
+      onActivity: items => {
+        const foreground = describeWorkProgress({
+          busy: args.current.busy(),
+          pending: Boolean(pending.current || slowAsks.current.length),
+          messages: args.current.messages(),
+          workers: $subagentsBySession.get()[currentSession.current || ''] || [],
+          lang: lang.current
+        })
+
+        setWorkProgress([foreground, describeDeskActivity(items, lang.current)].filter(Boolean).join('\n') || null)
+      },
       push: (text, progress) => {
         if (!progress || !announcements.current.pending) {
           announcements.current.push(text, undefined, progress)
@@ -199,7 +220,7 @@ export function useRealtimeConversation({
         const before = known.get(item.id)
         known.set(item.id, item.status)
 
-        if (before && before !== item.status && ['completed', 'failed', 'interrupted'].includes(item.status)) {
+        if (before !== item.status && ['completed', 'failed', 'interrupted'].includes(item.status)) {
           announcements.current.push(
             `Zadanie: ${item.goal}. Stan potwierdzony przez backend: ${item.status}. ${item.summary || 'Brak raportu wyniku — nie potwierdzaj sukcesu.'}`
           )
@@ -208,165 +229,188 @@ export function useRealtimeConversation({
     })
   }, [sessionId])
 
-  const ask = useCallback(async (request: string) => {
-    const sid = currentSession.current
-
-    const answer = submitAndAwaitReply(
-      { busy: () => args.current.busy(), messages: () => args.current.messages() },
-      () => args.current.onSubmit(request),
-      ASK_TIMEOUT_MS
-    )
-
-    const inline = await withInlineBudget(answer)
-
-    if (inline) {
-      if (inline.id === null) {
-        return inline.reason === 'timeout'
-          ? 'Hermes nadal pracuje nad odpowiedzią. Wynik pozostanie w rozmowie tekstowej.'
-          : 'Hermes nie zwrócił odpowiedzi.'
+  const ask = useCallback(
+    async (request: string) => {
+      // Never submit into the busy foreground composer: submitVoiceTurn intentionally
+      // rejects that call, and waiting for it would misattribute the previous job's answer.
+      if (args.current.busy() || dispatching.current) {
+        return deskTools('assign_work', { title: request.slice(0, 120), details: request })
       }
 
-      args.current.markSpoken(inline.id)
+      const sid = currentSession.current
+      // Claim the reply before submission can create the conversation id. Otherwise
+      // the first slow question is still owned by null after the chat has been created.
+      const task = { cancelled: false, session: sid }
+      slowAsks.current.push(task)
 
-      return inline.text
-    }
-
-    // Hermes is still working: release the model right away so it keeps
-    // talking, and hand the real answer to it as soon as it lands.
-    const task = { cancelled: false, session: sid }
-
-    slowAsks.current.push(task)
-
-    void Promise.race([answer, afterHardLimit()])
-      .then(reply => {
-        if (task.cancelled || currentSession.current !== task.session) {
-          return
-        }
-
-        if (reply.id !== null) {
-          const id = reply.id
-          announcements.current.push(reply.text.slice(0, 3000), () => args.current.markSpoken(id))
-        } else {
-          announcements.current.push(
-            reply.reason === 'timeout'
-              ? 'Hermes nie zakończył tego w wyznaczonym czasie. Nie mam potwierdzonego wyniku i nie potwierdzam sukcesu.'
-              : 'Hermes nie zwrócił potwierdzonego wyniku. Sprawdź rozmowę tekstową; nie traktuj tego jako ukończenia.'
-          )
-        }
-      })
-      .catch(() => {
-        if (!task.cancelled && currentSession.current === task.session) {
-          announcements.current.push('Nie udało się dokończyć tego zadania. Sprawdź połączenie i rozmowę tekstową.')
-        }
-      })
-      .finally(() => {
-        slowAsks.current = slowAsks.current.filter(item => item !== task)
-      })
-
-    return 'Sprawdzam. Powiem, jak będę wiedział.'
-  }, [])
-
-  const delegate = useCallback(async (request: string) => {
-    const sid = currentSession.current
-
-    const live = ($subagentsBySession.get()[sid || ''] || []).filter(
-      item => item.status === 'running' || item.status === 'queued'
-    )
-
-    const stop = /^(?:proszę\s+)?(?:zatrzymaj|przerwij|stop)\b/i.test(request.trim())
-    const steer = /^(?:zmień|zmien|doprecyzuj|popraw polecenie)(?=\s|$)/i.test(request.trim())
-
-    if (stop && !live.length && args.current.busy() && args.current.onInterrupt) {
-      await args.current.onInterrupt()
-
-      return 'Wysłano prośbę o zatrzymanie bieżącego zadania. Poczekaj na potwierdzenie stanu w rozmowie.'
-    }
-
-    if ((stop || steer) && sid && live.length) {
-      const results = await Promise.allSettled(
-        live.map(item =>
-          requestForOwnedSession<{ found?: boolean; status?: string }>(
-            sid,
-            async () => {
-              throw new Error('Brak połączenia z sesją')
-            },
-            `subagent.${stop ? 'interrupt' : 'steer'}`,
-            { session_id: sid, subagent_id: item.id, ...(stop ? {} : { text: request }) }
-          )
-        )
+      const answer = submitAndAwaitReply(
+        { busy: () => args.current.busy(), messages: () => args.current.messages() },
+        () => args.current.onSubmit(request),
+        ASK_TIMEOUT_MS
       )
 
-      const accepted = results.filter(
-        result => result.status === 'fulfilled' && (stop ? result.value.found : result.value.status === 'queued')
-      ).length
+      let inline: AgentReply | null
 
-      return `Backend przyjął polecenie dla ${accepted} z ${live.length} współpracowników. ${stop ? 'To prośba o zatrzymanie; poczekaj na potwierdzenie stanu.' : 'Zmiana została przekazana.'}`
-    }
-
-    if (/^(?:status|co robisz|jak idzie)/i.test(request.trim())) {
-      return live.length
-        ? live.map(item => `${item.goal}: ${item.stream.at(-1)?.text || item.status}`).join('\n')
-        : 'Backend nie zgłasza aktywnych podagentów w tej rozmowie.'
-    }
-
-    if (dispatching.current || args.current.busy()) {
-      return 'Poprzednie zlecenie jest jeszcze przyjmowane. Możemy dalej rozmawiać. Zapytaj o status albo doprecyzuj polecenie współpracownika.'
-    }
-
-    dispatching.current = true
-    const source = args.current
-    const task = { session: sid, cancelled: false }
-    pending.current = task
-
-    const ownedSource = {
-      busy: () => {
-        if (task.cancelled) {
-          throw new Error('Conversation changed')
-        }
-
-        return args.current.busy()
-      },
-      messages: () => {
-        if (task.cancelled) {
-          throw new Error('Conversation changed')
-        }
-
-        return args.current.messages()
+      try {
+        inline = await withInlineBudget(answer)
+      } catch (error) {
+        slowAsks.current = slowAsks.current.filter(item => item !== task)
+        throw error
       }
-    }
 
-    void Promise.race([
-      submitAndAwaitReply(ownedSource, () => source.onSubmit(request), ASK_TIMEOUT_MS),
-      afterHardLimit()
-    ])
-      .then(reply => {
+      if (inline) {
+        slowAsks.current = slowAsks.current.filter(item => item !== task)
+
         if (task.cancelled || currentSession.current !== task.session) {
-          return
+          return 'Rozmowa została zmieniona.'
         }
 
-        if (reply.id !== null) {
-          const id = reply.id
-          announcements.current.push(reply.text.slice(0, 3000), () => args.current.markSpoken(id))
-        } else {
-          announcements.current.push(
-            'Nie otrzymałem jeszcze potwierdzonego wyniku. Sprawdź stan zadania w rozmowie; nie traktuj tego jako ukończenia.'
+        if (inline.id === null) {
+          return inline.reason === 'timeout'
+            ? 'Hermes nadal pracuje nad odpowiedzią. Wynik pozostanie w rozmowie tekstowej.'
+            : 'Hermes nie zwrócił odpowiedzi.'
+        }
+
+        args.current.markSpoken(inline.id)
+
+        return inline.text
+      }
+
+      // Hermes is still working: release the model right away so it keeps
+      // talking, and hand the real answer to it as soon as it lands.
+      void Promise.race([answer, afterHardLimit()])
+        .then(reply => {
+          if (task.cancelled || currentSession.current !== task.session) {
+            return
+          }
+
+          if (reply.id !== null) {
+            const id = reply.id
+            announcements.current.push(reply.text.slice(0, 3000), () => args.current.markSpoken(id))
+          } else {
+            announcements.current.push(
+              reply.reason === 'timeout'
+                ? 'Hermes nie zakończył tego w wyznaczonym czasie. Nie mam potwierdzonego wyniku i nie potwierdzam sukcesu.'
+                : 'Hermes nie zwrócił potwierdzonego wyniku. Sprawdź rozmowę tekstową; nie traktuj tego jako ukończenia.'
+            )
+          }
+        })
+        .catch(() => {
+          if (!task.cancelled && currentSession.current === task.session) {
+            announcements.current.push('Nie udało się dokończyć tego zadania. Sprawdź połączenie i rozmowę tekstową.')
+          }
+        })
+        .finally(() => {
+          slowAsks.current = slowAsks.current.filter(item => item !== task)
+        })
+
+      return 'Sprawdzam. Powiem, jak będę wiedział.'
+    },
+    [deskTools]
+  )
+
+  const delegate = useCallback(
+    async (request: string) => {
+      const sid = currentSession.current
+
+      const live = ($subagentsBySession.get()[sid || ''] || []).filter(
+        item => item.status === 'running' || item.status === 'queued'
+      )
+
+      const stop = /^(?:proszę\s+)?(?:zatrzymaj|przerwij|stop)\b/i.test(request.trim())
+      const steer = /^(?:zmień|zmien|doprecyzuj|popraw polecenie)(?=\s|$)/i.test(request.trim())
+
+      if (stop && !live.length && (args.current.busy() || pending.current) && args.current.onInterrupt) {
+        await args.current.onInterrupt()
+
+        return 'Wysłano prośbę o zatrzymanie bieżącego zadania. Poczekaj na potwierdzenie stanu w rozmowie.'
+      }
+
+      if ((stop || steer) && sid && live.length) {
+        const results = await Promise.allSettled(
+          live.map(item =>
+            requestForOwnedSession<{ found?: boolean; status?: string }>(
+              sid,
+              async () => {
+                throw new Error('Brak połączenia z sesją')
+              },
+              `subagent.${stop ? 'interrupt' : 'steer'}`,
+              { session_id: sid, subagent_id: item.id, ...(stop ? {} : { text: request }) }
+            )
           )
-        }
-      })
-      .catch(() => {
-        if (!task.cancelled && currentSession.current === task.session) {
-          announcements.current.push('Przekazanie zadania nie powiodło się. Sprawdź połączenie i historię rozmowy.')
-        }
-      })
-      .finally(() => {
-        if (pending.current === task) {
-          pending.current = null
-          dispatching.current = false
-        }
-      })
+        )
 
-    return 'Przekazuję zadanie do wykonania i powiem, gdy pojawi się wynik.'
-  }, [])
+        const accepted = results.filter(
+          result => result.status === 'fulfilled' && (stop ? result.value.found : result.value.status === 'queued')
+        ).length
+
+        return `Backend przyjął polecenie dla ${accepted} z ${live.length} współpracowników. ${stop ? 'To prośba o zatrzymanie; poczekaj na potwierdzenie stanu.' : 'Zmiana została przekazana.'}`
+      }
+
+      if (/^(?:status|co robisz|jak idzie)/i.test(request.trim())) {
+        return deskTools('work_status', {})
+      }
+
+      if (dispatching.current || args.current.busy()) {
+        return deskTools('assign_work', { title: request.slice(0, 120), details: request })
+      }
+
+      dispatching.current = true
+      const source = args.current
+      const task = { session: sid, cancelled: false }
+      pending.current = task
+
+      const ownedSource = {
+        busy: () => {
+          if (task.cancelled) {
+            throw new Error('Conversation changed')
+          }
+
+          return args.current.busy()
+        },
+        messages: () => {
+          if (task.cancelled) {
+            throw new Error('Conversation changed')
+          }
+
+          return args.current.messages()
+        }
+      }
+
+      void Promise.race([
+        submitAndAwaitReply(ownedSource, () => source.onSubmit(request), ASK_TIMEOUT_MS),
+        afterHardLimit()
+      ])
+        .then(reply => {
+          if (task.cancelled || currentSession.current !== task.session) {
+            return
+          }
+
+          if (reply.id !== null) {
+            const id = reply.id
+            announcements.current.push(reply.text.slice(0, 3000), () => args.current.markSpoken(id))
+          } else {
+            announcements.current.push(
+              'Nie otrzymałem jeszcze potwierdzonego wyniku. Sprawdź stan zadania w rozmowie; nie traktuj tego jako ukończenia.'
+            )
+          }
+        })
+        .catch(() => {
+          if (!task.cancelled && currentSession.current === task.session) {
+            announcements.current.push('Przekazanie zadania nie powiodło się. Sprawdź połączenie i historię rozmowy.')
+          }
+        })
+        .finally(() => {
+          if (pending.current === task) {
+            pending.current = null
+            dispatching.current = false
+          }
+        })
+
+      return 'Przekazuję zadanie do wykonania i powiem, gdy pojawi się wynik.'
+    },
+    [deskTools]
+  )
 
   useEffect(() => {
     if (!enabled) {
@@ -381,6 +425,7 @@ export function useRealtimeConversation({
   }, [enabled])
 
   const end = useCallback(async () => {
+    setWorkProgress(null)
     announcements.current.clear()
     sessionRef.current?.stop()
     sessionRef.current = null
@@ -403,22 +448,23 @@ export function useRealtimeConversation({
       )
 
       if (
-        (pending.current || slowAsks.current.length || workers.length) &&
+        (args.current.busy() || pending.current || slowAsks.current.length || workers.length) &&
         !announcements.current.pending &&
         !$speakerMuted.get()
       ) {
-        const progress = workers.length
-          ? workers
-              .slice(0, 3)
-              .map(item => `${item.goal}: ${item.status}`)
-              .join('\n')
-          : lang.current === 'pl'
-            ? 'Czekam na odpowiedź Hermesa. Nie mam jeszcze potwierdzonego wyniku. Możemy dalej rozmawiać.'
-            : 'Waiting for Hermes to respond. No confirmed result yet. We can keep talking.'
+        const progress = describeWorkProgress({
+          busy: args.current.busy(),
+          pending: Boolean(pending.current || slowAsks.current.length),
+          messages: args.current.messages(),
+          workers,
+          lang: lang.current
+        })
 
-        announcements.current.push(progress, undefined, true)
+        if (progress) {
+          announcements.current.push(progress, undefined, true)
+        }
       }
-    }, 20_000)
+    }, 15_000)
 
     return () => window.clearInterval(timer)
   }, [enabled])
@@ -438,6 +484,7 @@ export function useRealtimeConversation({
         onAsk: ask,
         onDelegate: delegate,
         onTool: deskTools,
+        onReportSpoken: report => announcements.current.spoken(report),
         onTranscript: (role, text) => {
           if (role === 'user' && isJarvisMusicPhrase(text)) {
             startJarvisIntroMusic(true)
@@ -452,10 +499,6 @@ export function useRealtimeConversation({
           setLevel(Math.round(next * 32) / 32)
         },
         onStatus: next => {
-          if (next === 'speaking') {
-            announcements.current.spoken()
-          }
-
           setStatus(STATUS[next])
         }
       },
@@ -496,5 +539,5 @@ export function useRealtimeConversation({
   const stopTurn = useCallback(() => undefined, [])
   const start = useCallback(async () => undefined, [])
 
-  return { end, level, muted, start, status, stopTurn, toggleMute }
+  return { end, level, muted, start, status, stopTurn, toggleMute, workProgress }
 }

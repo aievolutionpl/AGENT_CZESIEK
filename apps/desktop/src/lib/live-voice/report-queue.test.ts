@@ -3,6 +3,30 @@ import { describe, expect, it, vi } from 'vitest'
 import { VoiceReportQueue } from './report-queue'
 
 describe('VoiceReportQueue', () => {
+  it('never acknowledges a final result with audio from an older progress report', () => {
+    const queue = new VoiceReportQueue(vi.fn())
+    const finalSpoken = vi.fn()
+    queue.push('working', undefined, true)
+    queue.drain(() => true, 0)
+    queue.push('verified result', finalSpoken)
+    queue.drain(() => true, 500)
+    queue.spoken('working')
+    expect(finalSpoken).not.toHaveBeenCalled()
+    expect(queue.pending).toBe(true)
+    queue.spoken('verified result')
+    expect(finalSpoken).toHaveBeenCalledOnce()
+    expect(queue.pending).toBe(false)
+  })
+
+  it('shows a final report when the provider never accepts delivery', () => {
+    const failed = vi.fn()
+    const queue = new VoiceReportQueue(failed)
+    queue.push('Verified result')
+    queue.drain(() => false, 0)
+    queue.drain(() => false, 90_000)
+    expect(failed).toHaveBeenCalledExactlyOnceWith('Verified result')
+    expect(queue.pending).toBe(false)
+  })
   it('keeps a silent report pending, retries it, and advances only after speech starts', () => {
     const failed = vi.fn()
     const queue = new VoiceReportQueue(failed)
@@ -15,7 +39,7 @@ describe('VoiceReportQueue', () => {
     expect(notify).toHaveBeenCalledTimes(1)
     queue.drain(notify, 12_000)
     expect(notify).toHaveBeenNthCalledWith(2, 'result')
-    queue.spoken()
+    queue.spoken('result')
     queue.drain(notify, 12_001)
     expect(notify).toHaveBeenLastCalledWith('next')
     expect(failed).not.toHaveBeenCalled()
@@ -27,11 +51,14 @@ describe('VoiceReportQueue', () => {
     const notify = vi.fn(() => false)
     queue.push('result')
     queue.drain(notify, 0)
-    queue.spoken()
+    queue.spoken('result')
     expect(queue.pending).toBe(true)
     notify.mockReturnValue(true)
 
-    for (const now of [1, 12_001, 24_001, 36_001]) {queue.drain(notify, now)}
+    for (const now of [1, 12_001, 24_001, 36_001]) {
+      queue.drain(notify, now)
+    }
+
     expect(failed).toHaveBeenCalledExactlyOnceWith('result')
     expect(queue.pending).toBe(false)
   })

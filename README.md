@@ -125,7 +125,9 @@ To uproszczony schemat odpowiedzialności. Interfejs rozmawia z backendem przez 
 
 Dwa osobne wybory modeli: **model zadaniowy** (Hermes — myślenie i narzędzia) oraz **model głosu Live** (rozmowa). Możesz zmieniać je niezależnie, także z ekranu głosu. Domyślny tryb „Szybki” ogranicza wysiłek rozumowania, żeby rozmowa była żwawa.
 
-Podczas pracy możesz dalej rozmawiać z Cześkiem. Aplikacja sprawdza tablicę zadań co 4 sekundy i przekazuje krótkie informacje o trwającej pracy nie częściej niż co 20 sekund. Raport końcowy ma pierwszeństwo przed tymi aktualizacjami. Jeśli model przyjmie raport, ale nie rozpocznie odpowiedzi głosowej, aplikacja ponawia dostarczenie; po trzech próbach pokazuje wynik w powiadomieniu. Statusy pochodzą z backendu — brak potwierdzonego wyniku nie oznacza sukcesu.
+Podczas pracy Hermesa możesz dalej rozmawiać z Cześkiem: omówić kolejny krok albo zlecić osobne zadanie. Rozmowa Live i wykonywanie pracy mają osobne ścieżki. Dodatkowe zlecenie trafia na tablicę pracy, gdy bieżący czat jest zajęty.
+
+Aplikacja sprawdza tablicę co 4 sekundy i przygotowuje krótkie aktualizacje co około 15–20 sekund, korzystając z faktycznych zdarzeń narzędzi i statusów współpracowników. Wypowiada je w przerwach rozmowy; pod przyciskami głosu pokazuje też bieżącą aktywność. Raport końcowy ma pierwszeństwo. Zwykła odpowiedź Cześka nie jest traktowana jako odczytanie raportu. Jeśli dostawca nie zacznie go wypowiadać, aplikacja ponawia dostarczenie; po trzech cichych próbach lub 90 sekundach braku przyjęcia pokazuje wynik w powiadomieniu. Brak potwierdzonego wyniku nie oznacza sukcesu.
 
 ## Tak wygląda aplikacja
 
@@ -136,6 +138,10 @@ Poniżej są rzeczywiste zrzuty aplikacji Electron z tej aktualizacji, wykonane 
 Widok Workspace w domyślnym trybie Liquid Glass zobaczysz na początku tego README. Jedna tapeta obejmuje całe okno, a przezroczyste lewe menu i prawy panel mają rozmycie, jasne krawędzie oraz delikatne refleksy.
 
 **Workspace** to główne miejsce rozmowy. Menu rozdziela pracę, połączenia i wiedzę; profil oraz ustawienia są na dole. Orb pokazuje stan rozmowy i pracy. Panele po bokach można chować, żeby zostawić więcej miejsca na rozmowę. Zmianę wyglądu pokazuje [zrzut ustawień poniżej](#ustawienia-co-i-gdzie-podłączyć).
+
+![Czat z wycentrowaną ramką i odstępami od krawędzi](docs/assets/czesiek/workspace-chat-spacing.png)
+
+Okno czatu ma własną delikatną ramkę, wycentrowaną szerokość i większy odstęp od dołu oraz prawej krawędzi. Powyższy zrzut pokazuje układ na profilu testowym z demonstracyjną odpowiedzią.
 
 ### Onboarding: od logo do własnego asystenta
 

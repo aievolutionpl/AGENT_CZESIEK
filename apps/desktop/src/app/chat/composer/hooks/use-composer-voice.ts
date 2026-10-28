@@ -453,6 +453,7 @@ export function useComposerVoice({
     startConversation,
     voiceActivityState,
     voiceConversationActive,
+    voiceWorkProgress: realtime ? liveConversation.workProgress : null,
     voiceStatus
   }
 }
