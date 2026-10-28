@@ -10,7 +10,9 @@ export function ChatGptLoginGuide() {
     <aside className="grid gap-2 text-sm leading-6 text-(--ui-text-secondary)" data-testid="chatgpt-login-guide">
       <p className="font-semibold text-(--ui-text-primary)">{copy.title}</p>
       <ol className="list-decimal space-y-1 pl-5">
-        {copy.steps.map(step => <li key={step}>{step}</li>)}
+        {copy.steps.map(step => (
+          <li key={step}>{step}</li>
+        ))}
       </ol>
       <p className="text-xs leading-5 text-(--ui-text-tertiary)">{copy.safety}</p>
       <a
@@ -19,7 +21,8 @@ export function ChatGptLoginGuide() {
         rel="noreferrer"
         target="_blank"
       >
-        {copy.docs}<ExternalLink aria-hidden="true" className="size-3.5" />
+        {copy.docs}
+        <ExternalLink aria-hidden="true" className="size-3.5" />
       </a>
     </aside>
   )

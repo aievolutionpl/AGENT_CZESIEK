@@ -1,9 +1,6 @@
 import type { ProfileScope } from '@/api/client'
 
-import {
-  OpenRouterQuickConnect,
-  type OpenRouterQuickConnectProps
-} from './openrouter-quick-connect'
+import { OpenRouterQuickConnect, type OpenRouterQuickConnectProps } from './openrouter-quick-connect'
 
 export interface OnboardingConnectStepProps {
   deps?: OpenRouterQuickConnectProps['deps']

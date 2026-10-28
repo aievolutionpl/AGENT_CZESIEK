@@ -2,7 +2,12 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { type ChatGptConnectDeps, chatGptConnected, chatGptWorkModel, connectChatGpt } from './chatgpt-connect'
 
-const provider = (models: string[], authenticated = true) => ({ authenticated, models, name: 'ChatGPT', slug: 'openai-codex' })
+const provider = (models: string[], authenticated = true) => ({
+  authenticated,
+  models,
+  name: 'ChatGPT',
+  slug: 'openai-codex'
+})
 
 describe('chatGptWorkModel', () => {
   it('takes the newest generation the subscription lists and skips small and dated variants', () => {
@@ -29,7 +34,16 @@ function deps(statuses: string[], overrides: Partial<ChatGptConnectDeps> = {}): 
     poll: vi.fn(async () => ({ session_id: 's', status: (queue.shift() ?? 'pending') as never })),
     setDefaultModel: vi.fn().mockResolvedValue(undefined),
     sleep: vi.fn().mockResolvedValue(undefined),
-    start: vi.fn().mockResolvedValue({ expires_in: 600, flow: 'device_code', poll_interval: 3, session_id: 's', user_code: 'ABCD-1234', verification_url: 'https://auth.openai.com/codex/device' }),
+    start: vi
+      .fn()
+      .mockResolvedValue({
+        expires_in: 600,
+        flow: 'device_code',
+        poll_interval: 3,
+        session_id: 's',
+        user_code: 'ABCD-1234',
+        verification_url: 'https://auth.openai.com/codex/device'
+      }),
     ...overrides
   }
 }
@@ -48,7 +62,10 @@ describe('connectChatGpt', () => {
   })
 
   it('reports a refusal or expiry without picking a model', async () => {
-    expect(await connectChatGpt(deps(['denied']), undefined, { onCode: vi.fn() })).toMatchObject({ ok: false, reason: 'denied' })
+    expect(await connectChatGpt(deps(['denied']), undefined, { onCode: vi.fn() })).toMatchObject({
+      ok: false,
+      reason: 'denied'
+    })
 
     const d = deps(['expired'])
 
@@ -60,11 +77,18 @@ describe('connectChatGpt', () => {
     const controller = new AbortController()
     const d = deps([], { sleep: vi.fn(async () => controller.abort()) })
 
-    expect(await connectChatGpt(d, undefined, { onCode: vi.fn(), signal: controller.signal })).toMatchObject({ ok: false, reason: 'cancelled' })
+    expect(await connectChatGpt(d, undefined, { onCode: vi.fn(), signal: controller.signal })).toMatchObject({
+      ok: false,
+      reason: 'cancelled'
+    })
     expect(d.cancel).toHaveBeenCalledWith('s')
 
     const broken = deps([], { start: vi.fn().mockRejectedValue(new Error('no network')) })
 
-    expect(await connectChatGpt(broken, undefined, { onCode: vi.fn() })).toMatchObject({ message: 'no network', ok: false, reason: 'error' })
+    expect(await connectChatGpt(broken, undefined, { onCode: vi.fn() })).toMatchObject({
+      message: 'no network',
+      ok: false,
+      reason: 'error'
+    })
   })
 })

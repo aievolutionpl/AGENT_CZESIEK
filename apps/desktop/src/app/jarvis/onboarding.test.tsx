@@ -119,7 +119,10 @@ it('preserves the saved personality when questions are skipped on an existing pr
   fireEvent.click(await screen.findByRole('radio', { name: 'Zrównoważony' }))
   fireEvent.click(screen.getByRole('button', { name: 'Zakończ' }))
   await waitFor(() => expect(saveConfig).toHaveBeenCalledOnce())
-  const saved = saveConfig.mock.calls[0][0] as { custom_prompt: string; display: { czesiek_profile: CzesiekPersonality } }
+  const saved = saveConfig.mock.calls[0][0] as {
+    custom_prompt: string
+    display: { czesiek_profile: CzesiekPersonality }
+  }
   expect(saved.display.czesiek_profile).toEqual(personality)
   expect(saved.custom_prompt).toContain(personalityPrompt(personality))
   expect(saved.custom_prompt).toContain('Zachowaj moje reguły.')
@@ -397,11 +400,14 @@ describe('Agent CzesiekOnboarding', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Zakończ' }))
 
-  await waitFor(() => expect(saveConfig).toHaveBeenCalledTimes(2))
-  const saved = saveConfig.mock.calls[1][0] as { custom_prompt: string; display: { czesiek_profile: CzesiekPersonality } }
-  expect(saved.display.czesiek_profile).toEqual(normalizePersonality(undefined))
-  expect(saved.custom_prompt).toContain(personalityPrompt(saved.display.czesiek_profile))
-  await waitFor(() => expect(readStoredOnboardingState()?.completedSteps).toContain('approvals'))
+    await waitFor(() => expect(saveConfig).toHaveBeenCalledTimes(2))
+    const saved = saveConfig.mock.calls[1][0] as {
+      custom_prompt: string
+      display: { czesiek_profile: CzesiekPersonality }
+    }
+    expect(saved.display.czesiek_profile).toEqual(normalizePersonality(undefined))
+    expect(saved.custom_prompt).toContain(personalityPrompt(saved.display.czesiek_profile))
+    await waitFor(() => expect(readStoredOnboardingState()?.completedSteps).toContain('approvals'))
   })
 
   it('does not complete when the final state cannot be serialized and retry succeeds', async () => {
@@ -1022,12 +1028,14 @@ it('lets all nine steps skip during a hung initial load without claiming complet
     TEST_SCOPE
   )
   renderOnboarding({ loadConfig: () => new Promise(() => {}), onDismiss, saveConfig })
+
   for (const step of JARVIS_ONBOARDING_STEPS) {
     expect(readStoredOnboardingState()?.currentStep).toBe(step)
     fireEvent.click(screen.getByRole('button', { name: 'Pomiń ten krok' }))
     expect(readStoredOnboardingState()?.completedSteps).toEqual([])
     expect(readStoredOnboardingState()?.selections?.model).toBe('keep-model')
   }
+
   expect(onDismiss).toHaveBeenCalledOnce()
   expect(readStoredOnboardingState()?.skipped).toBe(true)
   expect(saveConfig).not.toHaveBeenCalled()

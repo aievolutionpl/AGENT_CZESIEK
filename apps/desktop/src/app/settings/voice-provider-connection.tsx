@@ -109,7 +109,9 @@ export function VoiceProviderConnection({
             <span className="flex items-center gap-2 text-sm font-semibold">
               <AudioLines aria-hidden="true" className="size-4 shrink-0 text-(--ui-accent)" />
               {item.name}
-              {provider === item.id && <Check aria-hidden="true" className="ml-auto size-4 shrink-0 text-(--ui-accent)" />}
+              {provider === item.id && (
+                <Check aria-hidden="true" className="ml-auto size-4 shrink-0 text-(--ui-accent)" />
+              )}
             </span>
             <span className="mt-1 block text-xs text-(--ui-text-secondary)">{pl ? item.pl : item.en}</span>
           </button>
@@ -130,16 +132,25 @@ export function VoiceProviderConnection({
                 ? 'Dodaj klucz dostawcy, aby korzystać z jego głosów.'
                 : 'Add the provider’s key to use its voices.'}
         </p>
-        <Button className="w-fit" onClick={() => {
+        <Button
+          className="w-fit"
+          onClick={() => {
             const url = KEY_PAGES[provider]
 
             if (window.hermesDesktop?.openExternal) {
-              void window.hermesDesktop.openExternal(url).catch(() => setMessage(pl ? 'Nie otwarto przeglądarki. Adres: ' + url : 'Could not open browser. URL: ' + url))
+              void window.hermesDesktop
+                .openExternal(url)
+                .catch(() =>
+                  setMessage(pl ? 'Nie otwarto przeglądarki. Adres: ' + url : 'Could not open browser. URL: ' + url)
+                )
             } else {
               window.open(url, '_blank', 'noopener,noreferrer')
             }
-          }} size="sm" type="button"
-          variant="ghost">
+          }}
+          size="sm"
+          type="button"
+          variant="ghost"
+        >
           <ExternalLink aria-hidden="true" className="size-4" />
           {pl ? 'Uzyskaj klucz u dostawcy' : 'Get a key from the provider'}
         </Button>

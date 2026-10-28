@@ -110,7 +110,9 @@ export function registerPetOverlayIpc({
   })
   // Main renderer → overlay: forward the latest pet state for the overlay to render.
   ipcMain.on('hermes:pet-overlay:state', (event, payload) => {
-    if (event.sender !== getMainWindow()?.webContents) {return}
+    if (event.sender !== getMainWindow()?.webContents) {
+      return
+    }
     setVoiceActive(payload?.orb?.active === true)
     const petOverlayWindow = getPetOverlayWindow()
 

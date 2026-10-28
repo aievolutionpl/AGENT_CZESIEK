@@ -4,7 +4,11 @@ import { test } from 'vitest'
 
 import { compareVersions, evaluateRelease, pickInstallerAsset } from './release-check'
 
-const asset = (name: string) => ({ browser_download_url: `https://github.com/x/y/releases/download/v1/${name}`, name, size: 1 })
+const asset = (name: string) => ({
+  browser_download_url: `https://github.com/x/y/releases/download/v1/${name}`,
+  name,
+  size: 1
+})
 
 const release = (over: Record<string, unknown> = {}) => ({
   assets: [

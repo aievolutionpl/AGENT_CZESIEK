@@ -572,9 +572,11 @@ export function TreeGroup({
                     <PaneTab
                       active={isActive}
                       aria-selected={isActive}
-                      className={paneId === 'sessions' || paneFor(paneId)?.title === 'Bots'
-                        ? 'min-w-20 px-2 text-xs font-semibold tracking-normal'
-                        : undefined}
+                      className={
+                        paneId === 'sessions' || paneFor(paneId)?.title === 'Bots'
+                          ? 'min-w-20 px-2 text-xs font-semibold tracking-normal'
+                          : undefined
+                      }
                       data-tree-tab={paneId}
                       key={paneId}
                       onClose={closeable ? () => closeTab(paneId) : undefined}
@@ -789,7 +791,13 @@ export function TreeGroup({
             // way the zone editor's backdrop does.
             className="absolute inset-x-0 bottom-0 z-50 flex cursor-grab items-center justify-center outline-1 -outline-offset-2 outline-dashed backdrop-blur-[2px]"
             onPointerDown={e =>
-              startPaneDrag(activeId, e, undefined, undefined, localizePaneTitle(active?.title, activeId, t.zones.paneNames))
+              startPaneDrag(
+                activeId,
+                e,
+                undefined,
+                undefined,
+                localizePaneTitle(active?.title, activeId, t.zones.paneNames)
+              )
             }
             style={{
               top: topEdge ? TITLEBAR_HEIGHT : headerVisible ? 28 : 0,

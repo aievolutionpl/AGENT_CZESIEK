@@ -101,6 +101,7 @@ export function OpenRouterQuickConnect({
             : result.keySaved === 'unknown'
               ? copy.saveUnknown
               : copy.failed
+
         const reasons: Partial<Record<typeof result.reason, string>> = { empty: copy.empty, rejected: copy.rejected }
         setError(reasons[result.reason] ?? persistenceMessage)
       }

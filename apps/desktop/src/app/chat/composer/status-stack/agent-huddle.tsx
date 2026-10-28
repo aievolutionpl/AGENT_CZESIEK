@@ -73,9 +73,7 @@ function figuresFor(items: readonly SubagentProgress[]): HuddleFigure[] {
   // Helpers are on stage only WHILE they work: a settled goal is not repeated
   // here (the status rows own that), so the finished scene is just Czesiek and
   // Hermes standing together.
-  const helpers = items
-    .filter(item => item.status === 'running' || item.status === 'queued')
-    .slice(0, MAX_HELPERS)
+  const helpers = items.filter(item => item.status === 'running' || item.status === 'queued').slice(0, MAX_HELPERS)
 
   return [
     { key: 'main', label: 'Czesiek', role: 'main' },

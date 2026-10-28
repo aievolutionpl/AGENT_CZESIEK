@@ -48,10 +48,7 @@ interface EmbeddedHubPickerProps {
  *  discovery IS the point — with a collapse toggle (persisted, like every
  *  other pane) and an update-all action. Memoized: the iframe must not sit in
  *  the parent's keystroke/re-render path. */
-export const EmbeddedHubPicker = memo(function EmbeddedHubPicker({
-  hidden = false,
-  profile
-}: EmbeddedHubPickerProps) {
+export const EmbeddedHubPicker = memo(function EmbeddedHubPicker({ hidden = false, profile }: EmbeddedHubPickerProps) {
   const { t } = useI18n()
   const h = t.skills.hub
   // Subscribe to the ONE flag this header renders, not the whole action map —

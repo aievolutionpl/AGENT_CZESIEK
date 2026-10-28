@@ -49,7 +49,14 @@ const TABS = ['connections', 'keys', 'api'] as const
 type ConnectionsTab = (typeof TABS)[number]
 
 const CARD = 'jarvis-panel jarvis-rise rounded-3xl p-4'
-const KEY_LABELS: Record<string, string> = { openrouter: 'OpenRouter', openai: 'OpenAI', anthropic: 'Claude', gemini: 'Gemini Live', elevenlabs: 'ElevenLabs', tavily: 'Tavily' }
+const KEY_LABELS: Record<string, string> = {
+  openrouter: 'OpenRouter',
+  openai: 'OpenAI',
+  anthropic: 'Claude',
+  gemini: 'Gemini Live',
+  elevenlabs: 'ElevenLabs',
+  tavily: 'Tavily'
+}
 
 function ExternalAnchor({ href, label }: { href: string; label: string }) {
   return (
@@ -194,7 +201,6 @@ function ConnectionsGrid({ query }: { query: string }) {
   const needle = query.trim().toLocaleLowerCase()
 
   const visible = JARVIS_CONNECTIONS.filter(connection => {
-
     const entry = copy.entries[connection.id]
 
     return !needle || `${entry.name} ${entry.description}`.toLocaleLowerCase().includes(needle)
@@ -249,7 +255,9 @@ function ApiKeysSection() {
         <summary className="cursor-pointer text-sm font-semibold text-(--ui-text-primary)">ChatGPT / Codex</summary>
         <div className="mt-3 grid gap-3">
           <ChatGptLoginGuide />
-          <Button onClick={() => navigate(JARVIS_KEY_ROUTES.model)} type="button" variant="secondary">{t.jarvisConnections.openSettings}</Button>
+          <Button onClick={() => navigate(JARVIS_KEY_ROUTES.model)} type="button" variant="secondary">
+            {t.jarvisConnections.openSettings}
+          </Button>
         </div>
       </details>
       {(['model', 'tool'] as const).map(kind => (
@@ -271,11 +279,15 @@ function ApiKeysSection() {
           <ul className="grid gap-2 lg:grid-cols-2">
             {JARVIS_API_KEYS.filter(key => key.kind === kind).map(key => (
               <li className={cn(CARD, 'flex flex-col gap-1 p-3')} data-api-key={key.id} key={key.id}>
-              <div className="flex items-center gap-2">
-                {key.id === 'tavily' ? <Search aria-hidden="true" className="size-5 text-(--ui-accent)" /> : <ModelBrandIcon hints={[key.id]} model={key.id} />}
-                <span className="text-sm font-semibold text-(--ui-text-primary)">{KEY_LABELS[key.id]}</span>
-              </div>
-              <code className="text-xs text-(--ui-text-tertiary)">{key.env}</code>
+                <div className="flex items-center gap-2">
+                  {key.id === 'tavily' ? (
+                    <Search aria-hidden="true" className="size-5 text-(--ui-accent)" />
+                  ) : (
+                    <ModelBrandIcon hints={[key.id]} model={key.id} />
+                  )}
+                  <span className="text-sm font-semibold text-(--ui-text-primary)">{KEY_LABELS[key.id]}</span>
+                </div>
+                <code className="text-xs text-(--ui-text-tertiary)">{key.env}</code>
                 <span className="text-sm text-(--ui-text-secondary)">{copy.purposes[key.id]}</span>
                 <ExternalAnchor href={key.url} label={copy.getKey} />
               </li>

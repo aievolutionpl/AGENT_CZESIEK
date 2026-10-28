@@ -35,6 +35,7 @@ test('fresh packaged bootstrap downloads the pinned installer from the product r
   const repository = new URL(metadata.repository.url.replace(/^git\+/, '').replace(/\.git$/, '')).pathname
   let requested: URL | undefined
   const payload = 'installer fixture'
+
   const get = (url, _options, callback) => {
     requested = new URL(url)
     const request = new EventEmitter()
@@ -54,6 +55,7 @@ test('fresh packaged bootstrap downloads the pinned installer from the product r
       emit: () => {},
       _download: (ref, destination, signal) => downloadInstallScript(ref, destination, signal, get)
     })
+
     assert.equal(result.source, 'download')
     assert.equal(requested?.host, 'raw.githubusercontent.com')
     assert.equal(requested?.pathname, `${repository}/${commit}/scripts/${SCRIPT_NAME}`)
@@ -104,7 +106,9 @@ test('download deadline and Cancel both abort a stalled HTTPS request', async ()
 
       const pending = downloadInstallScript('main', path.join(home, SCRIPT_NAME), controller.signal, get, 25)
 
-      if (cancel) {controller.abort()}
+      if (cancel) {
+        controller.abort()
+      }
 
       await assert.rejects(pending, cancel ? /cancelled/ : /timed out/)
       assert.equal(requestSignal?.aborted, true)
@@ -156,7 +160,9 @@ test.skipIf(process.platform === 'win32')('Cancel stops a running manifest and n
       onEvent: ev => {
         events.push(ev)
 
-        if (ev.stage === '__manifest__' && ev.line === 'manifest-started') {controller.abort()}
+        if (ev.stage === '__manifest__' && ev.line === 'manifest-started') {
+          controller.abort()
+        }
       },
       writeMarker: () => {
         wroteMarker = true
@@ -165,7 +171,10 @@ test.skipIf(process.platform === 'win32')('Cancel stops a running manifest and n
 
     assert.deepEqual(result, { ok: false, cancelled: true })
     assert.equal(wroteMarker, false)
-    assert.equal(events.some(ev => ev.type === 'complete'), false)
+    assert.equal(
+      events.some(ev => ev.type === 'complete'),
+      false
+    )
   } finally {
     fs.rmSync(home, { recursive: true, force: true })
   }
@@ -395,19 +404,25 @@ test('resolveInstallScript rethrows when the 404 fallback is unavailable', async
   }
 })
 
-
 test('packaged first launch uses its bundled installer without any network request', async () => {
   const home = mkTmpHome()
   const resourcesPath = path.join(home, 'resources')
   fs.mkdirSync(path.join(resourcesPath, 'bootstrap'), { recursive: true })
   const bundled = path.join(resourcesPath, 'bootstrap', SCRIPT_NAME)
   fs.writeFileSync(bundled, 'bundled installer fixture')
+
   try {
     const result = await resolveInstallScript({
-      installStamp: { commit: 'b'.repeat(40) }, sourceRepoRoot: null,
-      hermesHome: home, resourcesPath, emit: () => {},
-      _download: async () => { throw new Error('HTTP 429: network must not be used') }
+      installStamp: { commit: 'b'.repeat(40) },
+      sourceRepoRoot: null,
+      hermesHome: home,
+      resourcesPath,
+      emit: () => {},
+      _download: async () => {
+        throw new Error('HTTP 429: network must not be used')
+      }
     })
+
     assert.equal(result.path, bundled)
     assert.equal(result.source, 'bundled')
   } finally {

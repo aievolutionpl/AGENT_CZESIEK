@@ -104,7 +104,9 @@ export function OrbOverlay({ state }: { state: DesktopOrbState }) {
     }
 
     const move = (event: MouseEvent) => {
-      if (drag.current) {return}
+      if (drag.current) {
+        return
+      }
       const target = document.elementFromPoint(event.clientX, event.clientY)
       const control = target?.closest('[data-orb-controls]')
       const rect = orbRef.current?.getBoundingClientRect()
@@ -134,54 +136,60 @@ export function OrbOverlay({ state }: { state: DesktopOrbState }) {
       style={{ '--orb-scale': scale } as React.CSSProperties}
     >
       <div className="desktop-orb__stage">
-      <div
-        aria-label={copy.drag}
-        className="desktop-orb__sphere"
-        onDoubleClick={() => api?.control({ type: 'open-app' })}
-        onLostPointerCapture={() => {
-          drag.current = null
-        }}
-        onPointerDown={event => {
-          if (event.button !== 0) {return}
-          const origin = { x: window.screenX, y: window.screenY }
-          drag.current = { origin, start: { x: event.screenX, y: event.screenY }, ...origin }
-          event.currentTarget.setPointerCapture(event.pointerId)
-          api?.setIgnoreMouse(false)
-        }}
-        onPointerMove={event => {
-          if (!drag.current) {return}
-          const next = moveOrb(drag.current.origin, drag.current.start, { x: event.screenX, y: event.screenY })
-          Object.assign(drag.current, next)
-          api?.setBounds({ ...next, width: window.innerWidth, height: window.innerHeight })
-        }}
-        onPointerUp={event => {
-          if (!drag.current) {return}
-          // Let go near a screen edge and the orb settles against it.
-          const dropped = clampToArea({ ...currentBounds(), x: drag.current.x, y: drag.current.y }, workArea())
-          const { bounds, snapped } = snapToEdges(dropped, workArea())
+        <div
+          aria-label={copy.drag}
+          className="desktop-orb__sphere"
+          onDoubleClick={() => api?.control({ type: 'open-app' })}
+          onLostPointerCapture={() => {
+            drag.current = null
+          }}
+          onPointerDown={event => {
+            if (event.button !== 0) {
+              return
+            }
+            const origin = { x: window.screenX, y: window.screenY }
+            drag.current = { origin, start: { x: event.screenX, y: event.screenY }, ...origin }
+            event.currentTarget.setPointerCapture(event.pointerId)
+            api?.setIgnoreMouse(false)
+          }}
+          onPointerMove={event => {
+            if (!drag.current) {
+              return
+            }
+            const next = moveOrb(drag.current.origin, drag.current.start, { x: event.screenX, y: event.screenY })
+            Object.assign(drag.current, next)
+            api?.setBounds({ ...next, width: window.innerWidth, height: window.innerHeight })
+          }}
+          onPointerUp={event => {
+            if (!drag.current) {
+              return
+            }
+            // Let go near a screen edge and the orb settles against it.
+            const dropped = clampToArea({ ...currentBounds(), x: drag.current.x, y: drag.current.y }, workArea())
+            const { bounds, snapped } = snapToEdges(dropped, workArea())
 
-          if (snapped || bounds.x !== drag.current.x || bounds.y !== drag.current.y) {
-            api?.setBounds(bounds)
-          }
+            if (snapped || bounds.x !== drag.current.x || bounds.y !== drag.current.y) {
+              api?.setBounds(bounds)
+            }
 
-          if (snapped) {
-            playUiSound('snap')
-          }
+            if (snapped) {
+              playUiSound('snap')
+            }
 
-          api?.control({ type: 'bounds', bounds })
-          drag.current = null
-          event.currentTarget.releasePointerCapture(event.pointerId)
-        }}
-        onWheel={event => changeScale(scaleRef.current - Math.sign(event.deltaY) * ORB_SCALE_STEP / 2)}
-        ref={orbRef}
-      >
-        <JarvisCore
-          live
-          taskPhase={state.task}
-          variant="hero"
-          voice={state.voice === 'idle' && state.active ? 'listening' : state.voice}
-        />
-      </div>
+            api?.control({ type: 'bounds', bounds })
+            drag.current = null
+            event.currentTarget.releasePointerCapture(event.pointerId)
+          }}
+          onWheel={event => changeScale(scaleRef.current - (Math.sign(event.deltaY) * ORB_SCALE_STEP) / 2)}
+          ref={orbRef}
+        >
+          <JarvisCore
+            live
+            taskPhase={state.task}
+            variant="hero"
+            voice={state.voice === 'idle' && state.active ? 'listening' : state.voice}
+          />
+        </div>
         <button
           aria-label={copy.resize}
           className="desktop-orb__grip"
@@ -192,7 +200,9 @@ export function OrbOverlay({ state }: { state: DesktopOrbState }) {
           onPointerDown={event => {
             const rect = orbRef.current?.getBoundingClientRect()
 
-            if (event.button !== 0 || !rect) {return}
+            if (event.button !== 0 || !rect) {
+              return
+            }
             const centre = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }
 
             grip.current = {
@@ -205,7 +215,9 @@ export function OrbOverlay({ state }: { state: DesktopOrbState }) {
           onPointerMove={event => {
             const g = grip.current
 
-            if (!g) {return}
+            if (!g) {
+              return
+            }
             // The window's centre stays put while resizing, so the sphere's centre in the
             // window shifts only by the growth; measure from the pointer's screen position.
             const distance = Math.hypot(event.clientX - g.centre.x, event.clientY - g.centre.y)

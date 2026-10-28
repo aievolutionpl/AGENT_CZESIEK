@@ -21,13 +21,19 @@ export function CollaboratorPicker() {
 
     void detect()
       .then(result => {
-        if (active) {setItems(result)}
+        if (active) {
+          setItems(result)
+        }
       })
       .catch(err => {
-        if (active) {setError(String(err.message || err))}
+        if (active) {
+          setError(String(err.message || err))
+        }
       })
       .finally(() => {
-        if (active) {setBusy(false)}
+        if (active) {
+          setBusy(false)
+        }
       })
 
     return () => {

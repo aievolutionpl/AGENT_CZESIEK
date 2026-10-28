@@ -38,7 +38,6 @@ function reducedMotion(): boolean {
 function useFoldPresence(open: boolean): boolean {
   const [lingering, setLingering] = useState(open)
 
-   
   useEffect(() => {
     if (open) {
       setLingering(true)

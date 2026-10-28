@@ -75,8 +75,11 @@ describe('voice provider connection', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Uzyskaj klucz u dostawcy' }))
       expect(openExternal).toHaveBeenCalledWith('https://elevenlabs.io/app/settings/api-keys')
     } finally {
-      if (descriptor) {Object.defineProperty(window, 'hermesDesktop', descriptor)}
-      else {Reflect.deleteProperty(window, 'hermesDesktop')}
+      if (descriptor) {
+        Object.defineProperty(window, 'hermesDesktop', descriptor)
+      } else {
+        Reflect.deleteProperty(window, 'hermesDesktop')
+      }
     }
   })
 })

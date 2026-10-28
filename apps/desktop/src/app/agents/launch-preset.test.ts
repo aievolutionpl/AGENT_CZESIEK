@@ -5,7 +5,14 @@ import type { PresetOwner } from './preset-store'
 import type { SubagentPreset } from './presets'
 
 const owner: PresetOwner = { connectionId: 'remote-a', profile: 'default' }
-const preset: SubagentPreset = { id: 'marketing', name: 'Marketing', character: 'Draft carefully.', skills: [{ name: 'brand-post-system' }], created_at: 'a', updated_at: 'a' }
+const preset: SubagentPreset = {
+  id: 'marketing',
+  name: 'Marketing',
+  character: 'Draft carefully.',
+  skills: [{ name: 'brand-post-system' }],
+  created_at: 'a',
+  updated_at: 'a'
+}
 
 beforeEach(() => {
   // Consume any preparation left by a failed assertion in this module.
@@ -14,7 +21,9 @@ beforeEach(() => {
 
 describe('scoped preset task preparation', () => {
   it('prepares explicit parent text but does not submit it', () => {
-    const prepared = preparePresetTask(owner, preset, 'Write a launch post', [{ name: 'brand-post-system', state: 'enabled' }])
+    const prepared = preparePresetTask(owner, preset, 'Write a launch post', [
+      { name: 'brand-post-system', state: 'enabled' }
+    ])
     expect(prepared.text).toContain('Draft carefully.')
     expect(prepared.text).toContain('Write a launch post')
     expect(takePreparedPresetTask(owner)).toEqual(prepared)

@@ -13,7 +13,10 @@ import { capabilityScoped, hermesApi, type ProfileScope, profileScoped } from '.
 
 export function createSkill(draft: { name: string; content: string; category: string }, profile?: ProfileScope) {
   return window.hermesDesktop.api<{ success: boolean; message: string }>({
-    ...capabilityScoped(profile), path: '/api/skills', method: 'POST', body: draft
+    ...capabilityScoped(profile),
+    path: '/api/skills',
+    method: 'POST',
+    body: draft
   })
 }
 

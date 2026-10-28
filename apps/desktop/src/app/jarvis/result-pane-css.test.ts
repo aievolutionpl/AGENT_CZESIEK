@@ -146,9 +146,7 @@ const contrast = (a: Rgb, b: Rgb): number => {
  *  `--theme-background-seed`/`--theme-foreground` from the active skin, so the
  *  shipped default skin supplies those and the sheet supplies the per-mode mix. */
 const fillInputs = (mode: 'dark' | 'light') => {
-  const chromeTints = [...stylesheet.matchAll(/--theme-neutral-chrome:\s*(#[0-9a-fA-F]{3,8})/g)].map(
-    match => match[1]
-  )
+  const chromeTints = [...stylesheet.matchAll(/--theme-neutral-chrome:\s*(#[0-9a-fA-F]{3,8})/g)].map(match => match[1])
 
   const mixKnobs = [...stylesheet.matchAll(/--theme-mix-chrome:\s*([\d.]+)%/g)].map(match => match[1])
 

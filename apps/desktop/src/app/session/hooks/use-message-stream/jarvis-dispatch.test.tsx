@@ -44,10 +44,10 @@ describe('Agent Czesiek projection from the production message stream', () => {
         rendered: 'rendered fallback',
         status: 'error',
         task_id: 'task-1',
-        text: 'text fallback',
+        text: 'text fallback'
       },
       session_id: SID,
-      type: 'message.complete',
+      type: 'message.complete'
     })
 
     expect($jarvisUi.get().task).toEqual({ id: 'task-1', phase: 'failed' })
@@ -87,7 +87,7 @@ describe('Agent Czesiek projection from the production message stream', () => {
       'voice.listening',
       'voice.stopped',
       'voice.stopped',
-      'voice.stopped',
+      'voice.stopped'
     ])
   })
 

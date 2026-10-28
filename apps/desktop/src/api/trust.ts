@@ -21,7 +21,12 @@ export interface TrustState {
 }
 
 const call = (profile: ProfileScope | undefined, path: string, body?: unknown) =>
-  window.hermesDesktop.api<TrustState>({ ...capabilityScoped(profile), body, method: body === undefined ? undefined : 'POST', path })
+  window.hermesDesktop.api<TrustState>({
+    ...capabilityScoped(profile),
+    body,
+    method: body === undefined ? undefined : 'POST',
+    path
+  })
 
 export const getTrust = (profile?: ProfileScope) => call(profile, '/api/trust')
 

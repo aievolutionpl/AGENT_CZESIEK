@@ -14,7 +14,9 @@ import {
   shouldAutoCreateDesktopShortcut
 } from './desktop-shortcut'
 
-function recordingIo(present: string[] = ['/home/ada/Pulpit', '/home/ada/Desktop', 'C:\\Users\\Ada\\Desktop', '/read-only/Desktop']) {
+function recordingIo(
+  present: string[] = ['/home/ada/Pulpit', '/home/ada/Desktop', 'C:\\Users\\Ada\\Desktop', '/read-only/Desktop']
+) {
   const files = new Map<string, string>()
   const chmods = new Map<string, number>()
   const links = new Map<string, { cwd: string; description: string; icon?: string; target: string }>()

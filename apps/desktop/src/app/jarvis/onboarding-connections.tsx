@@ -54,7 +54,14 @@ export interface ConnectionsStepProps {
   selected: readonly JarvisConnectionId[]
 }
 
-export function ConnectionsStep({ catalog, copy, onSelectRole, onToggle, role = null, selected }: ConnectionsStepProps) {
+export function ConnectionsStep({
+  catalog,
+  copy,
+  onSelectRole,
+  onToggle,
+  role = null,
+  selected
+}: ConnectionsStepProps) {
   const { locale } = useI18n()
   const roleCopy = locale === 'pl' ? ROLE_COPY.pl : ROLE_COPY.en
 
@@ -104,7 +111,9 @@ export function ConnectionsStep({ catalog, copy, onSelectRole, onToggle, role = 
               aria-checked={checked}
               className={cn(
                 'flex min-h-20 items-start gap-3 rounded-md border p-3 text-left transition focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-[#00B7FF]/50',
-                checked ? 'border-[#00B7FF] bg-[#00B7FF]/12' : 'border-(--ui-stroke-tertiary) bg-(--ui-bg-tertiary) hover:border-(--ui-stroke-secondary)'
+                checked
+                  ? 'border-[#00B7FF] bg-[#00B7FF]/12'
+                  : 'border-(--ui-stroke-tertiary) bg-(--ui-bg-tertiary) hover:border-(--ui-stroke-secondary)'
               )}
               data-connection={connection.id}
               key={connection.id}

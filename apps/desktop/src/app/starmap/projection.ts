@@ -1,10 +1,4 @@
-import type {
-  MemoryCamera,
-  MemoryPoint3D,
-  MemoryProjection,
-  MemoryProjectionSize,
-  ProjectedMemoryNode
-} from './types'
+import type { MemoryCamera, MemoryPoint3D, MemoryProjection, MemoryProjectionSize, ProjectedMemoryNode } from './types'
 
 const finite = (value: number, fallback: number): number => (Number.isFinite(value) ? value : fallback)
 

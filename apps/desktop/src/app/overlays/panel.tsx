@@ -298,9 +298,7 @@ export function PanelEmpty({ action, description, icon = 'inbox', title }: Panel
       <div className="flex flex-col items-center gap-2">
         <Codicon className="text-muted-foreground" name={icon} size="1.25rem" />
         {title ? <p className="text-sm font-medium text-foreground/90">{title}</p> : null}
-        {description ? (
-          <p className="max-w-sm text-xs leading-relaxed text-muted-foreground">{description}</p>
-        ) : null}
+        {description ? <p className="max-w-sm text-xs leading-relaxed text-muted-foreground">{description}</p> : null}
         {action ? <div className="mt-2">{action}</div> : null}
       </div>
     </div>

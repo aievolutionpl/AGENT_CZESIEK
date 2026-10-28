@@ -11,7 +11,12 @@ import { Loader2 } from '@/lib/icons'
 import { cn } from '@/lib/utils'
 import type { ModelOptionsResponse } from '@/types/hermes'
 
-import { CHATGPT_PROVIDER_SLUG, type ChatGptConnectDeps, type ChatGptConnectResult, connectChatGpt } from './chatgpt-connect'
+import {
+  CHATGPT_PROVIDER_SLUG,
+  type ChatGptConnectDeps,
+  type ChatGptConnectResult,
+  connectChatGpt
+} from './chatgpt-connect'
 
 const COPY = {
   en: {
@@ -52,7 +57,14 @@ export interface ChatGptQuickConnectProps {
 }
 
 /** "Sign in with ChatGPT": the subscription as Czesiek's brain, through the engine's device-code login. */
-export function ChatGptQuickConnect({ className, loadOptions, onConnected, scope, setDefault = false, tone = 'app' }: ChatGptQuickConnectProps) {
+export function ChatGptQuickConnect({
+  className,
+  loadOptions,
+  onConnected,
+  scope,
+  setDefault = false,
+  tone = 'app'
+}: ChatGptQuickConnectProps) {
   const { locale } = useI18n()
   const copy = locale === 'pl' ? COPY.pl : COPY.en
   const [phase, setPhase] = useState<'idle' | 'starting' | 'waiting'>('idle')
@@ -61,7 +73,6 @@ export function ChatGptQuickConnect({ className, loadOptions, onConnected, scope
   const controller = useRef<AbortController | null>(null)
   const dark = tone === 'dark'
 
-   
   useEffect(() => () => controller.current?.abort(), [])
 
   const begin = async () => {
@@ -101,7 +112,13 @@ export function ChatGptQuickConnect({ className, loadOptions, onConnected, scope
     if (result.ok) {
       onConnected(result)
     } else {
-      setError(result.reason === 'denied' ? copy.denied : result.reason === 'expired' ? copy.expired : result.message || copy.failed)
+      setError(
+        result.reason === 'denied'
+          ? copy.denied
+          : result.reason === 'expired'
+            ? copy.expired
+            : result.message || copy.failed
+      )
     }
   }
 
@@ -130,8 +147,14 @@ export function ChatGptQuickConnect({ className, loadOptions, onConnected, scope
           {code ? (
             <div className={cn('jarvis-well grid gap-1 px-3 py-2', dark && 'bg-black/30')}>
               <span className="text-xs opacity-70">{copy.code}</span>
-              <span className="select-all font-mono text-xl font-semibold tracking-[0.2em]" data-testid="chatgpt-code">{code.userCode}</span>
-              <button className="w-fit text-xs text-(--ui-accent) underline-offset-4 hover:underline" onClick={() => openExternalLink(code.url)} type="button">
+              <span className="select-all font-mono text-xl font-semibold tracking-[0.2em]" data-testid="chatgpt-code">
+                {code.userCode}
+              </span>
+              <button
+                className="w-fit text-xs text-(--ui-accent) underline-offset-4 hover:underline"
+                onClick={() => openExternalLink(code.url)}
+                type="button"
+              >
                 {copy.open}
               </button>
             </div>

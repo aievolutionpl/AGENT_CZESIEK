@@ -175,6 +175,7 @@ export function MessagingView({ setStatusbarItemGroup: _setStatusbarItemGroup, .
       ...ordered.filter(platform => !FEATURED_PLATFORM_IDS.has(platform.id))
     ].map(platform => platform.id)
   }, [platforms])
+
   const [selectedId, setSelectedId] = useRouteEnumParam('platform', platformIds, platformIds[0] ?? '')
 
   const restartGatewayNow = useCallback(async () => {
@@ -341,11 +342,13 @@ export function MessagingView({ setStatusbarItemGroup: _setStatusbarItemGroup, .
 
     const showAdvanced = showAllPlatforms || (Boolean(selectedId) && !FEATURED_PLATFORM_IDS.has(selectedId))
 
-    return platforms.filter(platform =>
-      (showAdvanced || FEATURED_PLATFORM_IDS.has(platform.id)) &&
-      (!q || [platform.id, platform.name, platform.description, platform.state]
-        .filter(Boolean)
-        .some(value => String(value).toLowerCase().includes(q)))
+    return platforms.filter(
+      platform =>
+        (showAdvanced || FEATURED_PLATFORM_IDS.has(platform.id)) &&
+        (!q ||
+          [platform.id, platform.name, platform.description, platform.state]
+            .filter(Boolean)
+            .some(value => String(value).toLowerCase().includes(q)))
     )
   }, [platforms, query, selectedId, showAllPlatforms])
 
@@ -357,7 +360,9 @@ export function MessagingView({ setStatusbarItemGroup: _setStatusbarItemGroup, .
     try {
       await updateMessagingPlatform(platform.id, { enabled }, scopeProfile)
 
-      if (generation !== scopeGenerationRef.current || owner !== scopeOwnerRef.current) {return}
+      if (generation !== scopeGenerationRef.current || owner !== scopeOwnerRef.current) {
+        return
+      }
       setPlatforms(
         current =>
           current?.map(row =>
@@ -397,7 +402,9 @@ export function MessagingView({ setStatusbarItemGroup: _setStatusbarItemGroup, .
     try {
       await updateMessagingPlatform(platform.id, { env }, scopeProfile)
 
-      if (generation !== scopeGenerationRef.current || owner !== scopeOwnerRef.current) {return}
+      if (generation !== scopeGenerationRef.current || owner !== scopeOwnerRef.current) {
+        return
+      }
       setEdits(current => ({ ...current, [platform.id]: {} }))
       await refreshPlatforms()
       setRestartNeeded(true)
@@ -421,7 +428,9 @@ export function MessagingView({ setStatusbarItemGroup: _setStatusbarItemGroup, .
     try {
       await updateMessagingPlatform(platform.id, { clear_env: [key] }, scopeProfile)
 
-      if (generation !== scopeGenerationRef.current || owner !== scopeOwnerRef.current) {return}
+      if (generation !== scopeGenerationRef.current || owner !== scopeOwnerRef.current) {
+        return
+      }
       setEdits(current => ({
         ...current,
         [platform.id]: {
@@ -574,6 +583,7 @@ export function MessagingView({ setStatusbarItemGroup: _setStatusbarItemGroup, .
                     className="mt-3 w-full justify-start text-xs"
                     onClick={() => {
                       setShowAllPlatforms(value => !value)
+
                       if (showAllPlatforms && !FEATURED_PLATFORM_IDS.has(selectedId)) {
                         setSelectedId(platformIds[0] ?? '')
                       }
@@ -583,8 +593,12 @@ export function MessagingView({ setStatusbarItemGroup: _setStatusbarItemGroup, .
                     variant="ghost"
                   >
                     {showAllPlatforms
-                      ? (locale === 'pl' ? 'Pokaż najważniejsze' : 'Show essential channels')
-                      : (locale === 'pl' ? 'Pozostałe platformy' : 'Other platforms')}
+                      ? locale === 'pl'
+                        ? 'Pokaż najważniejsze'
+                        : 'Show essential channels'
+                      : locale === 'pl'
+                        ? 'Pozostałe platformy'
+                        : 'Other platforms'}
                   </Button>
                 ) : null}
               </ListColumn>
@@ -688,7 +702,9 @@ function PlatformRow({
     >
       <PlatformAvatar platformId={platform.id} platformName={platform.name} />
       <span className="flex min-w-0 flex-1 items-center justify-between gap-2">
-        <span className="truncate text-sm font-medium">{platform.id === 'bluebubbles' ? 'iMessage (BlueBubbles)' : platform.name}</span>
+        <span className="truncate text-sm font-medium">
+          {platform.id === 'bluebubbles' ? 'iMessage (BlueBubbles)' : platform.name}
+        </span>
         <span className="flex shrink-0 items-center gap-1.5">
           {/* Someone is waiting to be let in — the only way this page tells
               you so before you open the platform. */}

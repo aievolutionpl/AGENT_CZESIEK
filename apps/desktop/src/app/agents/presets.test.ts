@@ -18,10 +18,15 @@ describe('subagent preset catalog', () => {
   })
 
   it('maps availability from the selected backend, including missing skills', () => {
-    expect(skillAvailability([{ name: 'installed' }, { name: 'disabled' }, { name: 'remote-only' }], [
-      { name: 'installed', enabled: true },
-      { name: 'disabled', enabled: false }
-    ])).toEqual([
+    expect(
+      skillAvailability(
+        [{ name: 'installed' }, { name: 'disabled' }, { name: 'remote-only' }],
+        [
+          { name: 'installed', enabled: true },
+          { name: 'disabled', enabled: false }
+        ]
+      )
+    ).toEqual([
       { name: 'installed', state: 'enabled' },
       { name: 'disabled', state: 'disabled' },
       { name: 'remote-only', state: 'missing' }
@@ -29,6 +34,9 @@ describe('subagent preset catalog', () => {
   })
 
   it('rejects malformed metadata without inventing a persisted preset', () => {
-    expect(normalizePresetMetadata({ schema_version: 2, presets: [{ id: 'bad' }] })).toEqual({ schema_version: 1, presets: [] })
+    expect(normalizePresetMetadata({ schema_version: 2, presets: [{ id: 'bad' }] })).toEqual({
+      schema_version: 1,
+      presets: []
+    })
   })
 })

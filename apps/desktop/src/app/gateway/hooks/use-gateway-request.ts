@@ -46,92 +46,96 @@ export function useGatewayRequest() {
     []
   )
 
-  const ensureGatewayOpen = useCallback(async (ownerGateway: HermesGateway, ownerConnection: { connectionId?: string; profile: string }) => {
-    const existing = ownerGateway
+  const ensureGatewayOpen = useCallback(
+    async (ownerGateway: HermesGateway, ownerConnection: { connectionId?: string; profile: string }) => {
+      const existing = ownerGateway
 
-    if (!existing) {
-      return null
-    }
-
-    if (gatewayStateRef.current === 'open' && existing.connectionState === 'open') {
-      return existing
-    }
-
-    if (reconnectingRef.current) {
-      return reconnectingRef.current
-    }
-
-    reconnectingRef.current = (async () => {
-      const desktop = window.hermesDesktop
-
-      if (!desktop) {
+      if (!existing) {
         return null
       }
 
-      reauthErrorRef.current = null
-
-      try {
-        // Reconnect to whichever profile the gateway is currently routed to (not
-        // always the primary), so a sleep/wake reconnect keeps the user on the
-        // profile they were chatting in. Both awaits below are IPC round-trips
-        // into the main process with no timeout of their own (#93454) — a
-        // wedged main-process round-trip otherwise hangs this await forever,
-        // latching reconnectingRef.current so every later requestGateway() call
-        // returns the same never-settling promise. Bound the same way
-        // use-gateway-boot.ts bounds the primary boot/soft-switch equivalents.
-        const profile = ownerConnection.profile
-        const connectionId = ownerConnection.connectionId
-
-        const conn = await withTimeout(
-          connectionId && desktop.getConnectionFor
-            ? desktop.getConnectionFor({ connectionId, profile })
-            : desktop.getConnection(profile),
-          RECONNECT_ATTEMPT_TIMEOUT_MS,
-          'Timed out reconnecting to Hermes backend'
-        )
-
-        if (gatewayRef.current === existing) {
-          connectionRef.current = conn
-          setConnection(conn)
-        }
-
-        // Re-mint the WS URL before reconnecting. OAuth tickets are single-use
-        // and short-lived, so the cached conn.wsUrl ticket is dead here;
-        // resolveGatewayWsUrl() never connects with a stale ticket. An explicit
-        // auth rejection becomes a reauth error; transport failures remain
-        // retryable. Stash only the former so requestGateway can show the
-        // actionable "sign in again" message.
-        const wsDeps = connectionId && desktop.getGatewayWsUrlFor
-          ? { getGatewayWsUrl: () => desktop.getGatewayWsUrlFor!({ connectionId, profile }) }
-          : desktop
-
-        const wsUrl = await withTimeout(
-          resolveGatewayWsUrl(wsDeps, conn),
-          RECONNECT_ATTEMPT_TIMEOUT_MS,
-          'Timed out re-minting the gateway WebSocket URL'
-        )
-
-        await existing.connect(wsUrl)
-
+      if (gatewayStateRef.current === 'open' && existing.connectionState === 'open') {
         return existing
-      } catch (error) {
-        if (isGatewayReauthRequired(error)) {
-          reauthErrorRef.current = error
-        }
-
-        if (gatewayRef.current === existing) {
-          connectionRef.current = null
-          setConnection(null)
-        }
-
-        return null
-      } finally {
-        reconnectingRef.current = null
       }
-    })()
 
-    return reconnectingRef.current
-  }, [])
+      if (reconnectingRef.current) {
+        return reconnectingRef.current
+      }
+
+      reconnectingRef.current = (async () => {
+        const desktop = window.hermesDesktop
+
+        if (!desktop) {
+          return null
+        }
+
+        reauthErrorRef.current = null
+
+        try {
+          // Reconnect to whichever profile the gateway is currently routed to (not
+          // always the primary), so a sleep/wake reconnect keeps the user on the
+          // profile they were chatting in. Both awaits below are IPC round-trips
+          // into the main process with no timeout of their own (#93454) — a
+          // wedged main-process round-trip otherwise hangs this await forever,
+          // latching reconnectingRef.current so every later requestGateway() call
+          // returns the same never-settling promise. Bound the same way
+          // use-gateway-boot.ts bounds the primary boot/soft-switch equivalents.
+          const profile = ownerConnection.profile
+          const connectionId = ownerConnection.connectionId
+
+          const conn = await withTimeout(
+            connectionId && desktop.getConnectionFor
+              ? desktop.getConnectionFor({ connectionId, profile })
+              : desktop.getConnection(profile),
+            RECONNECT_ATTEMPT_TIMEOUT_MS,
+            'Timed out reconnecting to Hermes backend'
+          )
+
+          if (gatewayRef.current === existing) {
+            connectionRef.current = conn
+            setConnection(conn)
+          }
+
+          // Re-mint the WS URL before reconnecting. OAuth tickets are single-use
+          // and short-lived, so the cached conn.wsUrl ticket is dead here;
+          // resolveGatewayWsUrl() never connects with a stale ticket. An explicit
+          // auth rejection becomes a reauth error; transport failures remain
+          // retryable. Stash only the former so requestGateway can show the
+          // actionable "sign in again" message.
+          const wsDeps =
+            connectionId && desktop.getGatewayWsUrlFor
+              ? { getGatewayWsUrl: () => desktop.getGatewayWsUrlFor!({ connectionId, profile }) }
+              : desktop
+
+          const wsUrl = await withTimeout(
+            resolveGatewayWsUrl(wsDeps, conn),
+            RECONNECT_ATTEMPT_TIMEOUT_MS,
+            'Timed out re-minting the gateway WebSocket URL'
+          )
+
+          await existing.connect(wsUrl)
+
+          return existing
+        } catch (error) {
+          if (isGatewayReauthRequired(error)) {
+            reauthErrorRef.current = error
+          }
+
+          if (gatewayRef.current === existing) {
+            connectionRef.current = null
+            setConnection(null)
+          }
+
+          return null
+        } finally {
+          reconnectingRef.current = null
+        }
+      })()
+
+      return reconnectingRef.current
+    },
+    []
+  )
 
   const requestGateway = useCallback(
     async <T>(method: string, params: Record<string, unknown> = {}, timeoutMs?: number, signal?: AbortSignal) => {
@@ -162,9 +166,10 @@ export function useGatewayRequest() {
         // sources.
         const ownerIsStillActive = gatewayRef.current === ownerGateway
 
-        const recovered = !isActivePrimary() && ownerIsStillActive
-          ? await ensureActiveGatewayOpen()
-          : await ensureGatewayOpen(ownerGateway, ownerScope)
+        const recovered =
+          !isActivePrimary() && ownerIsStillActive
+            ? await ensureActiveGatewayOpen()
+            : await ensureGatewayOpen(ownerGateway, ownerScope)
 
         if (!recovered) {
           // Prefer the reauth error from the failed reconnect (OAuth session

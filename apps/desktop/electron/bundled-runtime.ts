@@ -62,7 +62,9 @@ export function bundledRuntimeBackend({
   const environment = buildDesktopBackendEnv({ hermesHome, currentEnv })
 
   for (const key of Object.keys(environment)) {
-    if (key.toUpperCase() === 'PATH') {delete environment[key]}
+    if (key.toUpperCase() === 'PATH') {
+      delete environment[key]
+    }
   }
 
   // macOS keeps the system bash/git (Xcode tools); only Python and the optional

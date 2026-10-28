@@ -11,7 +11,7 @@ describe('jarvis ui store', () => {
     expect($jarvisUi.get()).toMatchObject({
       sessionId: 's2',
       voice: 'idle',
-      task: { id: null, phase: 'idle' },
+      task: { id: null, phase: 'idle' }
     })
   })
 })
