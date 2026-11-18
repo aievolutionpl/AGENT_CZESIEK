@@ -1549,6 +1549,14 @@ class TestOpenRouterCatalogDiskCache:
         monkeypatch.setattr("hermes_cli.model_catalog.get_curated_openrouter_models",
                             lambda: [("a/one", "")])
 
+    def test_refresh_from_the_picker_reloads_an_already_open_catalog(self, monkeypatch):
+        calls = []
+        self._install_network(monkeypatch, calls)
+        fetch_openrouter_models(force_refresh=True)
+        _models_mod.clear_provider_models_cache("openrouter")
+        fetch_openrouter_models()
+        assert len(calls) == 2
+
     def test_fresh_snapshot_serves_cold_process_without_network(self, monkeypatch, tmp_path):
         calls = []
         self._install_network(monkeypatch, calls)

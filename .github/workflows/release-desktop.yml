@@ -295,9 +295,14 @@ jobs:
           hdiutil attach -readonly -nobrowse -mountpoint "$mount" "${images[0]}"
           trap 'hdiutil detach "$mount"' EXIT
           test "$(readlink "$mount/Applications")" = /Applications
-          app="/Applications/Agent Czesiek.app"
+          bundles=("$mount"/*.app)
+          test "${#bundles[@]}" -eq 1
+          source="${bundles[0]}"
+          identifier=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$source/Contents/Info.plist")
+          test "$identifier" = "$(node -p "require('./apps/desktop/package.json').build.appId")"
+          app="/Applications/$(basename "$source")"
           test ! -e "$app"
-          ditto "$mount/Agent Czesiek.app" "$app"
+          ditto "$source" "$app"
           executable=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$app/Contents/Info.plist")
           test -x "$app/Contents/MacOS/$executable"
           node apps/desktop/scripts/smoke-bundled-runtime.mjs "$app/Contents/Resources/runtime"

@@ -146,6 +146,7 @@ def _custom_provider_ssl_context(base_url: str):
 
 # Process-lifetime picker lists refreshed from the live catalogs (see fetch_*_models).
 _openrouter_catalog_cache: list[tuple[str, str]] | None = None
+_openrouter_refresh_requested = False
 
 # The in-memory ``_openrouter_catalog_cache`` is per-process, so without a disk cache every cold
 # picker open re-downloads the full ~686KB /api/v1/models catalog. The *curated* result
@@ -512,8 +513,12 @@ def _fetch_live_catalog_index(url: str, timeout: float, opener) -> Optional[tupl
 def fetch_openrouter_models(
     timeout: float = 8.0, *, force_refresh: bool = False) -> list[tuple[str, str]]:
     """Return live interactive task models, keeping curated recommendations first."""
-    global _openrouter_catalog_cache
+    global _openrouter_catalog_cache, _openrouter_refresh_requested
 
+    # Explicit picker refresh invalidates the outer provider cache as well as
+    # this inner cache. Keep the previous snapshot for an offline fallback.
+    force_refresh = force_refresh or _openrouter_refresh_requested
+    _openrouter_refresh_requested = False
     if _openrouter_catalog_cache is not None and not force_refresh:
         return list(_openrouter_catalog_cache)
 
@@ -1672,6 +1677,9 @@ def cached_provider_model_ids(
 def clear_provider_models_cache(provider: Optional[str] = None) -> None:
     """Drop one provider's cache entry, or wipe the whole cache (``provider=None``). Used by
     ``/model --refresh`` and ``hermes model --refresh``."""
+    global _openrouter_refresh_requested
+    if provider is None or _normalized_cache_slug(provider) == "openrouter":
+        _openrouter_refresh_requested = True
     try:
         # Native Ollama tags are keyed by root URL, not provider slug — a targeted refresh can't
         # identify the root from the name alone, so clear this small in-process cache every time.

@@ -30,11 +30,11 @@ test('changing voice preserves the worker model and other settings', async () =>
     </MemoryRouter>
   )
   fireEvent.click(screen.getByRole('button', { name: /Rozmowa Live/ }))
-  fireEvent.click(await screen.findByRole('button', { name: 'OpenAI Realtime' }))
+  fireEvent.click(await screen.findByRole('button', { name: 'OpenAI Realtime 2.1', exact: true }))
   await waitFor(() => expect(api.saveHermesConfigRecord).toHaveBeenCalled())
   expect(api.saveHermesConfigRecord.mock.calls[0][0]).toEqual({
     model: { default: 'worker-model' },
-    voice: { engine: 'realtime', realtime: { provider: 'openai', model: 'gpt-realtime', gemini: { voice: 'Puck' } } }
+    voice: { engine: 'realtime', realtime: { provider: 'openai', model: 'gpt-realtime-2.1', gemini: { voice: 'Puck' } } }
   })
   expect(api.saveHermesConfigRecord.mock.calls[0][1]).toEqual(api.getHermesConfigRecord.mock.calls[0][0])
 })
