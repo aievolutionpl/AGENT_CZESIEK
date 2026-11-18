@@ -27,13 +27,17 @@ export function hermesModelGroups(
       const shortlist = provider.featured_models?.length ? provider.featured_models : (provider.models ?? [])
       const available = provider.models ?? []
       const recommended = Object.keys(WORK_MODELS).filter(model => available.includes(model))
-      const needle = query.trim().toLocaleLowerCase()
+      const terms = query.trim().toLowerCase().split(/[\s/-]+/).filter(Boolean)
 
-      const models = needle
-        ? available.filter(model => `${provider.name} ${model}`.toLocaleLowerCase().includes(needle))
+      const models = terms.length
+        ? available.filter(model => {
+            const name = `${provider.name} ${model}`.toLowerCase()
+
+            return terms.every(term => name.includes(term))
+          })
         : [...new Set([...recommended, ...shortlist.filter(model => available.includes(model))])].slice(0, limit)
 
-      if (!needle && current.model && provider.slug === current.provider && !models.includes(current.model)) {
+      if (!terms.length && current.model && provider.slug === current.provider && !models.includes(current.model)) {
         models.unshift(current.model)
       }
 

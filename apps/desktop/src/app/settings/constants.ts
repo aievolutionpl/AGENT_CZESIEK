@@ -12,6 +12,7 @@ import {
   Sun,
   Wrench
 } from '@/lib/icons'
+import { LIVE_VOICE_MODELS } from '@/lib/live-voice/models'
 import { REASONING_EFFORTS } from '@/lib/reasoning-effort'
 import type { ThemeMode } from '@/themes/context'
 
@@ -283,13 +284,9 @@ export const ENUM_OPTIONS: Record<string, string[]> = {
   // Voice conversation engine and its Live providers (hermes_cli/web_routers/voice_realtime.py).
   'voice.engine': ['classic', 'realtime'],
   'voice.realtime.provider': ['openai', 'gemini'],
-  'voice.realtime.model': ['gpt-realtime', 'gpt-realtime-2.1', 'gpt-realtime-2.1-mini'],
+  'voice.realtime.model': LIVE_VOICE_MODELS.filter(item => item.provider === 'openai').map(item => item.model),
   'voice.realtime.voice': ['marin', 'cedar', 'alloy', 'ash', 'ballad', 'coral', 'echo', 'sage', 'shimmer', 'verse'],
-  'voice.realtime.gemini.model': [
-    'gemini-3.8-live',
-    'gemini-3.8-live-extended-thinking',
-    'gemini-3.1-flash-live-preview'
-  ],
+  'voice.realtime.gemini.model': LIVE_VOICE_MODELS.filter(item => item.provider === 'gemini').map(item => item.model),
   'voice.realtime.gemini.voice': ['Charon', 'Kore', 'Puck', 'Zephyr', 'Fenrir', 'Leda', 'Orus', 'Aoede'],
   // Gemini TTS prebuilt voice set.
   'tts.gemini.voice': [

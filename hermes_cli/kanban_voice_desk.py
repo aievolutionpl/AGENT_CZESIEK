@@ -219,7 +219,7 @@ def dispatch(
     body = "Zlecone głosem przez Czesiek." + (f"\n\n{details}" if details else "")
     # The same request repeated inside a couple of minutes (a retried tool call) is one task.
     window = int(time.time() // _DEDUPE_WINDOW_S)
-    key = "voice:" + hashlib.sha1(f"{who}\0{title}\0{details}\0{window}".encode()).hexdigest()[:16]
+    key = "voice:" + hashlib.sha1(f"{session_id or ''}\0{who}\0{title}\0{details}\0{window}".encode()).hexdigest()[:16]
 
     with connect_closing() as conn:
         task_id = kb.create_task(
@@ -233,7 +233,7 @@ def dispatch(
             session_id=session_id or None,
         )
 
-    spawned = nudge()
+    nudge()
 
     with connect_closing() as conn:
         task = kb.get_task(conn, task_id)
@@ -243,7 +243,7 @@ def dispatch(
         "status": task.status if task else "unknown",
         "assignee": who,
         "dispatcher": dispatcher_state(),
-        "started": spawned > 0,
+        "started": bool(task and task.started_at),
     }
 
 

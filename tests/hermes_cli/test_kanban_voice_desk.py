@@ -41,6 +41,15 @@ def test_dispatch_lands_on_the_board_as_a_voice_task_and_repeats_are_one_task():
     assert "za ostatni kwartał" in task.body
 
 
+def test_identical_requests_in_separate_chats_have_independent_workers(monkeypatch):
+    # A dispatcher tick may start a different queued job.
+    monkeypatch.setattr(desk, "nudge", lambda: 1)
+    first = desk.dispatch("Build a report", session_id="one")
+    second = desk.dispatch("Build a report", session_id="two")
+    assert first["task_id"] != second["task_id"]
+    assert not first["started"] and not second["started"]
+
+
 def test_an_unknown_assistant_is_refused_with_the_roster_to_choose_from():
     with pytest.raises(ValueError, match="available: .*default"):
         desk.dispatch("Zrób coś", assignee="nie-ma-takiego")

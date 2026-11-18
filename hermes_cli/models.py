@@ -163,7 +163,7 @@ def _openrouter_catalog_disk_ttl() -> float:
 def _openrouter_catalog_disk_path() -> Path:
     from hermes_constants import get_hermes_home
 
-    return get_hermes_home() / "cache" / "openrouter_curated_catalog.json"
+    return get_hermes_home() / "cache" / "openrouter_task_catalog_v2.json"
 
 
 def _read_openrouter_catalog_disk() -> list[tuple[str, str]] | None:
@@ -511,7 +511,7 @@ def _fetch_live_catalog_index(url: str, timeout: float, opener) -> Optional[tupl
 
 def fetch_openrouter_models(
     timeout: float = 8.0, *, force_refresh: bool = False) -> list[tuple[str, str]]:
-    """Return the curated OpenRouter picker list, refreshed from the live catalog when possible."""
+    """Return live interactive task models, keeping curated recommendations first."""
     global _openrouter_catalog_cache
 
     if _openrouter_catalog_cache is not None and not force_refresh:
@@ -547,19 +547,22 @@ def fetch_openrouter_models(
 
     curated: list[tuple[str, str]] = []
     silent_default = get_preferred_silent_default_model("openrouter")
-    for preferred_id, _ in fallback:
-        live_item = live_by_id.get(preferred_id)
-        # Hide models without tool-calling support — selecting one fails at the first tool call.
-        if live_item is None or not _openrouter_model_supports_tools(live_item):
+    # Preserve recommendation order while admitting new releases immediately.
+    # Batch-only endpoints cannot service an interactive Hermes conversation.
+    model_ids = dict.fromkeys([mid for mid, _ in fallback] + list(live_by_id))
+    for model_id in model_ids:
+        item = live_by_id.get(model_id)
+        if item is None or model_id.endswith(":batch") or not _openrouter_model_supports_tools(item):
             continue
-        # Hide models that don't advertise tool-calling support — hermes-agent requires it and surfacing
-        # them leads to immediate runtime failures when the user selects them. Ported from
-        # Kilo-Org/kilocode#9068.
-        if preferred_id == silent_default:
-            desc = "default"  # keep the silent-default badge through the live refresh
+        architecture = item.get("architecture")
+        outputs = architecture.get("output_modalities") if isinstance(architecture, dict) else None
+        if isinstance(outputs, list) and "text" not in outputs:
+            continue
+        if model_id == silent_default:
+            desc = "default"
         else:
-            desc = "free" if _openrouter_model_is_free(live_item.get("pricing")) else ""
-        curated.append((preferred_id, desc))
+            desc = "free" if _openrouter_model_is_free(item.get("pricing")) else ""
+        curated.append((model_id, desc))
 
     if not curated:
         return list(_openrouter_catalog_cache or fallback)

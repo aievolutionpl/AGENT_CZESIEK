@@ -2,6 +2,7 @@ import { useStore } from '@nanostores/react'
 import { useState } from 'react'
 
 import { getHermesConfigRecord, saveHermesConfigRecord } from '@/api/config'
+import { LIVE_VOICE_MODELS } from '@/lib/live-voice/models'
 import { useI18n } from '@/i18n'
 import { $activeConnectionId } from '@/store/connections'
 import { notifyError } from '@/store/notifications'
@@ -10,12 +11,7 @@ import { $liveVoiceChoice, applyVoiceEngineFromConfig } from '@/store/voice-pref
 
 import { setNested } from '../settings/helpers'
 
-/** The voices Live conversation can run on; `provider:model` is the choice's identity. */
-export const LIVE_VOICE_MODELS = [
-  { label: 'Gemini 3.8 Live', model: 'gemini-3.8-live', provider: 'gemini' },
-  { label: 'Gemini 3.1 Flash Live', model: 'gemini-3.1-flash-live-preview', provider: 'gemini' },
-  { label: 'OpenAI Realtime', model: 'gpt-realtime', provider: 'openai' }
-] as const
+export { LIVE_VOICE_MODELS } from '@/lib/live-voice/models'
 
 export const liveModelValue = (choice: { model: string; provider: string }) => `${choice.provider}:${choice.model}`
 

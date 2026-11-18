@@ -31,6 +31,8 @@
 
 **Instalacja i kod to osobne etapy.** Zrzuty pokazują aktualny kod aplikacji, a dostępne instalatory znajdziesz w [Releases](https://github.com/aievolutionpl/AGENT_CZESIEK/releases). Sama aktualizacja README ani merge nie oznaczają publikacji nowego instalatora.
 
+W linii 0.18 pulpit pobiera z OpenRouter modele obsługujące tekst i narzędzia Hermesa. W wyszukiwarce modelu zadań możesz wpisać np. `Astra 6.2` lub `Claude Fable`. Wybór głosu jest osobny. OpenAI Realtime 2.1, Realtime 2.1 mini i modele Gemini Live korzystają z klucza właściwego dostawcy. Opcja odświeżenia modeli znajduje się w ustawieniach modeli.
+
 ## Spis treści
 
 - [Czym jest Czesiek](#czym-jest-czesiek)
