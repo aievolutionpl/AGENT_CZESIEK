@@ -1990,6 +1990,11 @@ def _resolve_hermes_argv() -> list[str]:
             return _hermes_path_argv(resolved_env_bin)
         return _module_hermes_argv()
 
+    # Desktop selected a specific backend (bundled or an existing collaborator).
+    # Its workers must use that interpreter even when another Hermes is on PATH.
+    if os.environ.get("HERMES_DESKTOP") == "1":
+        return _module_hermes_argv()
+
     hermes_bin = _safe_which_no_cwd("hermes") if _kb._IS_WINDOWS else shutil.which("hermes")
     if hermes_bin:
         return _hermes_path_argv(hermes_bin)

@@ -1201,6 +1201,17 @@ def test_resolve_hermes_argv_falls_back_to_module_form_when_no_path_shim(monkeyp
     assert argv == [sys.executable, "-m", "hermes_cli.main"]
 
 
+def test_desktop_worker_uses_the_selected_engine_even_with_another_shim_on_path(monkeypatch):
+    import sys
+    from hermes_cli import kanban_db_dispatch as kbd
+
+    monkeypatch.setenv("HERMES_DESKTOP", "1")
+    monkeypatch.delenv("HERMES_BIN", raising=False)
+    monkeypatch.setattr("shutil.which", lambda *args, **kwargs: "/other/hermes")
+    monkeypatch.setattr(kbd, "_safe_which_no_cwd", lambda *args: "/other/hermes")
+    assert kbd._resolve_hermes_argv() == [sys.executable, "-m", "hermes_cli.main"]
+
+
 def test_resolve_hermes_argv_module_actually_runs():
     """The fallback module name must be importable + runnable.
 

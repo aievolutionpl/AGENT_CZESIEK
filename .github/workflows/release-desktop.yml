@@ -101,7 +101,7 @@ jobs:
           # names unique; `archs` narrows the per-leg gate to that slice (the
           # aggregate gate still demands both).
           win='{"platform":"win","name":"win","archs":"x64","runs-on":"windows-latest","builder-args":"--win --x64"}'
-          mac_arm='{"platform":"mac","name":"mac-arm64","archs":"arm64","runs-on":"macos-latest","builder-args":"--mac --arm64"}'
+          mac_arm='{"platform":"mac","name":"mac-arm64","archs":"arm64","runs-on":"macos-15","builder-args":"--mac --arm64"}'
           mac_x64='{"platform":"mac","name":"mac-x64","archs":"x64","runs-on":"macos-15-intel","builder-args":"--mac --x64"}'
           linux='{"platform":"linux","name":"linux","archs":"x64","runs-on":"ubuntu-latest","builder-args":"--linux --x64"}'
 
