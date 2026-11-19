@@ -32,8 +32,9 @@ describe('hermesModelGroups', () => {
   it('finds live models by family and version in spoken order', () => {
     const ids = ['openai/gpt-6.2-astra', 'openai/gpt-6.2-sol']
 
-    expect(hermesModelGroups([provider({ models: ids })], { model: '', provider: '' }, 1, 'Astra 6.2')[0].models)
-      .toEqual([ids[0]])
+    expect(
+      hermesModelGroups([provider({ models: ids })], { model: '', provider: '' }, 1, 'Astra 6.2')[0].models
+    ).toEqual([ids[0]])
   })
 
   it('skips providers that cannot be used, and prefers a curated shortlist', () => {

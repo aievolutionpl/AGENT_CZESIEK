@@ -152,9 +152,11 @@ function sanitizeSelections(value: unknown): JarvisOnboardingSelections {
 
   const raw = value as Record<string, unknown>
   const selections: JarvisOnboardingSelections = {}
+
   if (raw.personality && typeof raw.personality === 'object') {
     selections.personality = normalizePersonality(raw.personality)
   }
+
   const accessOpened = safeBoolean(raw.accessOpened)
   const engine = safeString(raw.engine)
   const model = safeString(raw.model)
@@ -345,8 +347,8 @@ export function markJarvisOnboardingCompleted(): void {
 export function jarvisOnboardingComplete(state: JarvisOnboardingState | null): boolean {
   return Boolean(
     state &&
-      state.version === JARVIS_ONBOARDING_VERSION &&
-      JARVIS_ONBOARDING_STEPS.every(step => state.completedSteps.includes(step))
+    state.version === JARVIS_ONBOARDING_VERSION &&
+    JARVIS_ONBOARDING_STEPS.every(step => state.completedSteps.includes(step))
   )
 }
 

@@ -126,7 +126,11 @@ const normalizeWs = (value: string) => value.replace(/\s+/g, ' ').trim()
  * colon in the reply) and with markdown markers moved around. Those are
  * presentational, so they must not read as different prose.
  */
-const coverageKey = (value: string) => normalizeWs(value).toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim()
+const coverageKey = (value: string) =>
+  normalizeWs(value)
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, ' ')
+    .trim()
 
 /** Sentence-sized runs of a text, delimiters kept off the returned chunks. */
 const coverageSentences = (value: string) => value.match(/[^.!?…]+[.!?…]*/g) ?? [value]

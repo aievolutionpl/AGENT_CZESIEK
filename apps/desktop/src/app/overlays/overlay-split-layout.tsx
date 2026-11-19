@@ -165,7 +165,15 @@ export interface OverlayNavGroup extends OverlayNavLink {
 // dropdown in PageSearchShell), so every OverlaySplitLayout pane degrades the
 // same way instead of stacking its whole sidebar. Drop it in as the first
 // child of an OverlaySplitLayout, before OverlayMain.
-export function OverlayNav({ comfortable, footer, groups }: { comfortable?: boolean; footer?: ReactNode; groups: OverlayNavGroup[] }) {
+export function OverlayNav({
+  comfortable,
+  footer,
+  groups
+}: {
+  comfortable?: boolean
+  footer?: ReactNode
+  groups: OverlayNavGroup[]
+}) {
   return (
     <>
       <OverlaySidebar className={cn(RAIL_HIDDEN, comfortable && 'gap-1 px-3')}>

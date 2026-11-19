@@ -10,6 +10,10 @@ Na zwykłe pytania, które nie wymagają wykonania zadania, możesz odpowiadać 
 /** Installed once during onboarding, without discarding a profile's own instructions. */
 export function withCoordinatorPrompt(existing: unknown): string {
   const current = typeof existing === 'string' ? existing.trim() : ''
-  if (current.includes(MARKER)) {return current}
+
+  if (current.includes(MARKER)) {
+    return current
+  }
+
   return current ? `${current}\n\n${COORDINATOR_PROMPT}` : COORDINATOR_PROMPT
 }

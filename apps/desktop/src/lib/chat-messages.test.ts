@@ -1256,6 +1256,7 @@ describe('mergeFinalAssistantText', () => {
     // rendered as a second, faded copy of the reply.
     const draft =
       'Proszę bardzo, świeży kawałek z życia biura. Przychodzi programista do kawiarni i zamawia kawę. Kelner pyta: — Mleko? Cukier? — Nie, dzięki.'
+
     const parts = [reasoningPart(draft), { type: 'text' as const, text: 'streamed deltas' }]
     const final = `Cześć, jestem Czesiek. ${draft.replace('biura.', 'biura:')} Chcesz jeszcze jeden?`
 

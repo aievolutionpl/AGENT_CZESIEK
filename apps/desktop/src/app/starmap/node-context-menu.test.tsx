@@ -12,7 +12,9 @@ vi.mock('@/app/learning/archive-skill-confirm-dialog', () => ({
   fireOptimistic: vi.fn()
 }))
 vi.mock('@/components/chat/code-editor', () => ({ CodeEditor: () => null }))
-vi.mock('@/components/ui/button', () => ({ Button: ({ children }: { children: React.ReactNode }) => <button>{children}</button> }))
+vi.mock('@/components/ui/button', () => ({
+  Button: ({ children }: { children: React.ReactNode }) => <button>{children}</button>
+}))
 vi.mock('@/components/ui/confirm-dialog', () => ({ ConfirmDialog: () => null }))
 vi.mock('@/components/ui/dialog', () => ({
   Dialog: ({ children }: { children: React.ReactNode }) => <>{children}</>,
@@ -30,7 +32,11 @@ describe('imported memory ownership', () => {
       <NodeContextMenu
         onClose={() => {}}
         onNodeRemoved={() => {}}
-        source={{ kind: 'imported', import_id: 'shared', graph: { nodes: [], edges: [], clusters: [], memory: [], stats: {} } }}
+        source={{
+          kind: 'imported',
+          import_id: 'shared',
+          graph: { nodes: [], edges: [], clusters: [], memory: [], stats: {} }
+        }}
         target={{ id: 'memory:memory:0', kind: 'memory', label: 'Imported', x: 10, y: 10 }}
       />
     )

@@ -17,7 +17,9 @@ const MODEL_PREFERENCE = ['gpt-6', 'gpt-5.6', 'gpt-5.5', 'gpt-5.4', 'gpt-5.3', '
 /** Small, routing and dated variants are not "the ChatGPT model". */
 const LESSER = /(mini|nano|lite|preview|\d{4}-\d{2}-\d{2})/i
 
-export function chatGptProvider(providers: readonly ModelOptionProvider[] | undefined): ModelOptionProvider | undefined {
+export function chatGptProvider(
+  providers: readonly ModelOptionProvider[] | undefined
+): ModelOptionProvider | undefined {
   return providers?.find(provider => provider.slug === CHATGPT_PROVIDER_SLUG)
 }
 

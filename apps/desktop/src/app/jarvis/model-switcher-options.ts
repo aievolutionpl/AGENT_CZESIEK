@@ -27,7 +27,11 @@ export function hermesModelGroups(
       const shortlist = provider.featured_models?.length ? provider.featured_models : (provider.models ?? [])
       const available = provider.models ?? []
       const recommended = Object.keys(WORK_MODELS).filter(model => available.includes(model))
-      const terms = query.trim().toLowerCase().split(/[\s/-]+/).filter(Boolean)
+      const terms = query
+        .trim()
+        .toLowerCase()
+        .split(/[\s/-]+/)
+        .filter(Boolean)
 
       const models = terms.length
         ? available.filter(model => {

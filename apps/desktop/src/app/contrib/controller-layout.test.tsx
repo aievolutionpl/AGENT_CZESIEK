@@ -106,7 +106,9 @@ vi.mock('../chat/session-tile', () => ({
 }))
 vi.mock('../context-menu/app-context-menu', () => ({ AppContextMenu: () => <div data-testid="app-context-menu" /> }))
 vi.mock('../hud/hud-shell', () => ({ HudShell: () => <div data-testid="hud-shell" /> }))
-vi.mock('../chat/browser-popout-shell', () => ({ BrowserPopoutShell: () => <div data-testid="browser-popout-shell" /> }))
+vi.mock('../chat/browser-popout-shell', () => ({
+  BrowserPopoutShell: () => <div data-testid="browser-popout-shell" />
+}))
 vi.mock('./panes', () => ({
   FilesPane: () => <div />,
   LogsPane: () => <div />,

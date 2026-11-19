@@ -16,12 +16,21 @@ test('orb keeps its shared control channel after the in-window pet unmounts and 
   const disconnect = vi.fn()
   const pushState = vi.fn()
   const onOpened = vi.fn()
-  Object.defineProperty(window, 'hermesDesktop', { configurable: true, value: { petOverlay: {
-    onControl: (handler: (event: PetOverlayControl) => void) => { receive = handler;
+  Object.defineProperty(window, 'hermesDesktop', {
+    configurable: true,
+    value: {
+      petOverlay: {
+        onControl: (handler: (event: PetOverlayControl) => void) => {
+          receive = handler
 
- return disconnect },
-    open: vi.fn(async () => ({ ok: true })), close: vi.fn(async () => ({ ok: true })), pushState
-  } } })
+          return disconnect
+        },
+        open: vi.fn(async () => ({ ok: true })),
+        close: vi.fn(async () => ({ ok: true })),
+        pushState
+      }
+    }
+  })
   const releasePet = initPetOverlayBridge()
   const releaseOrb = initPetOverlayBridge()
   $desktopOrbConnection.set({ active: true, connected: true, locale: 'pl' })

@@ -161,7 +161,10 @@ export interface DesktopShortcutIo {
   exists: (filePath: string) => boolean
   symlink?: (target: string, linkPath: string) => void
   writeFile: (filePath: string, contents: string) => void
-  writeLink?: (linkPath: string, options: { cwd: string; description: string; icon?: string; target: string }) => boolean
+  writeLink?: (
+    linkPath: string,
+    options: { cwd: string; description: string; icon?: string; target: string }
+  ) => boolean
 }
 
 export interface EnsureDesktopShortcutInput {

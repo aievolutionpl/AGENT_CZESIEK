@@ -61,7 +61,13 @@ export function bundledRuntimeBackend({
     throw new Error('Pakiet silnika Agenta Cześka ma uszkodzony manifest. Zainstaluj ponownie pełny pakiet aplikacji.')
   }
 
-  if (!manifest || typeof manifest !== 'object' || manifest.schemaVersion !== 1 || manifest.platform !== platform || manifest.arch !== arch) {
+  if (
+    !manifest ||
+    typeof manifest !== 'object' ||
+    manifest.schemaVersion !== 1 ||
+    manifest.platform !== platform ||
+    manifest.arch !== arch
+  ) {
     throw new Error('Pakiet silnika Agenta Cześka nie pasuje do tej wersji aplikacji.')
   }
 

@@ -71,11 +71,7 @@ export function SubagentTranscript({ sessionId, subagentId }: { sessionId: strin
       <div className="mt-1 flex items-center gap-2">
         <AgentTypingIndicator active={tail?.available === true} />
         <span className="text-(--ui-text-tertiary)">
-          {!tail
-            ? t.agents.waitingActivity
-            : tail.available
-              ? t.agents.running
-              : t.agents.transcriptUnavailable}
+          {!tail ? t.agents.waitingActivity : tail.available ? t.agents.running : t.agents.transcriptUnavailable}
         </span>
       </div>
     </section>

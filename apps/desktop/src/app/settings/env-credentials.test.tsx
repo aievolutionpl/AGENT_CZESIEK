@@ -19,7 +19,11 @@ vi.mock('@/hermes', () => ({
 function Harness({ scope }: { scope: { connectionId: string; profile: string } }) {
   const { saveValue } = useEnvCredentials(scope)
 
-  return <button onClick={() => void saveValue('OPENROUTER_API_KEY', 'sk-test')} type="button">save</button>
+  return (
+    <button onClick={() => void saveValue('OPENROUTER_API_KEY', 'sk-test')} type="button">
+      save
+    </button>
+  )
 }
 
 describe('useEnvCredentials', () => {
