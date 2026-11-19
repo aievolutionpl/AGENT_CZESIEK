@@ -268,6 +268,20 @@ def _exited_status(code: int) -> int:
 
 
 
+@pytest.mark.skipif(os.name != "nt", reason="Windows worker handles")
+def test_windows_dispatcher_collects_real_worker_exit_code(monkeypatch):
+    import subprocess
+    from hermes_cli import kanban_db_dispatch as dispatch
+
+    child = subprocess.Popen([sys.executable, "-c", f"raise SystemExit({kb.KANBAN_RATE_LIMIT_EXIT_CODE})"])
+    monkeypatch.setattr(dispatch, "_windows_workers", {child.pid: child})
+    monkeypatch.setattr(dispatch, "_recent_worker_exits", {})
+    child.wait(timeout=20)
+    assert dispatch.reap_worker_zombies() == [child.pid]
+    assert dispatch._classify_worker_exit(child.pid) == ("rate_limited", kb.KANBAN_RATE_LIMIT_EXIT_CODE)
+    assert dispatch.reap_worker_zombies() == []
+
+
 def test_rate_limit_exit_requeues_without_counting_failure(
     kanban_home, monkeypatch,
 ):
@@ -571,7 +585,7 @@ def test_worktree_workspace_explicit_target_materializes_linked_worktree(kanban_
         capture_output=True,
         text=True,
     ).stdout
-    assert f"worktree {target}" in listed
+    assert target in [Path(line[9:]) for line in listed.splitlines() if line.startswith("worktree ")]
     assert f"branch refs/heads/{branch}" in listed
 
 
