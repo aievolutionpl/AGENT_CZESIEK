@@ -5,6 +5,7 @@ import { useMemo, useState } from 'react'
 import { createVaultNote, VAULT_RAIL_KEY } from '@/api/vault'
 import { Button } from '@/components/ui/button'
 import { getAiNews } from '@/hermes'
+import { useActiveCapabilityScope } from '@/hooks/use-active-capability-scope'
 import { useI18n } from '@/i18n'
 import { Bookmark, Checks, EyeOff, Loader2, RefreshCw, Sparkles, Volume2, VolumeX, Zap } from '@/lib/icons'
 import { cn } from '@/lib/utils'
@@ -112,6 +113,7 @@ function relativeAge(publishedSeconds: null | number, locale: string, nowMs = Da
 export function JarvisNewsLiveCard({ connected }: { connected: boolean }) {
   const { locale, t } = useI18n()
   const copy = locale === 'pl' ? COPY.pl : COPY.en
+  const { scope, scopeKey } = useActiveCapabilityScope()
   const state = t.jarvisShell.home.news
   const [source, setSource] = useState<null | string>(null)
   const [expanded, setExpanded] = useState(false)
@@ -125,16 +127,18 @@ export function JarvisNewsLiveCard({ connected }: { connected: boolean }) {
   const news = useQuery({
     enabled: connected,
     queryFn: () => getAiNews(NEWS_FETCH),
-    queryKey: ['jarvis-ai-news', NEWS_FETCH],
+    queryKey: ['jarvis-ai-news', scopeKey, NEWS_FETCH],
     refetchInterval: NEWS_REFRESH_MS,
     staleTime: NEWS_REFRESH_MS
   })
 
   const all = useMemo(() => withoutMuted(news.data?.items ?? [], muted), [news.data, muted])
   const chips = useMemo(() => topSources(all), [all])
-  const filtered = source && chips.includes(source) ? all.filter(item => item.source === source) : all
+  const activeSource = source && chips.includes(source) ? source : null
+  const filtered = activeSource ? all.filter(item => item.source === activeSource) : all
   const items = expanded ? filtered : filtered.slice(0, NEWS_SHOWN)
-  const unread = all.filter(item => !read.includes(item.link))
+  const readSet = useMemo(() => new Set(read), [read])
+  const unread = useMemo(() => all.filter(item => !readSet.has(item.link)), [all, readSet])
 
   const save = async (item: (typeof all)[number]) => {
     setSaving(item.link)
@@ -144,19 +148,23 @@ export function JarvisNewsLiveCard({ connected }: { connected: boolean }) {
 
       // The link is the identity: the same headline again is "already there",
       // a different one with the same file name gets its own note.
-      const made = await createVaultNote(item.title, {
-        content: body,
-        dedupeKey: item.link,
-        externalSource: `${item.source} (${item.link})`,
-        folder: NEWS_FOLDER
-      })
+      const made = await createVaultNote(
+        item.title,
+        {
+          content: body,
+          dedupeKey: item.link,
+          externalSource: `${item.source} (${item.link})`,
+          folder: NEWS_FOLDER
+        },
+        scope
+      )
 
       notify({
         kind: made.existed ? 'info' : 'success',
         message: made.existed ? copy.savedAlready : copy.saved,
         durationMs: 2000
       })
-      void queryClient.invalidateQueries({ queryKey: [VAULT_RAIL_KEY] })
+      void queryClient.invalidateQueries({ queryKey: [VAULT_RAIL_KEY, scopeKey] })
     } catch (error) {
       notifyError(error, copy.save)
     } finally {

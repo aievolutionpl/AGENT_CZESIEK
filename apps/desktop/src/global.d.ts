@@ -546,6 +546,15 @@ declare global {
       updates: {
         check: () => Promise<DesktopUpdateStatus>
         releaseCheck: () => Promise<DesktopReleaseCheck>
+        releaseDownload?: (opts: {
+          asset: { name: string; size?: number; url: string }
+          checksumsAsset?: null | { name: string; size?: number; url: string }
+        }) => Promise<DesktopReleaseDownloadResult>
+        releaseInstall?: (opts: {
+          filePath: string
+          prepareRecovery?: boolean
+        }) => Promise<{ ok: boolean; error?: string; recoveryCreated?: boolean }>
+        onReleaseProgress?: (callback: (payload: DesktopReleaseDownloadProgress) => void) => () => void
         apply: (opts?: DesktopUpdateApplyOptions) => Promise<DesktopUpdateApplyResult>
         getBranch: () => Promise<{ branch: string }>
         setBranch: (name: string) => Promise<{ branch: string }>
@@ -659,9 +668,26 @@ export interface DesktopUpdateCommit {
   at: number
 }
 
+export interface DesktopReleaseDownloadProgress {
+  stage: 'downloading' | 'verifying' | 'ready' | 'installing' | 'error'
+  receivedBytes: number
+  totalBytes: number
+  percent: number
+  message?: string
+}
+
+export interface DesktopReleaseDownloadResult {
+  ok: boolean
+  filePath?: string
+  sha256?: string
+  verified?: boolean
+  error?: string
+}
+
 export type DesktopReleaseCheck =
   | {
       asset: null | { name: string; size?: number; url: string }
+      checksumsAsset?: null | { name: string; size?: number; url: string }
       currentVersion: string
       latestVersion: string
       notes: string

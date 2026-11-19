@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import { useNavigate } from 'react-router'
 
 import { ModelBrandIcon } from '@/components/model-brand-icon'
@@ -15,19 +15,20 @@ export function LiveModelPicker({ connected }: { connected: boolean }) {
   const { locale } = useI18n()
   const { choose, label: currentLabel, live, saving } = useLiveVoiceModel()
   const [open, setOpen] = useState(false)
+  const labelId = useId()
   const navigate = useNavigate()
   const value = liveModelValue(live)
   const pl = locale === 'pl'
 
   return (
     <div className="mb-4 space-y-2">
-      <span className="block text-xs font-medium text-(--ui-text-secondary)" id="czesiek-live-model">
+      <span className="block text-xs font-medium text-(--ui-text-secondary)" id={labelId}>
         {pl ? 'Rozmowa Live · głos Cześka' : 'Live conversation · voice'}
       </span>
       <Popover onOpenChange={setOpen} open={open}>
         <PopoverTrigger asChild>
           <button
-            aria-labelledby="czesiek-live-model"
+            aria-labelledby={labelId}
             className="jarvis-well jarvis-field flex w-full min-w-0 items-center gap-3 px-3 py-2.5 text-left outline-none focus-visible:outline focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-(--ui-accent) disabled:opacity-60"
             disabled={!connected || saving}
             type="button"
@@ -41,7 +42,8 @@ export function LiveModelPicker({ connected }: { connected: boolean }) {
         </PopoverTrigger>
         <PopoverContent align="start" className="jarvis-menu grid w-(--radix-popover-trigger-width) gap-1 p-1.5">
           {LIVE_VOICE_MODELS.map(item => {
-            const selected = liveModelValue(item) === value
+            const itemValue = liveModelValue(item)
+            const selected = itemValue === value
 
             return (
               <button
@@ -50,10 +52,10 @@ export function LiveModelPicker({ connected }: { connected: boolean }) {
                   'jarvis-menu-item flex min-h-11 w-full items-center gap-3 rounded-xl px-2.5 text-left text-sm outline-none',
                   selected && 'bg-(--ui-accent)/12'
                 )}
-                key={item.model}
+                key={itemValue}
                 onClick={() => {
                   setOpen(false)
-                  void choose(liveModelValue(item))
+                  void choose(itemValue)
                 }}
                 type="button"
               >
@@ -72,7 +74,7 @@ export function LiveModelPicker({ connected }: { connected: boolean }) {
       </p>
       <button
         className="text-xs font-medium text-(--ui-accent) underline-offset-4 hover:underline"
-        onClick={() => navigate(`${SETTINGS_ROUTE}?tab=voice`)}
+        onClick={() => navigate(`${SETTINGS_ROUTE}?tab=config:voice`)}
         type="button"
       >
         {pl ? 'Klucze i ustawienia głosu' : 'Voice keys and settings'}

@@ -34,7 +34,9 @@ LOG_FILE = "integration_actions.jsonl"
 _LOG_MAX_BYTES = 1_000_000
 _LOG_KEEP_LINES = 500
 
-_GOOGLE_CALL = re.compile(r"google_api\.py\s+(gmail|calendar|drive|sheets|docs)\s+([a-z][a-z-]*)")
+_GOOGLE_CALL = re.compile(
+    r"""google_api\.py["']?\s+["']?(gmail|calendar|drive|sheets|docs)["']?\s+["']?([a-z][a-z-]*)["']?"""
+)
 
 # (group, subcommand) -> (english label, polish label). Everything not listed reads.
 _GOOGLE_WRITES = {
@@ -90,15 +92,22 @@ def _flag_values(segment: str) -> str:
     return " · ".join(found)
 
 
-def classify_command(command: str) -> Optional[IntegrationAction]:
-    """The first *writing* integration call in a shell command, or None when it only reads."""
+def classify_all_commands(command: str) -> list[IntegrationAction]:
+    """All *writing* integration calls in a shell command (handles chained commands and quoted args)."""
+    actions: list[IntegrationAction] = []
     for match in _GOOGLE_CALL.finditer(command or ""):
         group, sub = match.group(1), match.group(2)
         labels = _GOOGLE_WRITES.get((group, sub))
         if labels:
             segment = re.split(r"\s*(?:&&|\|\||;|\|)\s*", command[match.start():], maxsplit=1)[0]
-            return IntegrationAction("google", f"{group}.{sub}", labels[0], labels[1], _flag_values(segment))
-    return None
+            actions.append(IntegrationAction("google", f"{group}.{sub}", labels[0], labels[1], _flag_values(segment)))
+    return actions
+
+
+def classify_command(command: str) -> Optional[IntegrationAction]:
+    """The first *writing* integration call in a shell command, or None when it only reads."""
+    actions = classify_all_commands(command)
+    return actions[0] if actions else None
 
 
 def normalize_level(value: Any) -> str:

@@ -60,11 +60,16 @@ def _missing(task_id: str) -> HTTPException:
 
 
 @router.get("/api/voice/desk")
-async def get_desk(profile: Optional[str] = None, lang: str = "pl", limit: int = Query(default=8, ge=1, le=30)):
+async def get_desk(
+    profile: Optional[str] = None,
+    lang: str = "pl",
+    limit: int = Query(default=8, ge=1, le=30),
+    session_id: Optional[str] = None,
+):
     desk = _desk()
 
     def read():
-        data = desk.digest(limit=limit, lang=lang)
+        data = desk.digest(limit=limit, lang=lang, session_id=session_id)
 
         return {**data, "text": desk.render_digest(data, lang)}
 
@@ -123,12 +128,23 @@ async def cancel_task(task_id: str, profile: Optional[str] = None):
 
 @router.post("/api/voice/vision")
 async def describe_screen(body: VisionBody):
+    import asyncio
+
     from agent import screen_vision
+    from hermes_cli.config import load_config
+    from hermes_cli.web_routers.voice_realtime import vision_enabled
 
     language = _LANGUAGE_NAMES.get(body.lang, "Polish")
 
+    def run_scoped() -> str:
+        if not vision_enabled(load_config()):
+            raise PermissionError("Screen vision is disabled in configuration.")
+        return asyncio.run(screen_vision.describe(body.image, body.question, language=language))
+
     try:
-        text = await screen_vision.describe(body.image, body.question, language=language)
+        text = await scoped_to_thread(body.profile, run_scoped)
+    except PermissionError as exc:
+        raise HTTPException(status_code=403, detail=str(exc))
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
     except Exception as exc:

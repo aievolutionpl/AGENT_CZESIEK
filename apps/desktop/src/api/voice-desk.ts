@@ -60,8 +60,15 @@ export interface DeskTaskReport extends DeskItem {
 
 const post = <T>(path: string, body: unknown) => hermesApi<T>({ ...profileScoped(), body, method: 'POST', path })
 
-export const getVoiceDesk = (lang: DeskLang) =>
-  hermesApi<DeskDigest>({ ...profileScoped(), path: `/api/voice/desk?lang=${lang}` })
+export const getVoiceDesk = (lang: DeskLang, sessionId?: null | string) => {
+  const qs = new URLSearchParams({ lang })
+
+  if (sessionId) {
+    qs.set('session_id', sessionId)
+  }
+
+  return hermesApi<DeskDigest>({ ...profileScoped(), path: `/api/voice/desk?${qs.toString()}` })
+}
 
 export const getVoiceTask = (taskId: string, lang: DeskLang) =>
   hermesApi<DeskTaskReport>({

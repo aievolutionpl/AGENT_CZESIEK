@@ -135,8 +135,20 @@ export function seedVault({ vaultPath, seedDir }: { vaultPath: string; seedDir: 
 
   const { dirs, files } = listSeedEntries(seedDir)
 
+  const isSymlink = (target: string): boolean => {
+    try {
+      return fs.lstatSync(target).isSymbolicLink()
+    } catch {
+      return false
+    }
+  }
+
   for (const dir of dirs) {
     const target = path.join(vaultPath, ...dir.split('/'))
+
+    if (isSymlink(target)) {
+      continue
+    }
 
     if (!fs.existsSync(target)) {
       fs.mkdirSync(target, { recursive: true })
@@ -147,6 +159,12 @@ export function seedVault({ vaultPath, seedDir }: { vaultPath: string; seedDir: 
   for (const file of files) {
     const target = path.join(vaultPath, ...file.split('/'))
 
+    if (isSymlink(target)) {
+      result.existing.push(file)
+
+      continue
+    }
+
     if (fs.existsSync(target)) {
       result.existing.push(file)
 
@@ -154,7 +172,7 @@ export function seedVault({ vaultPath, seedDir }: { vaultPath: string; seedDir: 
     }
 
     fs.mkdirSync(path.dirname(target), { recursive: true })
-    fs.copyFileSync(path.join(seedDir, ...file.split('/')), target)
+    fs.copyFileSync(path.join(seedDir, ...file.split('/')), target, fs.constants.COPYFILE_EXCL)
     result.copied.push(file)
   }
 
@@ -193,6 +211,10 @@ export function envLineDefinesKey(line: string, key: string): boolean {
  * Dzięki temu `C:\Users\…\Czesiek Vault` wczytuje się poprawnie po obu stronach.
  */
 export function quoteEnvValue(value: string): string {
+  if (/[\r\n\0]/.test(value)) {
+    throw new Error('Wartość .env nie może zawierać znaków nowej linii ani NUL.')
+  }
+
   if (value === '') {
     return value
   }
@@ -230,7 +252,11 @@ export function ensureEnvEntry({
 
   try {
     raw = fs.readFileSync(envPath, 'utf8')
-  } catch {
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException)?.code !== 'ENOENT') {
+      throw error
+    }
+
     raw = ''
   }
 
@@ -250,7 +276,20 @@ export function ensureEnvEntry({
   lines.push(`${key}=${quoteEnvValue(value)}`)
 
   fs.mkdirSync(path.dirname(envPath), { recursive: true })
-  fs.writeFileSync(envPath, lines.join(eol) + eol)
+  const tmpPath = `${envPath}.${process.pid}.${Date.now()}.tmp`
+
+  try {
+    fs.writeFileSync(tmpPath, lines.join(eol) + eol, { mode: 0o600 })
+    fs.renameSync(tmpPath, envPath)
+  } catch (error) {
+    try {
+      fs.unlinkSync(tmpPath)
+    } catch {
+      // Ignore cleanup failure
+    }
+
+    throw error
+  }
 
   return { path: envPath, keyPresent: false, written: true }
 }
@@ -323,7 +362,11 @@ export function ensureAgentsMemoryProtocol({
 
   try {
     existing = fs.readFileSync(agentsPath, 'utf8')
-  } catch {
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException)?.code !== 'ENOENT') {
+      throw error
+    }
+
     existing = ''
   }
 

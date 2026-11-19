@@ -342,6 +342,7 @@ import { createQuickEntryShortcut, quickEntryWindowBounds, sanitizeQuickEntrySet
 import { type ActiveWork, mergeActiveWork, normalizeActiveWork, quitPromptFor } from './quit-guard'
 import { createRecoveryController } from './recovery-controller'
 import { evaluateRelease } from './release-check'
+import { downloadAndVerifyReleaseAsset } from './release-updater'
 import * as remoteLifecycle from './remote-lifecycle'
 import {
   attachPowerResumeRemoteRevalidation,
@@ -18176,6 +18177,73 @@ ipcMain.handle('hermes:updates:release-check', async () => {
   } finally {
     clearTimeout(timer)
   }
+})
+
+let activeReleaseDownload: AbortController | null = null
+
+ipcMain.handle('hermes:updates:release-download', async (event, payload) => {
+  const asset = payload?.asset
+  const checksumsAsset = payload?.checksumsAsset ?? null
+
+  if (!asset || typeof asset.name !== 'string' || typeof asset.url !== 'string') {
+    return { ok: false, error: 'Missing release installer metadata.' }
+  }
+
+  if (activeReleaseDownload) {
+    activeReleaseDownload.abort()
+  }
+
+  const controller = new AbortController()
+  activeReleaseDownload = controller
+  const downloadDir = path.join(app.getPath('userData'), 'release-updates')
+
+  try {
+    return await downloadAndVerifyReleaseAsset({
+      asset,
+      checksumsAsset,
+      downloadDir,
+      signal: controller.signal,
+      onProgress: progress => {
+        if (!event.sender.isDestroyed()) {
+          event.sender.send('hermes:updates:release-progress', progress)
+        }
+      }
+    })
+  } finally {
+    if (activeReleaseDownload === controller) {
+      activeReleaseDownload = null
+    }
+  }
+})
+
+ipcMain.handle('hermes:updates:release-install', async (_event, payload) => {
+  const rawPath = typeof payload?.filePath === 'string' ? payload.filePath : ''
+  const downloadDir = path.resolve(app.getPath('userData'), 'release-updates')
+  const resolved = path.resolve(rawPath)
+  const rel = path.relative(downloadDir, resolved)
+
+  if (!rawPath || !rel || rel.startsWith('..') || path.isAbsolute(rel) || !fs.existsSync(resolved)) {
+    return { ok: false, error: 'Downloaded installer file was not found in the updates cache.' }
+  }
+
+  let recoveryCreated = false
+
+  if (payload?.prepareRecovery !== false && recoveryController.status().supported) {
+    try {
+      await recoveryController.prepare()
+      recoveryCreated = true
+    } catch {
+      // Best-effort snapshot: do not block installing a verified update if backup is unavailable.
+    }
+  }
+
+  const openError = await shell.openPath(resolved)
+
+  if (openError) {
+    return { ok: false, error: openError, recoveryCreated }
+  }
+
+  return { ok: true, recoveryCreated }
 })
 
 ipcMain.handle('hermes:updates:branch:get', async () => readDesktopUpdateConfig())

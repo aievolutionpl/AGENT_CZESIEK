@@ -142,21 +142,21 @@ class DispatchResult:
 # plus a total size cap.
 _RECENT_WORKER_EXIT_TTL_SECONDS = 600
 _RECENT_WORKER_EXITS_MAX = 4096
-_recent_worker_exits: "dict[int, tuple[int, float]]" = {}
+_recent_worker_exits: "dict[int, tuple[int, float] | tuple[int, float, bool]]" = {}
 # Windows has no waitpid(-1, WNOHANG). Retain child handles until their exit
 # codes have been collected by the next dispatcher tick.
 _windows_workers: dict[int, subprocess.Popen] = {}
 
 
-def _record_worker_exit(pid: int, raw_status: int) -> None:
+def _record_worker_exit(pid: int, raw_status: int, *, is_exit_code: bool = False) -> None:
     """Record a reaped child's exit status; duplicate pids overwrite (latest wins)."""
     if not pid or pid <= 0:
         return
     now = time.time()
-    _recent_worker_exits[int(pid)] = (int(raw_status), now)
+    _recent_worker_exits[int(pid)] = (int(raw_status), now, is_exit_code)
     if len(_recent_worker_exits) > _RECENT_WORKER_EXITS_MAX // 2:
         cutoff = now - _RECENT_WORKER_EXIT_TTL_SECONDS
-        for _pid in [p for p, (_s, t) in _recent_worker_exits.items() if t < cutoff]:
+        for _pid in [p for p, entry in _recent_worker_exits.items() if entry[1] < cutoff]:
             _recent_worker_exits.pop(_pid, None)
     if len(_recent_worker_exits) > _RECENT_WORKER_EXITS_MAX:
         # Drop oldest half.
@@ -174,7 +174,15 @@ def _classify_worker_exit(pid: int) -> "tuple[str, Optional[int]]":
     entry = _recent_worker_exits.get(int(pid))
     if entry is None:
         return ("unknown", None)
-    raw, _ = entry
+    raw = entry[0]
+    is_exit_code = bool(entry[2]) if len(entry) >= 3 else False
+    if is_exit_code:
+        code = int(raw)
+        if code == 0:
+            return ("clean_exit", 0)
+        if code == _kb.KANBAN_RATE_LIMIT_EXIT_CODE:
+            return ("rate_limited", code)
+        return ("nonzero_exit", code)
     try:
         code = os.waitstatus_to_exitcode(raw)
     except (ValueError, OverflowError):
@@ -195,8 +203,9 @@ def reap_worker_zombies() -> "list[int]":
         for pid, child in list(_windows_workers.items()):
             code = child.poll()
             if code is not None and _windows_workers.pop(pid, None) is not None:
-                # Encode as a Windows waitpid status for waitstatus_to_exitcode.
-                _record_worker_exit(pid, code << 8)
+                # Store the raw Windows exit code directly (NTSTATUS/negative
+                # values overflow waitpid-style ``code << 8`` encoding).
+                _record_worker_exit(pid, code, is_exit_code=True)
                 reaped.append(pid)
     else:
         try:
@@ -241,8 +250,10 @@ def _pid_alive(pid: Optional[int]) -> bool:
                         if "Z" in line.split(":", 1)[1]:
                             return False
                         break
-        except (FileNotFoundError, PermissionError, OSError):
+        except FileNotFoundError:
             # proc entry gone → already reaped; treat as dead.
+            return False
+        except (PermissionError, OSError):
             pass
     elif sys.platform == "darwin":
         try:
@@ -1908,8 +1919,8 @@ def _rotate_worker_log(
             if not src.exists():
                 continue
             with contextlib.suppress(OSError):
-                src.rename(_rotated_log_path(log_path, generation + 1))
-        log_path.rename(_rotated_log_path(log_path, 1))
+                os.replace(src, _rotated_log_path(log_path, generation + 1))
+        os.replace(log_path, _rotated_log_path(log_path, 1))
     except OSError:
         pass
 
@@ -2286,13 +2297,13 @@ def _default_spawn(task: Task, workspace: str, *, board: Optional[str] = None) -
             creationflags=subprocess.CREATE_NO_WINDOW if _kb._IS_WINDOWS else 0,
         )
     except FileNotFoundError:
-        log_f.close()
         raise RuntimeError(
             "`hermes` executable not found on PATH. "
             "Install Hermes Agent or activate its venv before running the kanban dispatcher."
         )
-    # Popen already duplicated the log descriptor into the child.
-    log_f.close()
+    finally:
+        # Popen already duplicated the log descriptor into the child (or failed).
+        log_f.close()
     if os.name == "nt":
         _windows_workers[proc.pid] = proc
     return proc.pid

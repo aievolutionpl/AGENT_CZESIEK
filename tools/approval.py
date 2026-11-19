@@ -1010,8 +1010,16 @@ def _check_all_command_guards(command: str, env_type: str,
     dangerous-command findings are presented as ONE combined approval request, so a gateway
     force=True replay cannot bypass one check when only the other was shown to the user.
     ``has_host_access``: a Docker sandbox with bind-mounted host paths takes the normal flow."""
+    from tools.approval_integrations import integration_ask_all
+    integrations = integration_ask_all(command)
+    integration = integrations[0] if integrations else None
+
     if _should_skip_container_guards(env_type, has_host_access=has_host_access):
-        return _user_deny_block(command) or _approved()
+        denied = _user_deny_block(command)
+        if denied is not None:
+            return denied
+        if not integrations:
+            return _approved()
 
     blocked = _floor_block(command, sudo_guard=True)
     if blocked is not None:
@@ -1020,11 +1028,9 @@ def _check_all_command_guards(command: str, env_type: str,
     approval_mode = approval_context._get_approval_mode()
     # A write to a connected service at trust level "ask" is asked even under yolo / mode off: the user
     # chose that level for this integration, and "auto" is how they say they do not want to be asked.
-    from tools.approval_integrations import integration_ask
-    integration = integration_ask(command)
-    if (_yolo_active() or approval_mode == "off") and integration is None:
+    if (_yolo_active() or approval_mode == "off") and not integrations:
         return _approved()
-    if _command_matches_permanent_allowlist(command):
+    if _command_matches_permanent_allowlist(command) and not integrations:
         return _approved()
 
     approval_callback, is_cli, is_gateway, is_ask = _presence(approval_callback)
@@ -1040,6 +1046,14 @@ def _check_all_command_guards(command: str, env_type: str,
                     advice="Ask the user to do it, or set this integration's trust level to 'auto'.")}
             if result is not None:
                 return result
+        if integration is not None:
+            return {
+                "approved": False,
+                "message": (
+                    f"Blocked write to connected service ({integration.describe()}) because trust level is 'ask' "
+                    "and no interactive approval channel is available. Set trust level to 'auto' to allow unattended writes."
+                ),
+            }
         return _approved()
 
     # Gather findings: warnings = [(pattern_key, description, is_tirith)]. Tirith block AND warn both go through the
@@ -1056,9 +1070,14 @@ def _check_all_command_guards(command: str, env_type: str,
             warnings.append((tirith_key, _format_tirith_description(tirith_result), True))
     if is_dangerous and not is_approved(session_key, pattern_key):
         warnings.append((pattern_key, description, False))
-    if integration is not None and not is_approved(session_key, integration.key):
+    if integrations:
         from agent.i18n import get_language
-        warnings.append((integration.key, integration.describe(get_language()), False))
+        lang = get_language()
+        seen_keys: set[str] = set()
+        for act in integrations:
+            if act.key not in seen_keys and not is_approved(session_key, act.key):
+                seen_keys.add(act.key)
+                warnings.append((act.key, act.describe(lang), False))
     if not warnings:
         return _approved()
 

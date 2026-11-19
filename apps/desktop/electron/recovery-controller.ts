@@ -30,12 +30,15 @@ export function createRecoveryController(options: RecoveryOptions) {
     gate = new Promise<void>(resolve => {
       release = resolve
     })
+    let stopped = false
     let quitting = false
 
     try {
       if (!(await options.stop()).unlocked) {
         throw new Error('Nie udało się zatrzymać backendu. Nie zmieniono danych.')
       }
+
+      stopped = true
 
       if (restore) {
         await launchRecovery(options.root, process.pid, path.dirname(options.executable))
@@ -49,12 +52,16 @@ export function createRecoveryController(options: RecoveryOptions) {
 
       return { ok: true }
     } finally {
+      if (stopped && !quitting) {
+        try {
+          await options.restart()
+        } catch {
+          // Do not mask the primary error from try; backend supervisor can recover.
+        }
+      }
+
       release()
       gate = null
-
-      if (!quitting) {
-        await options.restart()
-      }
     }
   }
 

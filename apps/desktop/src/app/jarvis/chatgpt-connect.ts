@@ -89,11 +89,18 @@ export async function connectChatGpt(
     return { ok: false, reason: 'error' }
   }
 
+  if (signal?.aborted) {
+    await deps.cancel(start.session_id, ...args).catch(() => undefined)
+
+    return { ok: false, reason: 'cancelled' }
+  }
+
   onCode({ url: start.verification_url, userCode: start.user_code })
   void Promise.resolve(deps.openUrl(start.verification_url)).catch(() => undefined)
 
   const interval = Math.max(1000, (start.poll_interval || 0) * 1000, pollIntervalMs)
-  const deadline = Date.now() + Math.max(1, start.expires_in) * 1000
+  const expiresIn = Number.isFinite(start.expires_in) ? start.expires_in : 600
+  const deadline = Date.now() + Math.max(1, expiresIn) * 1000
 
   while (Date.now() < deadline) {
     if (signal?.aborted) {
@@ -105,7 +112,9 @@ export async function connectChatGpt(
     await deps.sleep(interval)
 
     if (signal?.aborted) {
-      continue
+      await deps.cancel(start.session_id, ...args).catch(() => undefined)
+
+      return { ok: false, reason: 'cancelled' }
     }
 
     let status: OAuthPollResponse
@@ -116,15 +125,30 @@ export async function connectChatGpt(
       return { message: error instanceof Error ? error.message : undefined, ok: false, reason: 'error' }
     }
 
+    if (signal?.aborted) {
+      await deps.cancel(start.session_id, ...args).catch(() => undefined)
+
+      return { ok: false, reason: 'cancelled' }
+    }
+
     if (status.status === 'approved') {
-      const options = await deps.loadOptions(...args)
-      const model = chatGptWorkModel(options.providers)
+      try {
+        const options = await deps.loadOptions(...args)
 
-      if (model && deps.setDefaultModel) {
-        await deps.setDefaultModel(CHATGPT_PROVIDER_SLUG, model, ...args)
+        if (signal?.aborted) {
+          return { ok: false, reason: 'cancelled' }
+        }
+
+        const model = chatGptWorkModel(options.providers)
+
+        if (model && deps.setDefaultModel) {
+          await deps.setDefaultModel(CHATGPT_PROVIDER_SLUG, model, ...args)
+        }
+
+        return { model, ok: true, options }
+      } catch (error) {
+        return { message: error instanceof Error ? error.message : undefined, ok: false, reason: 'error' }
       }
-
-      return { model, ok: true, options }
     }
 
     if (status.status === 'denied' || status.status === 'expired') {

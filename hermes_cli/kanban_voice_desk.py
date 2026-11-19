@@ -94,7 +94,7 @@ def _line(item: Dict[str, Any], lang: str) -> str:
     head = f'- {item["id"]} „{item["title"]}” ({item["assignee"] or "—"}): {_labels(lang)[item["verdict"]]}'
     parts = [head]
     if item["reason"]:
-        parts.append(f'{"Powód" if lang == "pl" else "Reason"}: {item["reason"]}')
+        parts.append(f'{"Powód" if lang == "pl" else "Reason"}: {fence(item["reason"], "kanban:worker").strip()}')
     if item["summary"]:
         parts.append(fence(item["summary"], "kanban:worker").strip())
     return "\n".join(parts)
@@ -247,7 +247,7 @@ def dispatch(
     }
 
 
-def digest(*, limit: int = MAX_ITEMS, lang: str = "pl") -> Dict[str, Any]:
+def digest(*, limit: int = MAX_ITEMS, lang: str = "pl", session_id: Optional[str] = None) -> Dict[str, Any]:
     """Board overview for the voice agent: what needs the user, what runs, what just finished."""
     now = int(time.time())
 
@@ -278,13 +278,22 @@ def digest(*, limit: int = MAX_ITEMS, lang: str = "pl") -> Dict[str, Any]:
         "done_recent": sum(1 for item in items if item["verdict"] in ("done", "done_unreported")),
     }
 
+    cap = max(1, limit)
+    selected = items[:cap]
+    if session_id:
+        seen = {item["id"] for item in selected}
+        selected = selected + [
+            item for item in items[cap:]
+            if item.get("session_id") == session_id and item["id"] not in seen
+        ]
+
     return {
         "at": now,
         "dispatcher": dispatcher_state(),
         "counts": counts,
         "agents": profile_names(),
-        "items": items[: max(1, limit)],
-        "truncated": len(items) > limit,
+        "items": selected,
+        "truncated": len(items) > len(selected),
     }
 
 
