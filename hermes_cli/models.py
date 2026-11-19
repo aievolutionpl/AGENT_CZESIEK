@@ -1317,12 +1317,11 @@ def _custom_catalog(normalized: str, force_refresh: bool) -> Optional[list[str]]
     if not base_url:
         return None
     model_cfg = _get_model_config_dict()
-    # Try common API key env vars for custom endpoints.
+    # Only use explicit custom-endpoint credentials — never forward OpenAI or
+    # OpenRouter production keys to arbitrary custom base URLs.
     api_key = (
         str(model_cfg.get("api_key", "") or "").strip()
-        or os.getenv("CUSTOM_API_KEY", "")
-        or os.getenv("OPENAI_API_KEY", "")
-        or os.getenv("OPENROUTER_API_KEY", ""))
+        or os.getenv("CUSTOM_API_KEY", ""))
     api_mode = "anthropic_messages" if _base_url_looks_like_anthropic_messages(base_url) else None
     return fetch_api_models(api_key, base_url, api_mode=api_mode) or None
 
@@ -1578,7 +1577,7 @@ def _load_provider_models_cache() -> dict:
         return {}
 
 
-_cache_write_lock = threading.Lock()
+_cache_write_lock = threading.RLock()
 
 
 def _save_provider_models_cache(data: dict) -> None:
@@ -1590,11 +1589,14 @@ def _save_provider_models_cache(data: dict) -> None:
 
 
 def _store_cache_entry(cache_key: str, entry: dict, cache: Optional[dict] = None) -> None:
-    """Write one row into the disk cache (reloading the latest state unless ``cache`` is given)."""
-    if cache is None:
-        cache = _load_provider_models_cache()
-    cache[cache_key] = entry
-    _save_provider_models_cache(cache)
+    """Write one row into the disk cache under ``_cache_write_lock``, reloading the latest state
+    from disk so concurrent fetches don't clobber each other's rows."""
+    with _cache_write_lock:
+        latest = _load_provider_models_cache()
+        latest[cache_key] = entry
+        _save_provider_models_cache(latest)
+        if isinstance(cache, dict):
+            cache[cache_key] = entry
 
 
 def update_provider_cache_entry(provider: str, models: list[str]) -> None:
@@ -1686,16 +1688,17 @@ def clear_provider_models_cache(provider: Optional[str] = None) -> None:
         _OLLAMA_LOCAL_MODELS_CACHE.clear()
         _OLLAMA_LOCAL_PROBE_FAILURE_CACHE.clear()
         _OLLAMA_LOCAL_PROBE_REACHABLE.clear()
-        if provider is None:
-            path = _provider_models_cache_path()
-            if path.exists():
-                path.unlink()
-            return
-        cache = _load_provider_models_cache()
-        normalized = _normalized_cache_slug(provider)
-        if normalized in cache:
-            del cache[normalized]
-            _save_provider_models_cache(cache)
+        with _cache_write_lock:
+            if provider is None:
+                path = _provider_models_cache_path()
+                if path.exists():
+                    path.unlink()
+                return
+            cache = _load_provider_models_cache()
+            normalized = _normalized_cache_slug(provider)
+            if normalized in cache:
+                del cache[normalized]
+                _save_provider_models_cache(cache)
     except Exception:
         pass
 
@@ -2440,7 +2443,7 @@ def _fetch_ai_gateway_models(timeout: float = 5.0) -> Optional[list[str]]:
     headers = {"Authorization": f"Bearer {api_key}", "User-Agent": _HERMES_USER_AGENT}
     try:
         url = base_url.rstrip("/") + "/models"
-        data = _get_json(url, timeout=timeout, headers=headers, opener=urllib.request.urlopen)
+        data = _get_json(url, timeout=timeout, headers=headers)
         return [
             m["id"] for m in data.get("data", [])
             if m.get("id") and m.get("type") == "language" and "tool-use" in (m.get("tags") or [])]

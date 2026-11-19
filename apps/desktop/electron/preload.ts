@@ -515,6 +515,14 @@ contextBridge.exposeInMainWorld('hermesDesktop', {
     check: () => ipcRenderer.invoke('hermes:updates:check'),
     apply: opts => ipcRenderer.invoke('hermes:updates:apply', opts),
     releaseCheck: () => ipcRenderer.invoke('hermes:updates:release-check'),
+    releaseDownload: opts => ipcRenderer.invoke('hermes:updates:release-download', opts),
+    releaseInstall: opts => ipcRenderer.invoke('hermes:updates:release-install', opts),
+    onReleaseProgress: callback => {
+      const listener = (_event, payload) => callback(payload)
+      ipcRenderer.on('hermes:updates:release-progress', listener)
+
+      return () => ipcRenderer.removeListener('hermes:updates:release-progress', listener)
+    },
     getBranch: () => ipcRenderer.invoke('hermes:updates:branch:get'),
     setBranch: name => ipcRenderer.invoke('hermes:updates:branch:set', name),
     onProgress: callback => {

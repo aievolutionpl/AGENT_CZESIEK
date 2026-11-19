@@ -190,15 +190,25 @@ def read_note(rel: str) -> dict[str, Any]:
 
 
 def write_note(rel: str, content: str) -> dict[str, Any]:
-    """Overwrite an existing note atomically (temp file + rename)."""
+    """Overwrite an existing note atomically (unique temp file + rename)."""
+    import tempfile
+
     path = _resolve_note(rel)
     if len(content.encode("utf-8")) > _MAX_NOTE_BYTES:
         raise ValueError("note is too large")
-    tmp = path.with_name(f".{path.name}.tmp")
-    # Preserve the editor's newlines across Windows and Unix; text-mode CRLF
-    # expansion made a saved note differ immediately from the submitted draft.
-    tmp.write_text(content, encoding="utf-8", newline="")
-    os.replace(tmp, path)
+    fd, tmp_name = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=str(path.parent))
+    try:
+        # Preserve the editor's newlines across Windows and Unix; text-mode CRLF
+        # expansion made a saved note differ immediately from the submitted draft.
+        with os.fdopen(fd, "w", encoding="utf-8", newline="") as handle:
+            handle.write(content)
+        os.replace(tmp_name, path)
+    except Exception:
+        try:
+            os.unlink(tmp_name)
+        except OSError:
+            pass
+        raise
     return {"ok": True, "id": rel}
 
 
@@ -237,6 +247,8 @@ def create_note(
     body = content if content is not None else f"# {name}\n\n"
     if external_source:
         body = external_content.fence(body, external_source)
+    if len(body.encode("utf-8")) > _MAX_NOTE_BYTES:
+        raise ValueError("note is too large")
 
     n = 1
     while True:

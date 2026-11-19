@@ -155,9 +155,23 @@ export function restoreRecoveryFiles(record: RecoveryRecord, root: string) {
   const choiceTarget = path.join(root, '..', 'runtime-collaborator.json')
   const previousChoice = fs.existsSync(choiceTarget) ? fs.readFileSync(choiceTarget) : null
   let choiceChanged = false
+
   // Finish copying before touching the current app. Renames stay on its volume.
-  fs.cpSync(path.join(snapshot, 'app'), stagedApp, { recursive: true })
-  fs.renameSync(target, previousApp)
+  try {
+    fs.cpSync(path.join(snapshot, 'app'), stagedApp, { recursive: true })
+    fs.renameSync(target, previousApp)
+  } catch (error) {
+    try {
+      if (fs.existsSync(stagedApp)) {
+        fs.rmSync(stagedApp, { recursive: true, force: true })
+      }
+    } catch {
+      // Ignore cleanup failure
+    }
+
+    throw error
+  }
+
   const changed: string[] = []
 
   try {
@@ -182,41 +196,60 @@ export function restoreRecoveryFiles(record: RecoveryRecord, root: string) {
     const choice = path.join(snapshot, 'runtime-collaborator.json')
 
     if (fs.existsSync(choice)) {
-      choiceChanged = true
       fs.copyFileSync(choice, choiceTarget)
+      choiceChanged = true
     }
 
     fs.writeFileSync(path.join(root, 'latest.json'), JSON.stringify({ ...record, status: 'restored' }))
   } catch (error) {
-    if (choiceChanged) {
-      if (previousChoice) {
-        fs.writeFileSync(choiceTarget, previousChoice)
-      } else {
-        fs.unlinkSync(choiceTarget)
+    const rollbackErrors: string[] = []
+
+    const tryStep = (fn: () => void) => {
+      try {
+        fn()
+      } catch (rollbackError) {
+        rollbackErrors.push(String(rollbackError))
       }
+    }
+
+    if (choiceChanged) {
+      tryStep(() => {
+        if (previousChoice) {
+          fs.writeFileSync(choiceTarget, previousChoice)
+        } else if (fs.existsSync(choiceTarget)) {
+          fs.unlinkSync(choiceTarget)
+        }
+      })
     }
 
     // Move partial restored data aside and put the pre-restore state back.
     for (const name of changed.reverse()) {
       const current = path.join(home, name)
-
-      if (fs.existsSync(current)) {
-        fs.renameSync(current, path.join(preserved, `partial-${name}`))
-      }
-
       const old = path.join(preserved, 'home', name)
 
-      if (fs.existsSync(old)) {
-        fs.renameSync(old, current)
+      tryStep(() => {
+        if (fs.existsSync(current)) {
+          fs.renameSync(current, path.join(preserved, `partial-${name}`))
+        }
+
+        if (fs.existsSync(old)) {
+          fs.renameSync(old, current)
+        }
+      })
+    }
+
+    tryStep(() => {
+      if (fs.existsSync(target)) {
+        fs.renameSync(target, `${target}.partial-restore-${suffix}`)
       }
-    }
 
-    if (fs.existsSync(target)) {
-      fs.renameSync(target, `${target}.partial-restore-${suffix}`)
-    }
+      if (fs.existsSync(previousApp)) {
+        fs.renameSync(previousApp, target)
+      }
+    })
 
-    fs.renameSync(previousApp, target)
-    throw new Error(`Przywracanie przerwane; zachowano poprzedni stan. ${String(error)}`)
+    const extra = rollbackErrors.length > 0 ? ` (rollback warnings: ${rollbackErrors.join('; ')})` : ''
+    throw new Error(`Przywracanie przerwane; zachowano poprzedni stan. ${String(error)}${extra}`)
   }
 }
 

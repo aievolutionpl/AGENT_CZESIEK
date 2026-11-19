@@ -53,17 +53,34 @@ export function bundledRuntimeBackend({
     throw new Error('Brakuje plików silnika Agenta Cześka. Zainstaluj ponownie pełny pakiet aplikacji.')
   }
 
-  const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'))
+  let manifest: { arch?: unknown; platform?: unknown; schemaVersion?: unknown } | null = null
 
-  if (manifest.schemaVersion !== 1 || manifest.platform !== platform || manifest.arch !== arch) {
+  try {
+    manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'))
+  } catch {
+    throw new Error('Pakiet silnika Agenta Cześka ma uszkodzony manifest. Zainstaluj ponownie pełny pakiet aplikacji.')
+  }
+
+  if (!manifest || typeof manifest !== 'object' || manifest.schemaVersion !== 1 || manifest.platform !== platform || manifest.arch !== arch) {
     throw new Error('Pakiet silnika Agenta Cześka nie pasuje do tej wersji aplikacji.')
   }
 
-  const environment = buildDesktopBackendEnv({ hermesHome, currentEnv })
+  const environment = buildDesktopBackendEnv({ hermesHome, currentEnv, platform })
+  let envPath = ''
 
   for (const key of Object.keys(environment)) {
-    if (key.toUpperCase() === 'PATH') {delete environment[key]}
+    if (key.toUpperCase() === 'PATH') {
+      envPath = environment[key] || envPath
+      delete environment[key]
+    }
   }
+
+  const rawCurrentPath = currentEnv.PATH || currentEnv.Path || currentEnv.path || ''
+  const sep = path.delimiter
+
+  const extraFromEnv = envPath
+    .split(isWindows ? ';' : ':')
+    .filter(entry => entry && !rawCurrentPath.split(isWindows ? ';' : ':').includes(entry))
 
   // macOS keeps the system bash/git (Xcode tools); only Python and the optional
   // Node are bundled, so they go first and the user's PATH stays behind them.
@@ -87,7 +104,7 @@ export function bundledRuntimeBackend({
     env: {
       ...environment,
       PYTHONPATH: root,
-      PATH: [...pathEntries, currentEnv.PATH || currentEnv.Path || ''].filter(Boolean).join(path.delimiter),
+      PATH: [...pathEntries, ...extraFromEnv, rawCurrentPath].filter(Boolean).join(sep),
       ...(isWindows ? { HERMES_GIT_BASH_PATH: path.join(bundle, 'git', 'bin', 'bash.exe') } : {}),
       PYTHONHOME: '',
       VIRTUAL_ENV: '',

@@ -15,31 +15,34 @@ from agent import integration_trust as trust
 
 
 def integration_block(command: str) -> dict | None:
-    action = trust.classify_command(command)
-    if action is None:
-        return None
-    level = trust.trust_level(action.integration)
-    if level not in ("read", "propose"):
-        return None
-    trust.log_decision(action, "blocked", level)
-    return {"approved": False, "message": trust.block_message(action, level), "integration_block": True,
-            "pattern_key": action.key, "description": action.describe()}
+    for action in trust.classify_all_commands(command):
+        level = trust.trust_level(action.integration)
+        if level in ("read", "propose"):
+            trust.log_decision(action, "blocked", level)
+            return {"approved": False, "message": trust.block_message(action, level), "integration_block": True,
+                    "pattern_key": action.key, "description": action.describe()}
+    return None
+
+
+def integration_ask_all(command: str) -> "list[trust.IntegrationAction]":
+    return [
+        action for action in trust.classify_all_commands(command)
+        if trust.trust_level(action.integration) == "ask"
+    ]
 
 
 def integration_ask(command: str) -> "trust.IntegrationAction | None":
-    action = trust.classify_command(command)
-    if action is None or trust.trust_level(action.integration) != "ask":
-        return None
-    return action
+    actions = integration_ask_all(command)
+    return actions[0] if actions else None
 
 
 def record_outcome(command: str, result: dict) -> None:
-    """Log what happened to a classified write once the gate has decided (blocked floors log themselves)."""
-    action = trust.classify_command(command)
-    if action is None or result.get("integration_block"):
+    """Log what happened to every classified write once the gate has decided (blocked floors log themselves)."""
+    if result.get("integration_block"):
         return
-    level = trust.trust_level(action.integration)
-    if not result.get("approved"):
-        trust.log_decision(action, "denied", level)
-    else:
-        trust.log_decision(action, "approved" if level == "ask" else "auto", level)
+    for action in trust.classify_all_commands(command):
+        level = trust.trust_level(action.integration)
+        if not result.get("approved"):
+            trust.log_decision(action, "denied", level)
+        else:
+            trust.log_decision(action, "approved" if level == "ask" else "auto", level)

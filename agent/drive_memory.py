@@ -13,6 +13,7 @@ Drive access goes through the ``google-workspace`` skill scripts, like the rest 
 from __future__ import annotations
 
 import json
+import os
 import re
 import tempfile
 from pathlib import Path
@@ -50,7 +51,27 @@ def _load() -> dict[str, Any]:
 
 
 def _save(state: dict[str, Any]) -> None:
-    _state_path().write_text(json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8")
+    target = _state_path()
+    target.parent.mkdir(parents=True, exist_ok=True)
+    payload = json.dumps(state, ensure_ascii=False, indent=2)
+    fd, tmp_name = tempfile.mkstemp(prefix=".drive_memory.", suffix=".tmp", dir=str(target.parent))
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as handle:
+            handle.write(payload)
+        os.replace(tmp_name, target)
+    except Exception:
+        try:
+            os.unlink(tmp_name)
+        except OSError:
+            pass
+        raise
+
+
+def _valid_drive_id(value: Any) -> str:
+    candidate = str(value or "").strip()
+    if not candidate or candidate.startswith("-") or not _ID.fullmatch(candidate):
+        raise ValueError("Invalid Google Drive identifier.")
+    return candidate
 
 
 def parse_folder_id(text: str) -> str:
@@ -59,8 +80,8 @@ def parse_folder_id(text: str) -> str:
     for pattern in (r"/folders/([A-Za-z0-9_-]+)", r"[?&]id=([A-Za-z0-9_-]+)"):
         hit = re.search(pattern, text)
         if hit:
-            return hit.group(1)
-    if _ID.match(text):
+            return _valid_drive_id(hit.group(1))
+    if _ID.fullmatch(text) and not text.startswith("-"):
         return text
     raise ValueError("That is not a Google Drive folder link.")
 
@@ -106,7 +127,8 @@ def remove_folder(folder_id: str) -> dict[str, Any]:
 
 
 def _list_children(folder_id: str, run: Runner) -> list[dict[str, Any]]:
-    query = f"'{folder_id}' in parents and trashed=false"
+    safe_id = _valid_drive_id(folder_id)
+    query = f"'{safe_id}' in parents and trashed=false"
     code, out, _ = run("google_api.py", ["drive", "search", query, "--raw-query", "--max", "100"], 60)
     data = _json(out) if code == 0 else None
     return [d for d in data if isinstance(d, dict) and d.get("id")] if isinstance(data, list) else []
@@ -142,10 +164,15 @@ def _extract_text(meta: dict[str, Any], run: Runner) -> Optional[str]:
 
 
 def _note_body(meta: dict[str, Any], text: Optional[str]) -> str:
-    name = str(meta.get("name") or meta["id"])
-    link = meta.get("webViewLink") or f"https://drive.google.com/open?id={meta['id']}"
-    modified = str(meta.get("modifiedTime") or "")[:10]
-    kind = str(meta.get("mimeType") or "").rsplit(".", 1)[-1].rsplit("/", 1)[-1]
+    raw_name = str(meta.get("name") or meta["id"])
+    name = " ".join(re.sub(r"[\r\n\x00-\x1f\x7f]+", " ", raw_name).split())[:200] or str(meta["id"])
+    raw_link = str(meta.get("webViewLink") or "").strip()
+    if raw_link.startswith("https://") and not re.search(r"[\s()<>\"']", raw_link):
+        link = raw_link
+    else:
+        link = f"https://drive.google.com/open?id={meta['id']}"
+    modified = re.sub(r"[\r\n]+", "", str(meta.get("modifiedTime") or ""))[:10]
+    kind = re.sub(r"[\r\n]+", "", str(meta.get("mimeType") or "")).rsplit(".", 1)[-1].rsplit("/", 1)[-1]
     header = [
         f"# {name}", "",
         f"> Źródło: [Otwórz w Google Drive]({link}) · {kind} · zmieniono {modified}",

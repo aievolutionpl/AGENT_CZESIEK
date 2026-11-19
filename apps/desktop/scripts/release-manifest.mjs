@@ -84,7 +84,7 @@ export function classifyArtifact(filename) {
 
   let rule = KIND_RULES.find(candidate => candidate.ext === ext)
   if (!rule && ext === '.zip') {
-    rule = { ext: '.zip', platform: lower.includes('mac') ? 'mac' : null, kind: 'zip', signable: false }
+    rule = { ext: '.zip', platform: lower.includes('mac') || lower.includes('darwin') ? 'mac' : null, kind: 'zip', signable: false }
   }
 
   if (!rule) {
@@ -100,8 +100,8 @@ export function classifyArtifact(filename) {
 }
 
 function detectPlatform(lower) {
-  if (lower.includes('win')) return 'win'
   if (lower.includes('mac') || lower.includes('darwin')) return 'mac'
+  if (lower.includes('win')) return 'win'
   if (lower.includes('linux')) return 'linux'
 
   return null

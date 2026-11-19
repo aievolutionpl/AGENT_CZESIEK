@@ -37,6 +37,7 @@ import type { JarvisInsightsView } from './panel-copy'
 import { JarvisQuickAccess } from './quick-access'
 import { $railHidden, $workspacePanelView, openWorkspacePanel, setRailHidden } from './rail-layout'
 import { JarvisMemoryCard } from './rail-memory-card'
+import { ReleaseUpdateBanner } from './release-update-banner'
 import { ScreenLookingBadge } from './screen-looking-badge'
 import { JarvisStatusStrip } from './status-strip'
 import { JarvisTipsLauncher } from './tips'
@@ -113,14 +114,20 @@ function useDashboardLayout(override: DashboardLayout | undefined): DashboardLay
     update()
 
     for (const query of media) {
-      query.addEventListener?.('change', update)
-      query.addListener?.(update)
+      if (query.addEventListener) {
+        query.addEventListener('change', update)
+      } else {
+        query.addListener?.(update)
+      }
     }
 
     return () => {
       for (const query of media) {
-        query.removeEventListener?.('change', update)
-        query.removeListener?.(update)
+        if (query.removeEventListener) {
+          query.removeEventListener('change', update)
+        } else {
+          query.removeListener?.(update)
+        }
       }
     }
   }, [override])
@@ -331,6 +338,7 @@ export function JarvisDashboard({
   onOpenUpdate,
   profileDisplayName,
   rail,
+  railActions,
   state,
   switcher,
   voiceControls
@@ -430,6 +438,7 @@ export function JarvisDashboard({
         {
           <>
             <HomeTopBar connected={connected} openTips={() => openTipsRef.current()} switcher={switcher} />
+            <ReleaseUpdateBanner />
             {home ? tipsLauncher : null}
           </>
         }
@@ -559,6 +568,7 @@ export function JarvisDashboard({
               >
                 {locale === 'pl' ? 'Pamięć' : 'Memory'}
               </Button>
+              {railActions}
               <Button
                 aria-label={t.jarvisShell.home.hideRail}
                 className="jarvis-glass jarvis-glass-hover"
@@ -575,6 +585,7 @@ export function JarvisDashboard({
               <JarvisMemoryCard connected={connected} />
             ) : (
               <>
+                {rail}
                 {insightsPanel}
                 <JarvisQuickAccess connected={connected} label={t.jarvisShell.home.shortcutsLabel} limit={3} />
               </>

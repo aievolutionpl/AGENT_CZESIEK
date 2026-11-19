@@ -90,9 +90,11 @@ export function useRealtimeConversation({
 }: UseRealtimeConversationArgs) {
   const [status, setStatus] = useState<ConversationStatus>('idle')
   const [muted, setMuted] = useState(false)
+  const mutedRef = useRef(false)
   const [level, setLevel] = useState(0)
   const [workProgress, setWorkProgress] = useState<string | null>(null)
   const sessionRef = useRef<null | RealtimeVoiceSession>(null)
+  const lastClearedFor = useRef<{ value: string | null }>({ value: sessionId })
   const args = useRef({ busy, failureLabel, markSpoken, messages, onFatalError, onSubmit, onInterrupt })
   args.current = { busy, failureLabel, markSpoken, messages, onFatalError, onSubmit, onInterrupt }
 
@@ -211,8 +213,19 @@ export function useRealtimeConversation({
   }, [enabled])
 
   useEffect(() => {
-    announcements.current.clear()
-    assignedTasks.current.clear()
+    const prev = lastClearedFor.current.value
+    lastClearedFor.current.value = sessionId
+    const claimed = prev === null && sessionId !== null
+
+    if (!claimed && prev !== sessionId) {
+      announcements.current.clear()
+      assignedTasks.current.clear()
+    }
+
+    if (!enabled) {
+      return
+    }
+
     const known = new Map(($subagentsBySession.get()[sessionId || ''] || []).map(item => [item.id, item.status]))
 
     return $subagentsBySession.subscribe(all => {
@@ -227,13 +240,13 @@ export function useRealtimeConversation({
         }
       }
     })
-  }, [sessionId])
+  }, [enabled, sessionId])
 
   const ask = useCallback(
     async (request: string) => {
       // Never submit into the busy foreground composer: submitVoiceTurn intentionally
       // rejects that call, and waiting for it would misattribute the previous job's answer.
-      if (args.current.busy() || dispatching.current) {
+      if (args.current.busy() || dispatching.current || slowAsks.current.length > 0) {
         return deskTools('assign_work', { title: request.slice(0, 120), details: request })
       }
 
@@ -241,12 +254,30 @@ export function useRealtimeConversation({
       // Claim the reply before submission can create the conversation id. Otherwise
       // the first slow question is still owned by null after the chat has been created.
       const task = { cancelled: false, session: sid }
+      dispatching.current = true
       slowAsks.current.push(task)
 
-      const answer = submitAndAwaitReply(
-        { busy: () => args.current.busy(), messages: () => args.current.messages() },
-        () => args.current.onSubmit(request),
-        ASK_TIMEOUT_MS
+      const ownedSource = {
+        busy: () => {
+          if (task.cancelled) {
+            throw new Error('Conversation changed')
+          }
+
+          return args.current.busy()
+        },
+        messages: () => {
+          if (task.cancelled) {
+            throw new Error('Conversation changed')
+          }
+
+          return args.current.messages()
+        }
+      }
+
+      const answer = submitAndAwaitReply(ownedSource, () => args.current.onSubmit(request), ASK_TIMEOUT_MS).finally(
+        () => {
+          dispatching.current = false
+        }
       )
 
       let inline: AgentReply | null
@@ -430,6 +461,7 @@ export function useRealtimeConversation({
     sessionRef.current?.stop()
     sessionRef.current = null
     $speakerMuted.set(false)
+    mutedRef.current = false
     setMuted(false)
     setStatus('idle')
     setLevel(0)
@@ -509,6 +541,7 @@ export function useRealtimeConversation({
           session.stop()
         } else {
           sessionRef.current = session
+          session.setMuted(mutedRef.current)
           session.setSpeakerMuted?.($speakerMuted.get())
         }
       },
@@ -528,11 +561,10 @@ export function useRealtimeConversation({
   }, [ask, deskTools, delegate, enabled, end])
 
   const toggleMute = useCallback(() => {
-    setMuted(value => {
-      sessionRef.current?.setMuted(!value)
-
-      return !value
-    })
+    const next = !mutedRef.current
+    mutedRef.current = next
+    sessionRef.current?.setMuted(next)
+    setMuted(next)
   }, [])
 
   // Turn detection is server-side: there is no local "end my turn" to force.

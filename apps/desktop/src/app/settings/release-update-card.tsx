@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
-import type { DesktopReleaseCheck } from '@/global'
+import { Progress } from '@/components/ui/progress'
+import type { DesktopReleaseCheck, DesktopReleaseDownloadProgress } from '@/global'
 import { useI18n } from '@/i18n'
-import { CheckCircle2, ExternalLink, Loader2, RefreshCw } from '@/lib/icons'
+import { CheckCircle2, Download, ExternalLink, Loader2, RefreshCw } from '@/lib/icons'
 import { cn } from '@/lib/utils'
 
 const COPY = {
@@ -11,6 +12,12 @@ const COPY = {
     check: 'Check for updates',
     checking: 'Checking…',
     download: 'Download installer',
+    downloadAndInstall: 'Download & install',
+    downloading: (pct: number) => (pct > 0 ? `Downloading installer (${pct}%)…` : 'Downloading installer…'),
+    verifying: 'Verifying SHA-256 checksum…',
+    launching: 'Creating backup & starting installer…',
+    launched: 'Installer opened — follow the on-screen steps. Your profile and data stay intact.',
+    downloadFailed: (err: string) => `In-app download failed (${err}). You can still open the release page.`,
     latest: (v: string) => `You have the latest version (${v}).`,
     notes: 'See what changed',
     noRelease: 'No published release was found. The repository may be private or have no release yet.',
@@ -24,6 +31,12 @@ const COPY = {
     check: 'Sprawdź aktualizacje',
     checking: 'Sprawdzam…',
     download: 'Pobierz instalator',
+    downloadAndInstall: 'Pobierz i zainstaluj',
+    downloading: (pct: number) => (pct > 0 ? `Pobieram instalator (${pct}%)…` : 'Pobieram instalator…'),
+    verifying: 'Weryfikuję sumę kontrolną SHA-256…',
+    launching: 'Tworzę kopię bezpieczeństwa i uruchamiam instalator…',
+    launched: 'Instalator został uruchomiony — dokończ aktualizację w jego oknie. Profil i dane zostają.',
+    downloadFailed: (err: string) => `Nie udało się pobrać w aplikacji (${err}). Możesz otworzyć stronę wydania.`,
     latest: (v: string) => `Masz najnowszą wersję (${v}).`,
     notes: 'Zobacz, co się zmieniło',
     noRelease: 'Nie znaleziono opublikowanego wydania. Repozytorium może być prywatne albo nie ma jeszcze wydania.',
@@ -39,14 +52,18 @@ const open = (url: string) => void window.hermesDesktop?.openExternal?.(url)
 
 /**
  * The update card for installed builds (no git checkout to pull from): reads
- * the distribution repository's latest GitHub Release and offers the installer
- * for this machine. Checks once when it opens, and on demand.
+ * the distribution repository's latest GitHub Release and offers one-click
+ * in-app download + SHA-256 verification + installer launch (with browser fallback).
  */
 export function ReleaseUpdateCard() {
   const { locale } = useI18n()
   const copy = locale === 'pl' ? COPY.pl : COPY.en
   const [result, setResult] = useState<DesktopReleaseCheck | null>(null)
   const [checking, setChecking] = useState(false)
+  const [progress, setProgress] = useState<DesktopReleaseDownloadProgress | null>(null)
+  const [busyInstall, setBusyInstall] = useState(false)
+  const [installMessage, setInstallMessage] = useState<string | null>(null)
+  const [installError, setInstallError] = useState<string | null>(null)
 
   const run = useCallback(async () => {
     const check = window.hermesDesktop?.updates?.releaseCheck
@@ -56,6 +73,7 @@ export function ReleaseUpdateCard() {
     }
 
     setChecking(true)
+    setInstallError(null)
 
     try {
       setResult(await check())
@@ -68,8 +86,75 @@ export function ReleaseUpdateCard() {
     void run()
   }, [run])
 
+  useEffect(() => {
+    const subscribe = window.hermesDesktop?.updates?.onReleaseProgress
+
+    if (!subscribe) {
+      return
+    }
+
+    return subscribe(next => {
+      setProgress(next)
+    })
+  }, [])
+
   const available = result?.ok === true && result.updateAvailable
   const failed = result !== null && !result.ok
+
+  const canInAppDownload = Boolean(
+    result?.ok === true &&
+      result.asset &&
+      window.hermesDesktop?.updates?.releaseDownload &&
+      window.hermesDesktop?.updates?.releaseInstall
+  )
+
+  const startInAppUpdate = useCallback(async () => {
+    if (result?.ok !== true || !result.asset) {
+      return
+    }
+
+    const download = window.hermesDesktop?.updates?.releaseDownload
+    const install = window.hermesDesktop?.updates?.releaseInstall
+
+    if (!download || !install) {
+      open(result.asset.url)
+
+      return
+    }
+
+    setBusyInstall(true)
+    setInstallError(null)
+    setInstallMessage(null)
+    setProgress({ stage: 'downloading', receivedBytes: 0, totalBytes: result.asset.size ?? 0, percent: 0 })
+
+    try {
+      const dl = await download({
+        asset: result.asset,
+        checksumsAsset: result.checksumsAsset ?? null
+      })
+
+      if (!dl.ok || !dl.filePath) {
+        setInstallError(copy.downloadFailed(dl.error || 'unknown error'))
+
+        return
+      }
+
+      setProgress({ stage: 'installing', receivedBytes: 1, totalBytes: 1, percent: 100 })
+      const launched = await install({ filePath: dl.filePath, prepareRecovery: true })
+
+      if (!launched.ok) {
+        setInstallError(copy.downloadFailed(launched.error || 'could not launch installer'))
+
+        return
+      }
+
+      setInstallMessage(copy.launched)
+    } catch (error) {
+      setInstallError(copy.downloadFailed(error instanceof Error ? error.message : String(error)))
+    } finally {
+      setBusyInstall(false)
+    }
+  }, [copy, result])
 
   return (
     <div
@@ -103,17 +188,40 @@ export function ReleaseUpdateCard() {
         <p className="mt-2 line-clamp-4 whitespace-pre-line text-xs text-muted-foreground">{result.notes}</p>
       ) : null}
 
+      {busyInstall && progress ? (
+        <div className="mt-3 space-y-1.5">
+          <p className="text-xs text-muted-foreground">
+            {progress.stage === 'verifying'
+              ? copy.verifying
+              : progress.stage === 'installing'
+                ? copy.launching
+                : copy.downloading(progress.percent)}
+          </p>
+          <Progress value={progress.percent} />
+        </div>
+      ) : null}
+
+      {installMessage ? <p className="mt-2 text-xs text-emerald-600 dark:text-emerald-400">{installMessage}</p> : null}
+      {installError ? <p className="mt-2 text-xs text-destructive">{installError}</p> : null}
+
       <div className="mt-3 flex flex-wrap items-center gap-4">
-        <Button disabled={checking} onClick={() => void run()} size="sm" variant="textStrong">
+        <Button disabled={checking || busyInstall} onClick={() => void run()} size="sm" variant="textStrong">
           {checking ? <Loader2 className="size-3 animate-spin" /> : <RefreshCw className="size-3" />}
           {checking ? copy.checking : copy.check}
         </Button>
 
         {result?.ok === true && available ? (
           <>
-            <Button onClick={() => open(result.asset?.url ?? result.pageUrl)} size="sm">
-              {copy.download}
-            </Button>
+            {canInAppDownload ? (
+              <Button disabled={busyInstall} onClick={() => void startInAppUpdate()} size="sm">
+                {busyInstall ? <Loader2 className="size-3 animate-spin" /> : <Download className="size-3" />}
+                {copy.downloadAndInstall}
+              </Button>
+            ) : (
+              <Button onClick={() => open(result.asset?.url ?? result.pageUrl)} size="sm">
+                {copy.download}
+              </Button>
+            )}
             <Button onClick={() => open(result.pageUrl)} size="sm" variant="textStrong">
               <ExternalLink className="size-3" />
               {copy.notes}

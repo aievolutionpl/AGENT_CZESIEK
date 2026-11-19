@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { createRealtimeVoiceSession, getApiRequestConnection, getEnvVars, getStatus, getToolsets } from '@/hermes'
+import { useActiveCapabilityScope } from '@/hooks/use-active-capability-scope'
 import { Wrench } from '@/lib/icons'
 import { startLiveVoice } from '@/lib/live-voice/start'
 import type { RealtimeVoiceSession } from '@/lib/realtime-voice'
@@ -9,6 +10,7 @@ import type { RealtimeVoiceSession } from '@/lib/realtime-voice'
 import { healthError } from './health-error'
 import { SectionHeading, SettingsContent } from './primitives'
 import { RecoverySettings } from './recovery-settings'
+import { VOICE_PROVIDER_KEYS } from './voice-provider-choice'
 
 interface Check {
   label: string
@@ -26,6 +28,12 @@ const initial: Record<string, Check> = {
 }
 
 export function AssistantHealth() {
+  const { scopeKey } = useActiveCapabilityScope()
+
+  return <ScopedAssistantHealth key={scopeKey} />
+}
+
+function ScopedAssistantHealth() {
   const [checks, setChecks] = useState(initial)
   const [busy, setBusy] = useState(false)
   const [calling, setCalling] = useState(false)
@@ -75,15 +83,23 @@ export function AssistantHealth() {
       check('keys', async () => {
         const env = await getEnvVars()
 
-        const configured = ['OPENROUTER_API_KEY', 'GEMINI_API_KEY', 'GOOGLE_API_KEY', 'OPENAI_API_KEY'].filter(
-          key => env[key]?.is_set
+        const keyCandidates = Array.from(
+          new Set([
+            'OPENROUTER_API_KEY',
+            'GEMINI_API_KEY',
+            'GOOGLE_API_KEY',
+            'OPENAI_API_KEY',
+            ...Object.values(VOICE_PROVIDER_KEYS)
+          ])
         )
+
+        const configured = keyCandidates.filter(key => env[key]?.is_set)
 
         if (!configured.length) {
           throw new Error('Nie zapisano kluczy API. Dodaj je w ustawieniach dostawców.')
         }
 
-        return `Zapisane: ${configured.map(key => key.replace('_API_KEY', '')).join(', ')}. Sam zapis nie potwierdza ważności klucza; test rozmowy sprawdzi wybrane API głosowe.`
+        return `Zapisane: ${configured.map(key => key.replace(/_API_KEY$|_KEY$/, '')).join(', ')}. Sam zapis nie potwierdza ważności klucza; test rozmowy sprawdzi wybrane API głosowe.`
       }),
       check('tools', async () => {
         const tools = await getToolsets()

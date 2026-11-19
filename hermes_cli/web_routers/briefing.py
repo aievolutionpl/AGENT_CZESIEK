@@ -171,15 +171,17 @@ async def _google_snapshot(profile: Optional[str]) -> Optional[Dict[str, Any]]:
 
 @router.get("/api/briefing")
 async def get_briefing(profile: Optional[str] = None):
+    from hermes_cli.web_routers._common import scoped_to_thread
+
     try:
-        cfg = await asyncio.to_thread(load_config)
+        cfg = await scoped_to_thread(profile, load_config)
     except Exception:
         cfg = {}
     since, today = briefing_window(datetime.now())
     world_data, ai_data, workspace, google = await asyncio.gather(
         _cached_news(resolve_briefing_feeds(cfg)),
         _cached_news(news.resolve_news_feeds(cfg)),
-        asyncio.to_thread(_workspace, profile, since, today),
+        scoped_to_thread(profile, lambda: _workspace(profile, since, today)),
         _google_snapshot(profile),
     )
     model = cfg.get("model") if isinstance(cfg, dict) else None

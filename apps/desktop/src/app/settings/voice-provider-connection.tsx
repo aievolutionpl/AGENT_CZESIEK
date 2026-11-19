@@ -2,7 +2,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link } from 'react-router'
 
-import type { ProfileScope } from '@/api/client'
+import { type ProfileScope, profileScopeKey } from '@/api/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useI18n } from '@/i18n'
@@ -65,8 +65,15 @@ export function VoiceProviderConnection({
             ? 'Klucz zapisany. Wybierz głos i rozpocznij nową rozmowę.'
             : 'Key saved. Choose a voice and start a new conversation.'
         )
+
         // Voice catalogs and availability may have been fetched before the key existed.
-        await queryClient.invalidateQueries({ queryKey: ['elevenlabs-voices'] })
+        if (provider === 'elevenlabs') {
+          try {
+            await queryClient.invalidateQueries({ queryKey: ['elevenlabs-voices', profileScopeKey(scope)] })
+          } catch {
+            // Key is already saved; do not report a save error on cache refresh failure.
+          }
+        }
       } else {
         setMessage(result.message ?? (pl ? 'Nie udało się zapisać klucza.' : 'Could not save the key.'))
       }

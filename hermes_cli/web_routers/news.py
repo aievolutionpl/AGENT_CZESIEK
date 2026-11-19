@@ -61,6 +61,23 @@ def _feed_name(url: str) -> str:
     return host[4:] if host.startswith("www.") else host
 
 
+def _is_safe_feed_url(url: str) -> bool:
+    """Reject non-HTTP(S) schemes, localhost/internal names, and non-global literal IPs (SSRF guard)."""
+    import ipaddress
+
+    parsed = urlparse(url)
+    if parsed.scheme not in ("http", "https"):
+        return False
+    host = (parsed.hostname or "").strip().lower().rstrip(".")
+    if not host or host == "localhost" or host.endswith((".localhost", ".local", ".internal")):
+        return False
+    try:
+        ip = ipaddress.ip_address(host)
+    except ValueError:
+        return True
+    return ip.is_global
+
+
 def resolve_news_feeds(cfg: Optional[Dict[str, Any]]) -> List[Dict[str, str]]:
     """Normalize ``dashboard.news_feeds``; defaults when unset, empty or malformed."""
     dash = (cfg or {}).get("dashboard") if isinstance(cfg, dict) else None
@@ -75,7 +92,7 @@ def resolve_news_feeds(cfg: Optional[Dict[str, Any]]) -> List[Dict[str, str]]:
                 name = str(entry.get("name") or "").strip()
             else:
                 continue
-            if urlparse(url).scheme not in ("http", "https"):
+            if not _is_safe_feed_url(url):
                 continue
             feeds.append({"name": name or _feed_name(url), "url": url})
     return feeds[:_MAX_FEEDS] or [dict(f) for f in DEFAULT_NEWS_FEEDS]
@@ -187,6 +204,11 @@ async def _fetch_host_group(client: httpx.AsyncClient, group: List[Tuple[int, Di
     return out
 
 
+async def _guard_redirect_request(request: httpx.Request) -> None:
+    if not _is_safe_feed_url(str(request.url)):
+        raise httpx.UnsupportedProtocol(f"Blocked unsafe feed URL: {request.url.host}")
+
+
 async def collect_news(feeds: List[Dict[str, str]]) -> Dict[str, Any]:
     groups: Dict[str, List[Tuple[int, Dict[str, str]]]] = {}
     for index, feed in enumerate(feeds):
@@ -195,6 +217,7 @@ async def collect_news(feeds: List[Dict[str, str]]) -> Dict[str, Any]:
         timeout=_FETCH_TIMEOUT_S,
         follow_redirects=True,
         headers={"User-Agent": "HermesAgent-Dashboard/1.0 (+news)"},
+        event_hooks={"request": [_guard_redirect_request]},
     ) as client:
         gathered = await asyncio.gather(*(_fetch_host_group(client, group) for group in groups.values()))
     # Feeds keep the order they were configured in, whatever order their hosts finished.

@@ -66,7 +66,7 @@ export function createDeskTools({ capture, lang, localProgress, onAssigned, onLo
         assignee: text(args.assignee) || undefined,
         details: text(args.details),
         lang: lang(),
-        priority: Number.isFinite(priority) ? priority : 0,
+        priority: Number.isFinite(priority) ? Math.round(priority) : 0,
         session_id: owner,
         title: text(args.title)
       })

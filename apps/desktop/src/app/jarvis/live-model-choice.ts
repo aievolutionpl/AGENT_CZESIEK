@@ -1,5 +1,5 @@
 import { useStore } from '@nanostores/react'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 
 import { getHermesConfigRecord, saveHermesConfigRecord } from '@/api/config'
 import { useI18n } from '@/i18n'
@@ -22,14 +22,16 @@ export function useLiveVoiceModel() {
   const connectionId = useStore($activeConnectionId)
   const profile = useStore($activeGatewayProfile)
   const [saving, setSaving] = useState(false)
+  const inFlight = useRef(false)
 
   const choose = async (selection: string) => {
     const model = LIVE_VOICE_MODELS.find(item => liveModelValue(item) === selection)
 
-    if (!model) {
+    if (!model || inFlight.current) {
       return
     }
 
+    inFlight.current = true
     setSaving(true)
 
     const scope = { connectionId, profile }
@@ -54,8 +56,11 @@ export function useLiveVoiceModel() {
         applyVoiceEngineFromConfig(config)
       }
     } catch (error) {
-      notifyError(error, locale === 'pl' ? 'Nie zapisano modelu rozmowy' : 'Could not save voice model')
+      if ($activeGatewayProfile.get() === profile && $activeConnectionId.get() === connectionId) {
+        notifyError(error, locale === 'pl' ? 'Nie zapisano modelu rozmowy' : 'Could not save voice model')
+      }
     } finally {
+      inFlight.current = false
       setSaving(false)
     }
   }

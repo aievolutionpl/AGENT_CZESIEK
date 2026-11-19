@@ -63,7 +63,7 @@ export function diffDesk(
 export interface DeskWatcherDeps {
   onActivity?: (items: readonly DeskItem[]) => void
   assigned?: () => ReadonlySet<string>
-  fetchDesk: (lang: DeskLang) => Promise<DeskDigest>
+  fetchDesk: (lang: DeskLang, sessionId?: null | string) => Promise<DeskDigest>
   intervalMs?: number
   lang: () => DeskLang
   push: (text: string, progress?: boolean) => void
@@ -97,7 +97,7 @@ export function startDeskWatcher({
     const requestedSession = sessionId()
 
     try {
-      const digest = await fetchDesk(lang())
+      const digest = await fetchDesk(lang(), requestedSession)
 
       if (!stopped && requestedSession === sessionId()) {
         if (owner !== requestedSession) {

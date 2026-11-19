@@ -313,7 +313,7 @@ function ScopedVaultView({ scope, scopeKey }: { scope: ProfileScope; scopeKey: s
   const openInObsidian = () => {
     if (graph) {
       const abs = selected ? `${graph.vault.path}/${selected}` : graph.vault.path
-      void window.hermesDesktop.openExternal(`obsidian://open?path=${encodeURIComponent(abs)}`)
+      void window.hermesDesktop?.openExternal?.(`obsidian://open?path=${encodeURIComponent(abs)}`)?.catch(() => undefined)
     }
   }
 
