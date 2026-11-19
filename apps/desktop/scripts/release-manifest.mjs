@@ -126,6 +126,31 @@ export function sha256File(file, readFile = fs.readFileSync) {
   return createHash('sha256').update(readFile(file)).digest('hex')
 }
 
+/** Both Mac builds produce latest-mac.yml. Rebuild it from the packaged files
+ * after downloading the two legs, before calculating the published checksums. */
+export async function writeMacUpdateIndex(dir, version, now = new Date()) {
+  const names = fs.readdirSync(dir)
+  const files = []
+  for (const arch of ['x64', 'arm64']) {
+    for (const extension of ['zip', 'dmg']) {
+      const suffix = `-${version}-mac-${arch}.${extension}`
+      const matches = names.filter(name => name.endsWith(suffix))
+      if (matches.length !== 1) throw new Error(`Expected one macOS package ending in ${suffix}, found ${matches.length}`)
+      const [url] = matches
+      const source = path.join(dir, url)
+      const hash = createHash('sha512')
+      for await (const chunk of fs.createReadStream(source)) hash.update(chunk)
+      files.push({ url, sha512: hash.digest('base64'), size: fs.statSync(source).size })
+    }
+  }
+
+  // Older clients use the Intel ZIP in path. Current clients select the
+  // architecture-specific ZIP from files. JSON is also valid YAML.
+  const { url, sha512 } = files[0]
+  const index = { version, files, path: url, sha512, releaseDate: now.toISOString() }
+  fs.writeFileSync(path.join(dir, 'latest-mac.yml'), JSON.stringify(index, null, 2) + '\n')
+}
+
 function readNotarizationReport(dir, readFile = fs.readFileSync) {
   try {
     return JSON.parse(readFile(path.join(dir, NOTARIZATION_REPORT_FILENAME), 'utf8'))
@@ -228,7 +253,7 @@ function parseArgs(argv) {
   return args
 }
 
-function main() {
+async function main() {
   const args = parseArgs(process.argv.slice(2))
   const dir = path.resolve(args.dir)
 
@@ -238,6 +263,7 @@ function main() {
     version = pkg.version
   }
 
+  if (process.argv.includes('--mac-update-index')) await writeMacUpdateIndex(dir, version)
   const manifest = buildManifest({ dir, version, commit: args.commit })
   writeManifest(dir, manifest)
 
@@ -249,5 +275,5 @@ function main() {
 }
 
 if (isMain(import.meta.url)) {
-  main()
+  await main()
 }
