@@ -7,12 +7,13 @@ if state=$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json isDraft --j
     exit 1
   fi
 
-  gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --notes-file notes.md
+  gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --notes-file notes.md
   gh release upload "$TAG" staging/* --repo "$GITHUB_REPOSITORY" --clobber
 else
   gh release create "$TAG" \
     --repo "$GITHUB_REPOSITORY" \
-    --title "AI Evolution Jarvis v${VERSION}" \
+    --target "$GITHUB_SHA" \
+    --title "Agent Czesiek v${VERSION}" \
     --notes-file notes.md \
     --draft
   gh release upload "$TAG" staging/* --repo "$GITHUB_REPOSITORY"

@@ -89,8 +89,8 @@ jobs:
           fi
 
           pkg_version=$(node -p "require('./apps/desktop/package.json').version")
-          if [ "$IS_TAG" = "true" ] && [ "$version" != "$pkg_version" ]; then
-            echo "::error::Tag $REF_NAME does not match apps/desktop/package.json version $pkg_version."
+          if [ "$version" != "$pkg_version" ]; then
+            echo "::error::Requested version $version does not match apps/desktop/package.json version $pkg_version."
             echo "::error::Bump the package version in the same commit you tag, or the installers will be named after a version nobody released."
             exit 1
           fi
@@ -101,7 +101,7 @@ jobs:
           # names unique; `archs` narrows the per-leg gate to that slice (the
           # aggregate gate still demands both).
           win='{"platform":"win","name":"win","archs":"x64","runs-on":"windows-latest","builder-args":"--win --x64"}'
-          mac_arm='{"platform":"mac","name":"mac-arm64","archs":"arm64","runs-on":"macos-latest","builder-args":"--mac --arm64"}'
+          mac_arm='{"platform":"mac","name":"mac-arm64","archs":"arm64","runs-on":"macos-15","builder-args":"--mac --arm64"}'
           mac_x64='{"platform":"mac","name":"mac-x64","archs":"x64","runs-on":"macos-15-intel","builder-args":"--mac --x64"}'
           linux='{"platform":"linux","name":"linux","archs":"x64","runs-on":"ubuntu-latest","builder-args":"--linux --x64"}'
 
@@ -263,6 +263,50 @@ jobs:
           APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
         run: node scripts/notarize-release.mjs --dir release
 
+      - name: Install NSIS and verify Windows shortcuts and bundled engine
+        if: matrix.leg.platform == 'win'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $installer = @(Get-ChildItem apps/desktop/release/*.exe)
+          if ($installer.Count -ne 1) { throw 'Expected exactly one NSIS installer' }
+          $dest = Join-Path $env:RUNNER_TEMP 'CzesiekInstalled'
+          $process = Start-Process -FilePath $installer[0].FullName -ArgumentList '/S',"/D=$dest" -Wait -PassThru -WindowStyle Hidden
+          if ($process.ExitCode -ne 0) { throw "NSIS exited $($process.ExitCode)" }
+          $shell = New-Object -ComObject WScript.Shell
+          $expected = (Resolve-Path (Join-Path $dest 'AI Evolution Jarvis.exe')).Path
+          foreach ($pair in @('DesktopDirectory,CommonDesktopDirectory','Programs,CommonPrograms')) {
+            $links = @($pair.Split(',') | ForEach-Object {
+              Get-ChildItem -LiteralPath ([Environment]::GetFolderPath($_)) -Filter 'Agent Czesiek.lnk' -Recurse -ErrorAction SilentlyContinue
+            })
+            if (-not ($links | Where-Object { $shell.CreateShortcut($_.FullName).TargetPath -eq $expected })) {
+              throw "Missing shortcut to installed executable in $pair"
+            }
+          }
+          node apps/desktop/scripts/smoke-bundled-runtime.mjs (Join-Path $dest 'resources/runtime')
+
+      - name: Install from DMG and verify Applications link and bundled engine
+        if: matrix.leg.platform == 'mac'
+        shell: bash
+        run: |
+          set -euo pipefail
+          images=(apps/desktop/release/*.dmg)
+          mount="$RUNNER_TEMP/czesiek-volume"
+          hdiutil attach -readonly -nobrowse -mountpoint "$mount" "${images[0]}"
+          trap 'hdiutil detach "$mount"' EXIT
+          test "$(readlink "$mount/Applications")" = /Applications
+          bundles=("$mount"/*.app)
+          test "${#bundles[@]}" -eq 1
+          source="${bundles[0]}"
+          identifier=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$source/Contents/Info.plist")
+          test "$identifier" = "$(node -p "require('./apps/desktop/package.json').build.appId")"
+          app="/Applications/$(basename "$source")"
+          test ! -e "$app"
+          ditto "$source" "$app"
+          executable=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$app/Contents/Info.plist")
+          test -x "$app/Contents/MacOS/$executable"
+          node apps/desktop/scripts/smoke-bundled-runtime.mjs "$app/Contents/Resources/runtime"
+
       - name: Build release manifest
         working-directory: apps/desktop
         shell: bash
@@ -284,8 +328,17 @@ jobs:
             --version "${{ needs.resolve.outputs.version }}" \
             --platforms ${{ matrix.leg.platform }} \
             --archs ${{ matrix.leg.archs }} \
-            ${{ needs.resolve.outputs.require_signing == 'true' && '' || '--allow-unsigned' }}
+            ${{ needs.resolve.outputs.require_signing != 'true' && '--allow-unsigned' || '' }}
 
+      - name: Preserve signing evidence
+        if: matrix.leg.platform != 'linux'
+        shell: bash
+        working-directory: apps/desktop/release
+        run: |
+          mkdir -p evidence
+          for report in .signing-report.json .notarization-report.json; do
+            if [[ -f "$report" ]]; then cp "$report" "evidence/${{ matrix.leg.name }}$report"; fi
+          done
       - name: Summarize
         if: always()
         working-directory: apps/desktop
@@ -299,15 +352,15 @@ jobs:
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
 
-      # The signing and notarization reports are deliberately NOT uploaded:
-      # they are build bookkeeping, already folded into release-manifest.json,
-      # and nothing downstream should re-derive signing state from them.
+      # Per-platform evidence is consumed by the aggregate gate. Only the public
+      # manifest and packages are forwarded to the release.
       - name: Upload installers
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: installers-${{ matrix.leg.name }}
           path: |
+            apps/desktop/release/evidence/*.json
             apps/desktop/release/*.exe
             apps/desktop/release/*.msi
             apps/desktop/release/*.dmg
@@ -365,10 +418,21 @@ jobs:
       # catches an artifact that was produced but lost on upload.
       - name: Rebuild the combined manifest
         run: |
+          shopt -s nullglob
+          mac_reports=(staging/evidence/mac-*.notarization-report.json)
+          if (( ${#mac_reports[@]} )); then
+            jq -s '{mode: (map(.mode) | unique | join(",")), notarized: (map(.notarized // []) | add)}' "${mac_reports[@]}" > staging/.notarization-report.json
+          fi
+          if [[ -f staging/evidence/win.signing-report.json ]]; then
+            cp staging/evidence/win.signing-report.json staging/.signing-report.json
+          fi
+          # Keep only public assets in the bundle. The reports have been folded into the manifest below.
+          if [[ -d staging/evidence ]]; then mv staging/evidence "$RUNNER_TEMP/release-evidence"; fi
           node apps/desktop/scripts/release-manifest.mjs \
             --dir staging \
             --version "${{ needs.resolve.outputs.version }}" \
-            --commit "${{ github.sha }}"
+            --commit "${{ github.sha }}" \
+            ${{ contains(fromJSON(needs.resolve.outputs.platforms), 'mac') && '--mac-update-index' || '' }}
 
       - name: Verify the release gate
         id: gate
@@ -382,7 +446,7 @@ jobs:
             --dir staging \
             --version "${{ needs.resolve.outputs.version }}" \
             --platforms "$(echo '${{ needs.resolve.outputs.platforms }}' | tr -d '[]" ' )" \
-            ${{ needs.resolve.outputs.require_signing == 'true' && '' || '--allow-unsigned' }} \
+            ${{ needs.resolve.outputs.require_signing != 'true' && '--allow-unsigned' || '' }} \
             | tee gate-report.txt
 
       - name: Publish the gate report
@@ -436,13 +500,12 @@ jobs:
           set -euo pipefail
 
           cat > notes.md <<EOF
-          ## AI Evolution Jarvis v${VERSION}
+          ## Agent Czesiek v${VERSION}
 
           Installers below are built by \`release-desktop.yml\` at commit \`${GITHUB_SHA}\`
           and have passed the release gate: the full desktop E2E suite is green,
-          every required installer is present, Windows and macOS artifacts are
-          signed and notarized, and each checksum was re-verified against the
-          downloaded file.
+          the requested installer checks passed and artifact checksums were verified.
+          Consult the manifest below for the signing status of each download.
 
           ### Verify your download
 

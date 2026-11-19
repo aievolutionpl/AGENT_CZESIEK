@@ -268,6 +268,20 @@ def _exited_status(code: int) -> int:
 
 
 
+@pytest.mark.skipif(os.name != "nt", reason="Windows worker handles")
+def test_windows_dispatcher_collects_real_worker_exit_code(monkeypatch):
+    import subprocess
+    from hermes_cli import kanban_db_dispatch as dispatch
+
+    child = subprocess.Popen([sys.executable, "-c", f"raise SystemExit({kb.KANBAN_RATE_LIMIT_EXIT_CODE})"])
+    monkeypatch.setattr(dispatch, "_windows_workers", {child.pid: child})
+    monkeypatch.setattr(dispatch, "_recent_worker_exits", {})
+    child.wait(timeout=20)
+    assert dispatch.reap_worker_zombies() == [child.pid]
+    assert dispatch._classify_worker_exit(child.pid) == ("rate_limited", kb.KANBAN_RATE_LIMIT_EXIT_CODE)
+    assert dispatch.reap_worker_zombies() == []
+
+
 def test_rate_limit_exit_requeues_without_counting_failure(
     kanban_home, monkeypatch,
 ):
@@ -571,7 +585,7 @@ def test_worktree_workspace_explicit_target_materializes_linked_worktree(kanban_
         capture_output=True,
         text=True,
     ).stdout
-    assert f"worktree {target}" in listed
+    assert target in [Path(line[9:]) for line in listed.splitlines() if line.startswith("worktree ")]
     assert f"branch refs/heads/{branch}" in listed
 
 
@@ -828,6 +842,7 @@ class TestSharedBoardPaths:
                 captured["env"] = kwargs.get("env", {})
                 self.pid = 4242
 
+        monkeypatch.setattr(kbd, "_windows_workers", {})
         monkeypatch.setattr("subprocess.Popen", _FakePopen)
 
         task = kb.Task(
@@ -1197,8 +1212,20 @@ def test_resolve_hermes_argv_falls_back_to_module_form_when_no_path_shim(monkeyp
 
     monkeypatch.delenv("HERMES_BIN", raising=False)
     monkeypatch.setattr(shutil, "which", lambda name: None)
+    monkeypatch.setattr(kbd, "_safe_which_no_cwd", lambda name: None)
     argv = kbd._resolve_hermes_argv()
     assert argv == [sys.executable, "-m", "hermes_cli.main"]
+
+
+def test_desktop_worker_uses_the_selected_engine_even_with_another_shim_on_path(monkeypatch):
+    import sys
+    from hermes_cli import kanban_db_dispatch as kbd
+
+    monkeypatch.setenv("HERMES_DESKTOP", "1")
+    monkeypatch.delenv("HERMES_BIN", raising=False)
+    monkeypatch.setattr("shutil.which", lambda *args, **kwargs: "/other/hermes")
+    monkeypatch.setattr(kbd, "_safe_which_no_cwd", lambda *args: "/other/hermes")
+    assert kbd._resolve_hermes_argv() == [sys.executable, "-m", "hermes_cli.main"]
 
 
 def test_resolve_hermes_argv_module_actually_runs():
@@ -1218,7 +1245,8 @@ def test_resolve_hermes_argv_module_actually_runs():
 
     with mock.patch.dict(os.environ, {}, clear=False):
         os.environ.pop("HERMES_BIN", None)
-        with mock.patch.object(shutil, "which", return_value=None):
+        with mock.patch.object(shutil, "which", return_value=None), \
+             mock.patch.object(kbd, "_safe_which_no_cwd", return_value=None):
             argv = kbd._resolve_hermes_argv()
     r = subprocess.run(argv + ["--version"], capture_output=True, text=True, timeout=30)
     assert r.returncode == 0, (

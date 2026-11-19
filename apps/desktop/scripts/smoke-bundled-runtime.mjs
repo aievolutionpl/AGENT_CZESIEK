@@ -1,9 +1,12 @@
 import fs from 'node:fs'
 import { randomUUID } from 'node:crypto'
 import path from 'node:path'
+import os from 'node:os'
 import { spawn } from 'node:child_process'
 const root = path.resolve(process.argv[2] || 'build/runtime')
-const home = fs.mkdtempSync(path.join(process.env.TEMP || '.', 'czesiek-runtime-smoke-'))
+const windows = process.platform === 'win32'
+const python = path.join(root, 'python', windows ? 'python.exe' : 'bin/python3')
+const home = fs.mkdtempSync(path.join(os.tmpdir(), 'czesiek-runtime-smoke-'))
 const token = randomUUID()
 const guard = path.join(home, 'offline-guard')
 fs.mkdirSync(guard)
@@ -19,16 +22,16 @@ Object.assign(env, {
   HERMES_DASHBOARD_SESSION_TOKEN: token,
   HERMES_SERVE_HEADLESS: '1',
   HERMES_DESKTOP: '1',
-  PYTHONPATH: guard + ';' + root + '/agent',
+  PYTHONPATH: [guard, path.join(root, 'agent')].join(path.delimiter),
   PYTHONNOUSERSITE: '1',
   PYTHONDONTWRITEBYTECODE: '1',
   PYTHONUTF8: '1',
-  PATH: root + '/python;C:/Windows/System32;C:/Windows',
+  PATH: windows ? root + '/python;C:/Windows/System32;C:/Windows' : path.dirname(python) + ':/usr/bin:/bin',
   TEMP: home,
   TMP: home
 })
 const child = spawn(
-  root + '/python/python.exe',
+  python,
   ['-m', 'hermes_cli.main', 'serve', '--host', '127.0.0.1', '--port', '0'],
   { env, cwd: home, windowsHide: true }
 )
@@ -56,7 +59,7 @@ const onData = async data => {
         liveStatus: voice.status,
         liveSessionWithoutKey: session.status,
         profile: home,
-        python: root + '/python/python.exe',
+        python,
         externalPythonNetwork: 'blocked',
         systemPythonOnPath: false
       })

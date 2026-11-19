@@ -143,6 +143,9 @@ class DispatchResult:
 _RECENT_WORKER_EXIT_TTL_SECONDS = 600
 _RECENT_WORKER_EXITS_MAX = 4096
 _recent_worker_exits: "dict[int, tuple[int, float]]" = {}
+# Windows has no waitpid(-1, WNOHANG). Retain child handles until their exit
+# codes have been collected by the next dispatcher tick.
+_windows_workers: dict[int, subprocess.Popen] = {}
 
 
 def _record_worker_exit(pid: int, raw_status: int) -> None:
@@ -173,24 +176,29 @@ def _classify_worker_exit(pid: int) -> "tuple[str, Optional[int]]":
         return ("unknown", None)
     raw, _ = entry
     try:
-        if os.WIFEXITED(raw):
-            code = os.WEXITSTATUS(raw)
-            if code == 0:
-                return ("clean_exit", 0)
-            if code == _kb.KANBAN_RATE_LIMIT_EXIT_CODE:
-                return ("rate_limited", code)
-            return ("nonzero_exit", code)
-        if os.WIFSIGNALED(raw):
-            return ("signaled", os.WTERMSIG(raw))
-    except Exception:
-        pass
-    return ("unknown", None)
+        code = os.waitstatus_to_exitcode(raw)
+    except (ValueError, OverflowError):
+        return ("unknown", None)
+    if code < 0:
+        return ("signaled", -code)
+    if code == 0:
+        return ("clean_exit", 0)
+    if code == _kb.KANBAN_RATE_LIMIT_EXIT_CODE:
+        return ("rate_limited", code)
+    return ("nonzero_exit", code)
 
 
 def reap_worker_zombies() -> "list[int]":
-    """Reap all zombie children without blocking; returns reaped PIDs. No-op on Windows."""
+    """Collect exited workers without blocking and return their PIDs."""
     reaped: "list[int]" = []
-    if os.name != "nt":
+    if os.name == "nt":
+        for pid, child in list(_windows_workers.items()):
+            code = child.poll()
+            if code is not None and _windows_workers.pop(pid, None) is not None:
+                # Encode as a Windows waitpid status for waitstatus_to_exitcode.
+                _record_worker_exit(pid, code << 8)
+                reaped.append(pid)
+    else:
         try:
             while True:
                 try:
@@ -1990,6 +1998,11 @@ def _resolve_hermes_argv() -> list[str]:
             return _hermes_path_argv(resolved_env_bin)
         return _module_hermes_argv()
 
+    # Desktop selected a specific backend (bundled or an existing collaborator).
+    # Its workers must use that interpreter even when another Hermes is on PATH.
+    if os.environ.get("HERMES_DESKTOP") == "1":
+        return _module_hermes_argv()
+
     hermes_bin = _safe_which_no_cwd("hermes") if _kb._IS_WINDOWS else shutil.which("hermes")
     if hermes_bin:
         return _hermes_path_argv(hermes_bin)
@@ -2278,8 +2291,10 @@ def _default_spawn(task: Task, workspace: str, *, board: Optional[str] = None) -
             "`hermes` executable not found on PATH. "
             "Install Hermes Agent or activate its venv before running the kanban dispatcher."
         )
-    # Intentionally NOT closing log_f: the child keeps writing after return;
-    # the OS-level FD stays open in the child until it exits.
+    # Popen already duplicated the log descriptor into the child.
+    log_f.close()
+    if os.name == "nt":
+        _windows_workers[proc.pid] = proc
     return proc.pid
 
 

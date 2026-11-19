@@ -81,7 +81,9 @@ class TestFetchOpenRouterModels:
                     b'{"id":"google/gemini-3-pro-image-preview","pricing":{"prompt":"0.00001","completion":"0.00003"},'
                     b'"supported_parameters":["temperature","response_format"]},'
                     b'{"id":"qwen/qwen3.7-max","pricing":{"prompt":"0.000000325","completion":"0.00000195"},'
-                    b'"supported_parameters":["tools","temperature"]}'
+                    b'"supported_parameters":["tools","temperature"]},'
+                    b'{"id":"lab/new:batch","supported_parameters":["tools"]},'
+                    b'{"id":"lab/audio","supported_parameters":["tools"],"architecture":{"output_modalities":["audio"]}}'
                     b']}'
                 )
 
@@ -92,7 +94,7 @@ class TestFetchOpenRouterModels:
             [
                 ("anthropic/claude-opus-4.6", ""),
                 ("google/gemini-3-pro-image-preview", ""),
-                ("qwen/qwen3.7-max", ""),
+                # qwen is intentionally absent from the curated manifest.
             ],
         )
         monkeypatch.setattr(_models_mod, "_openrouter_catalog_cache", None)
@@ -105,6 +107,7 @@ class TestFetchOpenRouterModels:
         ids = [mid for mid, _ in models]
         assert "anthropic/claude-opus-4.6" in ids
         assert "qwen/qwen3.7-max" in ids
+        assert not {"lab/new:batch", "lab/audio"}.intersection(ids)
         # Image-only model advertised supported_parameters WITHOUT tools → must be dropped.
         assert "google/gemini-3-pro-image-preview" not in ids
 
@@ -1545,6 +1548,14 @@ class TestOpenRouterCatalogDiskCache:
         monkeypatch.setattr(_models_mod, "_fetch_live_catalog_index", fake_index)
         monkeypatch.setattr("hermes_cli.model_catalog.get_curated_openrouter_models",
                             lambda: [("a/one", "")])
+
+    def test_refresh_from_the_picker_reloads_an_already_open_catalog(self, monkeypatch):
+        calls = []
+        self._install_network(monkeypatch, calls)
+        fetch_openrouter_models(force_refresh=True)
+        _models_mod.clear_provider_models_cache("openrouter")
+        fetch_openrouter_models()
+        assert len(calls) == 2
 
     def test_fresh_snapshot_serves_cold_process_without_network(self, monkeypatch, tmp_path):
         calls = []

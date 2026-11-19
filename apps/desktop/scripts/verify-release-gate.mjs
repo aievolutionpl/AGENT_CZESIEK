@@ -170,7 +170,7 @@ export function renderReport(result, manifest) {
   lines.push('')
 
   if (result.ok) {
-    lines.push('PASS — every required artifact is present, signed and intact.')
+    lines.push('PASS — required artifacts passed the configured checks.')
   } else {
     lines.push(`FAIL — ${result.problems.length} problem(s):`)
     for (const problem of result.problems) {

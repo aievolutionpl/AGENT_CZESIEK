@@ -13,6 +13,7 @@ import {
   MANIFEST_FILENAME,
   renderChecksums,
   sha256File,
+  writeMacUpdateIndex,
   writeManifest
 } from '../scripts/release-manifest.mjs'
 
@@ -71,6 +72,34 @@ describe('detectArch', () => {
     assert.equal(detectArch('a-x86_64.AppImage'), 'x64')
     assert.equal(detectArch('a-amd64.deb'), 'x64')
     assert.equal(detectArch('a.deb'), null)
+  })
+})
+
+describe('writeMacUpdateIndex', () => {
+  test('publishes both Mac update payloads with the digest of their actual contents', async () => {
+    for (const arch of ['arm64', 'x64']) {
+      for (const ext of ['zip', 'dmg']) {
+        const name = `Jarvis-1.0.0-mac-${arch}.${ext}`
+        fs.writeFileSync(path.join(dir, name), name)
+      }
+    }
+    await writeMacUpdateIndex(dir, '1.0.0')
+    const index = JSON.parse(fs.readFileSync(path.join(dir, 'latest-mac.yml'), 'utf8'))
+    assert.equal(index.files.length, 4)
+    assert.equal(index.path, 'Jarvis-1.0.0-mac-x64.zip')
+    assert.equal(index.sha512, index.files[0].sha512)
+    for (const { url, size, sha512 } of index.files) {
+      assert.equal(size, Buffer.byteLength(url))
+      assert.equal(sha512, createHash('sha512').update(url).digest('base64'))
+    }
+    assert.ok(index.files.some(file => file.url === 'Jarvis-1.0.0-mac-arm64.zip'))
+  })
+
+  test('rejects incomplete Mac releases before replacing the index', async () => {
+    writeArtifact('Jarvis-1.0.0-mac-x64.zip')
+    writeArtifact('Jarvis-1.0.0-mac-x64.dmg')
+    await assert.rejects(writeMacUpdateIndex(dir, '1.0.0'), /arm64/)
+    assert.equal(fs.existsSync(path.join(dir, 'latest-mac.yml')), false)
   })
 })
 

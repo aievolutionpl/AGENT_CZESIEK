@@ -325,7 +325,7 @@ class TestGenerate:
             result = _openrouter().generate(prompt="a pet")
 
         assert result["success"] is True
-        assert result["image"] == "/tmp/openrouter_gen.png"
+        assert Path(result["image"]) == Path("/tmp/openrouter_gen.png")
         assert result["provider"] == "openrouter"
         mock_save.assert_called_once()
 
@@ -701,7 +701,7 @@ class TestImageApiSurface:
         assert result["cost_usd"] == 0.0336
         assert result["total_tokens"] == 1128
         assert result["exact_aspect_ratio"] == "9:16"
-        assert result["image"] == "/tmp/i.png"
+        assert Path(result["image"]) == Path("/tmp/i.png")
 
     def test_multiple_images_land_in_additional_images(self):
         entries = [
@@ -714,8 +714,8 @@ class TestImageApiSurface:
                    side_effect=[Path("/tmp/a.png"), Path("/tmp/b.png")]):
             result = _openrouter_image_api().generate(prompt="p", model="openai/gpt-image-2")
 
-        assert result["image"] == "/tmp/a.png"
-        assert result["additional_images"] == ["/tmp/b.png"]
+        assert Path(result["image"]) == Path("/tmp/a.png")
+        assert [Path(image) for image in result["additional_images"]] == [Path("/tmp/b.png")]
 
     def test_empty_data_is_typed(self):
         with patch(_RUNTIME, return_value=_runtime_ok()), \
@@ -755,9 +755,11 @@ class TestImageApiSurface:
         assert result["error_type"] == "auth_error"
         assert "_retryable" not in result
 
-    def test_catalog_models_are_offered_only_by_openrouter(self):
+    def test_offline_image_api_snapshot_is_offered_only_by_openrouter(self, monkeypatch):
         from plugins.image_gen.openrouter import _IMAGE_API_MODELS, _build_providers
 
+        # The snapshot is an offline fallback. A real endpoint can retire a model.
+        monkeypatch.setattr("plugins.image_gen.openrouter._fetch_catalog", lambda *a, **kw: [])
         by_name = {p.name: p for p in _build_providers()}
         openrouter_ids = {m["id"] for m in by_name["openrouter"].list_models()}
         nous_ids = {m["id"] for m in by_name["nous"].list_models()}

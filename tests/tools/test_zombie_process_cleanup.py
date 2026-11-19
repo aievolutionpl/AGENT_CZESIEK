@@ -481,6 +481,18 @@ class TestDelegationCleanup:
         monkeypatch.setattr(relay_runtime, "get_runtime", lambda **_kwargs: relay_host)
         monkeypatch.setattr("tools.delegate_tool._get_child_timeout", lambda: 0.1)
 
+        # Exercise a timeout during an active relay turn even if the CI host
+        # takes longer than the short test deadline to schedule the worker.
+        from tools import delegate_tool_child_run
+
+        stop_child = delegate_tool_child_run._signal_child_stop
+
+        def stop_active_child(worker):
+            assert child_started.wait(timeout=10)
+            return stop_child(worker)
+
+        monkeypatch.setattr(delegate_tool_child_run, "_signal_child_stop", stop_active_child)
+
         def run_conversation(**kwargs):
             lease = relay_runtime.SESSION_COORDINATOR.acquire_conversation(
                 profile_key=relay_runtime.current_profile_key(),
