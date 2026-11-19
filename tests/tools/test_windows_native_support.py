@@ -549,28 +549,25 @@ class TestKanbanWaitpidWindowsGuard:
     """os.WNOHANG doesn't exist on Windows — the dispatcher tick reap loop
     must be gated behind ``os.name != "nt"``."""
 
-    def test_source_gates_waitpid_loop(self):
-        root = Path(__file__).resolve().parents[2]
-        source = (root / "hermes_cli" / "kanban_db_dispatch.py").read_text(encoding="utf-8")
-        # Find the waitpid call and confirm it's inside a POSIX gate.
-        idx = source.find("os.waitpid(-1, os.WNOHANG)")
-        assert idx > 0, "waitpid call must exist"
-        # Look backwards up to 400 chars for the gate. Accept either form:
-        #   `if os.name != "nt":` (run iff POSIX), or
-        #   `if os.name == "nt": return []` (early-return guard).
-        # Both correctly keep the waitpid loop off Windows; the early-return
-        # form is stronger because the rest of the function never runs.
-        preamble = source[max(0, idx - 400):idx]
-        guard_patterns = (
-            'os.name != "nt"',
-            "os.name != 'nt'",
-            'os.name == "nt"',  # early-return guard
-            "os.name == 'nt'",
-        )
-        assert any(p in preamble for p in guard_patterns), (
-            "os.waitpid(-1, os.WNOHANG) must sit behind an os.name guard "
-            f"(checked patterns: {guard_patterns})"
-        )
+    def test_windows_polls_process_handles_without_waitpid(self, monkeypatch):
+        from hermes_cli import kanban_db_dispatch as dispatcher
+
+        windows_os = mock.Mock()
+        windows_os.name = "nt"
+        running = mock.Mock()
+        running.poll.return_value = None
+        finished = mock.Mock()
+        finished.poll.return_value = 7
+        workers = {123: running, 456: finished}
+        record = mock.Mock()
+        monkeypatch.setattr(dispatcher, "os", windows_os)
+        monkeypatch.setattr(dispatcher, "_windows_workers", workers)
+        monkeypatch.setattr(dispatcher, "_record_worker_exit", record)
+
+        assert dispatcher.reap_worker_zombies() == [456]
+        assert workers == {123: running}
+        record.assert_called_once_with(456, 7 << 8)
+        windows_os.waitpid.assert_not_called()
 
 
 # ---------------------------------------------------------------------------
