@@ -842,6 +842,7 @@ class TestSharedBoardPaths:
                 captured["env"] = kwargs.get("env", {})
                 self.pid = 4242
 
+        monkeypatch.setattr(kbd, "_windows_workers", {})
         monkeypatch.setattr("subprocess.Popen", _FakePopen)
 
         task = kb.Task(
