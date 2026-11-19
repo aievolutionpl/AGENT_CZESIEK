@@ -26,11 +26,13 @@ import yaml
 
 logger = logging.getLogger(__name__)
 
-CATALOG_TIERS = ("official", "community")
+CATALOG_TIERS = ("official", "verified", "community")
 LIVE_CATALOG_URL = "https://hermes-agent.nousresearch.com/docs/api/plugin-catalog.json"
 LIVE_CATALOG_TTL_SECONDS = 6 * 60 * 60
 _REQUEST_TIMEOUT = 5.0
-_MAX_LIVE_BYTES = 2 * 1024 * 1024
+# Backport from upstream Hermes v0.23.1 (PR #151860): the live catalog passed 2 MiB on 2026-11-09.
+_MAX_LIVE_BYTES = 16 * 1024 * 1024
+_LIVE_CATALOG_HOSTS = frozenset({"hermes-agent.nousresearch.com", "nousresearch.github.io"})
 
 _SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 _NAME_RE = re.compile(r"^[a-z0-9_-]{1,64}$")
@@ -232,6 +234,11 @@ def fetch_live_catalog(*, force: bool = False) -> Optional[Dict[str, Any]]:
         import httpx
         resp = httpx.get(LIVE_CATALOG_URL, timeout=_REQUEST_TIMEOUT, follow_redirects=True)
         resp.raise_for_status()
+        final_url = getattr(resp, "url", None)
+        if final_url is not None and hasattr(final_url, "scheme"):
+            host = (getattr(final_url, "host", "") or "").lower()
+            if final_url.scheme != "https" or (host and host not in _LIVE_CATALOG_HOSTS):
+                raise ValueError(f"refused untrusted live catalog redirect host: {host}")
         if len(resp.content) > _MAX_LIVE_BYTES:
             raise ValueError("live catalog payload too large")
         data = resp.json()
