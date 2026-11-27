@@ -52,6 +52,7 @@ function boundedConnectOperation<T>(operation: () => Promise<T>, timeoutMs: numb
       if (settled) {
         return
       }
+
       settled = true
       clearTimeout(timer)
       signal?.removeEventListener('abort', abort)
@@ -91,6 +92,7 @@ export async function connectOpenRouter(
   if (!key) {
     return { ok: false, reason: 'empty' }
   }
+
   const args: [ProfileScope?] = scope === undefined ? [] : [scope]
   const run = <T>(operation: () => Promise<T>) => boundedConnectOperation(operation, timeoutMs, signal)
   let verified = false
@@ -103,6 +105,7 @@ export async function connectOpenRouter(
       if (probe.reachable && !probe.ok) {
         return { ok: false, reason: 'rejected' }
       }
+
       verified = probe.reachable && probe.ok
     } catch {
       // Connectivity failure is not rejection. Save for later, without claiming authentication.
@@ -111,6 +114,7 @@ export async function connectOpenRouter(
     if (signal?.aborted) {
       return { ok: false, reason: 'cancelled', keySaved }
     }
+
     keySaved = 'unknown'
     const saved = await run(() => deps.saveKey(key, ...args))
 
@@ -127,6 +131,7 @@ export async function connectOpenRouter(
     if (!verified) {
       return { ok: false, reason: 'unverified', keySaved }
     }
+
     const options = await run(() => deps.loadOptions(...args))
     const provider = options.providers?.find(item => item.slug === OPENROUTER_PROVIDER_SLUG)
     const model = openRouterWorkModel(resolveOpenRouterPresets(options.providers))

@@ -9319,8 +9319,10 @@ function probeSecureTokenStorage(): boolean {
   }
 
   try {
-    return Boolean(safeStorage.isEncryptionAvailable()) &&
-        (process.platform !== 'linux' || safeStorage.getSelectedStorageBackend?.() !== 'basic_text')
+    return (
+      Boolean(safeStorage.isEncryptionAvailable()) &&
+      (process.platform !== 'linux' || safeStorage.getSelectedStorageBackend?.() !== 'basic_text')
+    )
   } catch {
     return false
   }
@@ -9377,20 +9379,23 @@ function rewriteAllStoredSecrets(shouldRewrite: (secret: any) => boolean, reenco
   const io = _nativeTokenStoreIo()
 
   let store
+
   try {
     store = JSON.parse(io.readStoreText())
   } catch (error) {
-    if (error?.code === 'ENOENT') return touched
+    if (error?.code === 'ENOENT') {
+      return touched
+    }
     throw error
   }
 
   if (store && typeof store === 'object' && !Array.isArray(store)) {
-      const entries = Object.entries(store)
+    const entries = Object.entries(store)
 
-      if (entries.some(([, v]) => shouldRewrite(v))) {
-        touched = true
-        io.writeStoreText(JSON.stringify(Object.fromEntries(entries.map(([k, v]) => [k, reencode(v)]))))
-      }
+    if (entries.some(([, v]) => shouldRewrite(v))) {
+      touched = true
+      io.writeStoreText(JSON.stringify(Object.fromEntries(entries.map(([k, v]) => [k, reencode(v)]))))
+    }
   }
 
   return touched
@@ -9402,8 +9407,12 @@ function rewriteAllStoredSecrets(shouldRewrite: (secret: any) => boolean, reenco
  */
 function migrateLegacyPlainSecretsOnce() {
   const policy = secretStoragePolicy()
-  if (!policy.on || policy.migrated) return
+
+  if (!policy.on || policy.migrated) {
+    return
+  }
   const needsEncryption = (secret: any) => secret?.encoding === 'plain' && Boolean(secret.value)
+
   try {
     rewriteAllStoredSecrets(needsEncryption, secret =>
       needsEncryption(secret) ? encryptDesktopSecretStrict(String(secret.value), safeStorage) : secret
@@ -9436,8 +9445,10 @@ function applySecretStorageEncryption(on: boolean) {
     if (
       !(() => {
         try {
-          return Boolean(safeStorage.isEncryptionAvailable()) &&
-        (process.platform !== 'linux' || safeStorage.getSelectedStorageBackend?.() !== 'basic_text')
+          return (
+            Boolean(safeStorage.isEncryptionAvailable()) &&
+            (process.platform !== 'linux' || safeStorage.getSelectedStorageBackend?.() !== 'basic_text')
+          )
         } catch {
           return false
         }
@@ -15035,10 +15046,7 @@ function createWindow() {
 
       if (IS_WINDOWS) {
         try {
-          writeSandboxMarker(
-            app.getPath('userData'),
-            { state: 'ok' }
-          )
+          writeSandboxMarker(app.getPath('userData'), { state: 'ok' })
         } catch (error) {
           rememberLog(`[sandbox] marker update after main-window reveal failed: ${error?.message || error}`)
         }

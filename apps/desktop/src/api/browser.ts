@@ -17,11 +17,17 @@ export interface BrowserModeStatus {
 }
 
 const call = (profile: ProfileScope | undefined, path: string, body?: unknown) =>
-  window.hermesDesktop.api<BrowserModeStatus>({ ...capabilityScoped(profile), body, method: body === undefined ? undefined : 'POST', path })
+  window.hermesDesktop.api<BrowserModeStatus>({
+    ...capabilityScoped(profile),
+    body,
+    method: body === undefined ? undefined : 'POST',
+    path
+  })
 
 export const getBrowserStatus = (profile?: ProfileScope) => call(profile, '/api/browser/status')
 
-export const setBrowserMode = (mode: BrowserMode, profile?: ProfileScope) => call(profile, '/api/browser/mode', { mode })
+export const setBrowserMode = (mode: BrowserMode, profile?: ProfileScope) =>
+  call(profile, '/api/browser/mode', { mode })
 
 export const openBrowserSignIn = (profile?: ProfileScope) => call(profile, '/api/browser/open-signin', {})
 

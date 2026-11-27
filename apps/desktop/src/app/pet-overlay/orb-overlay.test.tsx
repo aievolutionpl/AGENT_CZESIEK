@@ -6,12 +6,17 @@ import { TRANSLATIONS } from '@/i18n'
 
 import { OrbOverlay } from './orb-overlay'
 
-vi.mock('@/app/jarvis/core', () => ({ JarvisCore: ({ voice }: { voice: string }) => <div data-testid="orb-voice">{voice}</div> }))
+vi.mock('@/app/jarvis/core', () => ({
+  JarvisCore: ({ voice }: { voice: string }) => <div data-testid="orb-voice">{voice}</div>
+}))
 afterEach(() => vi.unstubAllGlobals())
 
 test('orb mirrors the live conversation and sends controls to its owner without starting another session', () => {
   const control = vi.fn()
-  Object.defineProperty(window, 'hermesDesktop', { configurable: true, value: { petOverlay: { control, setIgnoreMouse: vi.fn() } } })
+  Object.defineProperty(window, 'hermesDesktop', {
+    configurable: true,
+    value: { petOverlay: { control, setIgnoreMouse: vi.fn() } }
+  })
   const state = { active: false, connected: true, locale: 'pl' as const, voice: 'idle' as const, task: 'idle' as const }
   const view = render(<OrbOverlay state={state} />)
   fireEvent.click(screen.getByRole('button', { name: 'Rozpocznij rozmowę' }))

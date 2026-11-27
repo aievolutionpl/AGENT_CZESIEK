@@ -33,16 +33,19 @@ export function CostDashboard({ scope, onScopeChange, onOpenSession }: CostDashb
           ? await refreshCosts({ from: query.from, to: query.to, max_records: 100 }, scope)
           : await getCosts(queryInput, scope)
 
-        if (requestRef.current === requestId) {setResponse(next)}
+        if (requestRef.current === requestId) {
+          setResponse(next)
+        }
       } catch (cause) {
-        if (requestRef.current === requestId)
-          {setError(
+        if (requestRef.current === requestId) {
+          setError(
             cause instanceof CostsUnavailableError
               ? 'Cost dashboard is unavailable on this backend.'
               : cause instanceof Error
                 ? cause.message
                 : String(cause)
-          )}
+          )
+        }
       } finally {
         if (requestRef.current === requestId) {
           setLoading(false)

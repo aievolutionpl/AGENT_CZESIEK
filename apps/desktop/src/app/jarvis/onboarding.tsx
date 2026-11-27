@@ -515,8 +515,10 @@ export function JarvisOnboarding({
   const close = () => {
     if (!dismissJarvisOnboarding(undefined, scope)) {
       setSaveError(copy.errors.save)
+
       return
     }
+
     requestToken.current += 1
     loadToken.current += 1
     setCompleted(true)
@@ -527,10 +529,13 @@ export function JarvisOnboarding({
     requestToken.current += 1
     setConfigurationStatus(status => (status === 'checking' ? 'idle' : status))
     setAccessStatus(status => (status === 'checking' ? 'idle' : status))
+
     if (currentIndex === JARVIS_ONBOARDING_STEPS.length - 1) {
       close()
+
       return
     }
+
     persistState(updatedState(stateRef.current, { currentStep: JARVIS_ONBOARDING_STEPS[currentIndex + 1] }))
   }
 

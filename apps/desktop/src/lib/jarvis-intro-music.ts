@@ -20,6 +20,7 @@ export function startJarvisIntroMusic(restart = false): void {
   if (isJarvisIntroMusicPlaying()) {
     return
   }
+
   const audio = introPlayer()
 
   if (restart) {
@@ -27,9 +28,12 @@ export function startJarvisIntroMusic(restart = false): void {
   }
 
   playPending = true
-  void audio.play().catch(() => undefined).finally(() => {
-    playPending = false
-  })
+  void audio
+    .play()
+    .catch(() => undefined)
+    .finally(() => {
+      playPending = false
+    })
 }
 
 const STARTUP_PLAYED_KEY = 'jarvis-intro-startup-played'
@@ -39,7 +43,9 @@ export function playJarvisIntroOnStartup(): void {
   if (startupPlayed) {
     return
   }
+
   startupPlayed = true
+
   try {
     if (window.sessionStorage.getItem(STARTUP_PLAYED_KEY)) {
       return
@@ -65,13 +71,15 @@ export function isJarvisIntroMusicPlaying(): boolean {
 }
 
 export function isJarvisMusicPhrase(text: string): boolean {
-  return text
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLocaleLowerCase('pl')
-    .replace(/ł/g, 'l')
-    .replace(/[^a-z\s]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .match(/\btatus wrocil\b/) !== null
+  return (
+    text
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLocaleLowerCase('pl')
+      .replace(/ł/g, 'l')
+      .replace(/[^a-z\s]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .match(/\btatus wrocil\b/) !== null
+  )
 }

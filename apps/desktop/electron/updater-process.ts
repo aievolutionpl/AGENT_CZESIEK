@@ -191,7 +191,9 @@ export function collectRelaunchArgs(argv: unknown, platform: NodeJS.Platform = p
       return false
     }
 
-    if (platform === 'win32' && arg.split('=', 1)[0] === '--no-sandbox') return false
+    if (platform === 'win32' && arg.split('=', 1)[0] === '--no-sandbox') {
+      return false
+    }
 
     return !INTERNAL_ARG_PREFIXES.some(prefix =>
       prefix.endsWith('=') ? arg.startsWith(prefix) : arg === prefix || arg.startsWith(prefix + '=')

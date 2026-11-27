@@ -136,7 +136,9 @@ export function MaintenancePanel() {
   )
 
   const shareDebug = useCallback(async () => {
-    if (!(await confirm({ title: mm.debugShare, description: mm.debugShareDesc, confirmLabel: mm.debugShare }))) return
+    if (!(await confirm({ title: mm.debugShare, description: mm.debugShareDesc, confirmLabel: mm.debugShare }))) {
+      return
+    }
     setSharing(true)
     setShare(null)
     setError('')

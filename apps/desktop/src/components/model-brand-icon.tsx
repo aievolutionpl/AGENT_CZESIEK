@@ -19,7 +19,9 @@ import nousMark from '@/assets/brands/nous.png'
 import openaiMark from '@/assets/brands/openai.png'
 import { cn } from '@/lib/utils'
 
-interface BrandGlyphProps extends SVGProps<SVGSVGElement> { title?: string }
+interface BrandGlyphProps extends SVGProps<SVGSVGElement> {
+  title?: string
+}
 type Glyph = ComponentType<BrandGlyphProps>
 
 /** A model maker's mark. Makers missing from the simple-icons pack get a drawn glyph of their own. */
@@ -34,7 +36,13 @@ export interface ModelBrand {
   name: string
 }
 
-const stroke = { fill: 'none', stroke: 'currentColor', strokeLinecap: 'round', strokeLinejoin: 'round', strokeWidth: 1.7 } as const
+const stroke = {
+  fill: 'none',
+  stroke: 'currentColor',
+  strokeLinecap: 'round',
+  strokeLinejoin: 'round',
+  strokeWidth: 1.7
+} as const
 
 /** An ink drop — the free models. */
 const DropGlyph: Glyph = props => (
@@ -55,7 +63,12 @@ const ChipGlyph: Glyph = props => (
 export const MODEL_BRANDS: readonly ModelBrand[] = [
   { Icon: SiElevenlabs, color: 'var(--ui-text-primary)', match: ['elevenlabs'], name: 'ElevenLabs' },
   { image: { mask: false, src: deepseekMark }, color: '#4D6BFE', match: ['deepseek'], name: 'DeepSeek' },
-  { image: { mask: true, src: openaiMark }, color: '#10A37F', match: ['openai', 'gpt', 'realtime', 'o3', 'o4'], name: 'OpenAI' },
+  {
+    image: { mask: true, src: openaiMark },
+    color: '#10A37F',
+    match: ['openai', 'gpt', 'realtime', 'o3', 'o4'],
+    name: 'OpenAI'
+  },
   { Icon: SiClaude, color: '#D97757', match: ['anthropic', 'claude', 'sonnet', 'opus', 'haiku'], name: 'Claude' },
   { Icon: SiGooglegemini, color: '#4285F4', match: ['google', 'gemini', 'gemma'], name: 'Gemini' },
   { Icon: SiMeta, color: '#0668E1', match: ['meta', 'llama'], name: 'Meta' },
@@ -66,7 +79,12 @@ export const MODEL_BRANDS: readonly ModelBrand[] = [
   { Icon: SiPerplexity, color: '#20808D', match: ['perplexity', 'sonar'], name: 'Perplexity' },
   { Icon: SiHuggingface, color: '#FFB000', match: ['huggingface'], name: 'Hugging Face' },
   { Icon: SiOllama, color: '#7C8597', match: ['ollama', 'local'], name: 'Ollama' },
-  { image: { mask: true, src: nousMark }, color: '#8B5CF6', match: ['nousresearch', 'nous', 'hermes', 'czesiek'], name: 'Hermes' },
+  {
+    image: { mask: true, src: nousMark },
+    color: '#8B5CF6',
+    match: ['nousresearch', 'nous', 'hermes', 'czesiek'],
+    name: 'Hermes'
+  },
   { Icon: SiOpenrouter, color: '#6467F2', match: ['openrouter'], name: 'OpenRouter' },
   { Icon: DropGlyph, color: '#0EA5E9', match: ['free', 'inkling'], name: 'Free' }
 ]
@@ -94,7 +112,11 @@ export function resolveModelBrand(...hints: (null | string | undefined)[]): Mode
   return FALLBACK
 }
 
-const SIZES = { lg: 'size-11 rounded-xl [&>img]:size-7 [&>span]:size-7 [&>svg]:size-6', md: 'size-9 rounded-[0.75rem] [&>img]:size-[1.35rem] [&>span]:size-[1.35rem] [&>svg]:size-[1.2rem]', sm: 'size-7 rounded-lg [&>img]:size-[1.15rem] [&>span]:size-[1.15rem] [&>svg]:size-4' } as const
+const SIZES = {
+  lg: 'size-11 rounded-xl [&>img]:size-7 [&>span]:size-7 [&>svg]:size-6',
+  md: 'size-9 rounded-[0.75rem] [&>img]:size-[1.35rem] [&>span]:size-[1.35rem] [&>svg]:size-[1.2rem]',
+  sm: 'size-7 rounded-lg [&>img]:size-[1.15rem] [&>span]:size-[1.15rem] [&>svg]:size-4'
+} as const
 
 export interface ModelBrandIconProps {
   className?: string
@@ -125,7 +147,7 @@ export function ModelBrandIcon({ className, hints = [], model, size = 'md' }: Mo
           <img alt="" draggable={false} src={brand.image.src} />
         )
       ) : brand.Icon ? (
-          <brand.Icon aria-hidden="true" className="text-(--brand)" title="" />
+        <brand.Icon aria-hidden="true" className="text-(--brand)" title="" />
       ) : null}
     </span>
   )

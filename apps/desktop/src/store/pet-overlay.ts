@@ -200,10 +200,14 @@ export function popOutDesktopOrb(onOpened?: () => void): void {
     const saved = loadSavedBounds()
 
     if (saved) {
-      void window.hermesDesktop?.petOverlay?.open({ bounds: { ...saved, ...currentOrbWindowSize() }, screen: true }).then(result => {
-        if (result.bounds) {saveBounds(result.bounds)}
-        onOpened?.()
-      })
+      void window.hermesDesktop?.petOverlay
+        ?.open({ bounds: { ...saved, ...currentOrbWindowSize() }, screen: true })
+        .then(result => {
+          if (result.bounds) {
+            saveBounds(result.bounds)
+          }
+          onOpened?.()
+        })
     } else {
       onOpened?.()
     }
@@ -214,10 +218,13 @@ export function popOutDesktopOrb(onOpened?: () => void): void {
   }
 
   const saved = loadSavedBounds()
-  openOverlay({
-    bounds: { ...(saved ?? { x: Math.max(0, window.innerWidth - 360), y: 100 }), ...currentOrbWindowSize() },
-    screen: Boolean(saved)
-  }, onOpened)
+  openOverlay(
+    {
+      bounds: { ...(saved ?? { x: Math.max(0, window.innerWidth - 360), y: 100 }), ...currentOrbWindowSize() },
+      screen: Boolean(saved)
+    },
+    onOpened
+  )
 }
 
 /**

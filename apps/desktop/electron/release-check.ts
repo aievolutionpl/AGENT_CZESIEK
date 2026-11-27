@@ -168,7 +168,11 @@ const ARCH_ARM = /arm64|aarch64|apple/i
 const ARCH_X64 = /x64|x86_64|intel|amd64/i
 const ARCH_UNIVERSAL = /universal/i
 
-function pickByArch(candidates: readonly ReleaseAssetInfo[], arch: string, allowOppositeFallback: boolean): null | ReleaseAssetInfo {
+function pickByArch(
+  candidates: readonly ReleaseAssetInfo[],
+  arch: string,
+  allowOppositeFallback: boolean
+): null | ReleaseAssetInfo {
   if (candidates.length === 0) {
     return null
   }
@@ -248,7 +252,13 @@ export function evaluateRelease(
   const release = (payload ?? {}) as GithubRelease
   const tag = typeof release.tag_name === 'string' ? release.tag_name : ''
 
-  if (!tag || !VERSION_RE.test(tag) || !isTrustedReleaseUrl(release.html_url) || release.draft === true || release.prerelease === true) {
+  if (
+    !tag ||
+    !VERSION_RE.test(tag) ||
+    !isTrustedReleaseUrl(release.html_url) ||
+    release.draft === true ||
+    release.prerelease === true
+  ) {
     throw new Error('Latest release is missing, a draft, or has no version tag.')
   }
 

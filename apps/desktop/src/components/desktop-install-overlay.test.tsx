@@ -174,7 +174,9 @@ describe('DesktopInstallOverlay first-run setup', () => {
       await Promise.resolve()
     })
 
-    expect(screen.queryByText('Local installation could not start. Restart Agent Czesiek Desktop and try again.')).toBeTruthy()
+    expect(
+      screen.queryByText('Local installation could not start. Restart Agent Czesiek Desktop and try again.')
+    ).toBeTruthy()
   })
 
   it('clears a stale local-start error when a repair presents a different root', async () => {
@@ -201,7 +203,9 @@ describe('DesktopInstallOverlay first-run setup', () => {
       })
     })
 
-    expect(screen.queryByText('Local installation could not start. Restart Agent Czesiek Desktop and try again.')).toBeNull()
+    expect(
+      screen.queryByText('Local installation could not start. Restart Agent Czesiek Desktop and try again.')
+    ).toBeNull()
   })
 
   it('requires a successful token connection test before applying remote config', async () => {

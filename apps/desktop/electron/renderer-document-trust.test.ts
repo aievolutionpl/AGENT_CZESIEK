@@ -53,7 +53,12 @@ test('terminal and filesystem IPC reject foreign and child documents before exec
     const frame = { url: frameUrl }
     const event = { senderFrame: frame, sender: { mainFrame: frame, id: 1 } }
 
-    for (const channel of ['hermes:terminal:start', 'hermes:terminal:write', 'hermes:fs:readDir', 'hermes:fs:writeText']) {
+    for (const channel of [
+      'hermes:terminal:start',
+      'hermes:terminal:write',
+      'hermes:fs:readDir',
+      'hermes:fs:writeText'
+    ]) {
       assert.throws(() => handlers.get(channel)!(event), /desktop renderer/)
     }
   }

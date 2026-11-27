@@ -103,9 +103,9 @@ export function ReleaseUpdateCard() {
 
   const canInAppDownload = Boolean(
     result?.ok === true &&
-      result.asset &&
-      window.hermesDesktop?.updates?.releaseDownload &&
-      window.hermesDesktop?.updates?.releaseInstall
+    result.asset &&
+    window.hermesDesktop?.updates?.releaseDownload &&
+    window.hermesDesktop?.updates?.releaseInstall
   )
 
   const startInAppUpdate = useCallback(async () => {
