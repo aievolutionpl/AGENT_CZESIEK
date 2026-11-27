@@ -461,16 +461,16 @@ class TestSaveEnvValueSecure:
         from dotenv import dotenv_values
 
         with patch.dict(os.environ, {"HERMES_HOME": str(tmp_path)}, clear=False):
-            os.environ.pop("ANTHROPIC_TOKEN", None)
+            os.environ.pop("TEST_HASH_SETTING", None)
             token = "sk-ant-oat01-abc#xyz#more"
-            save_env_value("ANTHROPIC_TOKEN", token)
+            save_env_value("TEST_HASH_SETTING", token)
 
             content = (tmp_path / ".env").read_text(encoding="utf-8")
-            assert f'ANTHROPIC_TOKEN="{token}"' in content
+            assert f'TEST_HASH_SETTING="{token}"' in content
 
             parsed = dotenv_values(str(tmp_path / ".env"))
-            assert parsed["ANTHROPIC_TOKEN"] == token
-            assert load_env()["ANTHROPIC_TOKEN"] == token
+            assert parsed["TEST_HASH_SETTING"] == token
+            assert load_env()["TEST_HASH_SETTING"] == token
 
 
     def test_save_env_value_already_quoted_input_is_not_double_wrapped_idempotently(

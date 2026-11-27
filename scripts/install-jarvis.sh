@@ -157,7 +157,24 @@ TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 FILE="$TMP/$(basename "$ASSET")"
 curl -fL --progress-bar -o "$FILE" "$ASSET" || fail "Pobieranie nie powiodło się. Sprawdź połączenie z internetem i spróbuj ponownie."
-ok "Pobrano."
+# Verify the exact asset against the digest in the same release metadata.
+command -v python3 >/dev/null || fail "Do weryfikacji SHA-256 potrzebny jest Python 3."
+printf '%s' "$RELEASE" > "$TMP/release.json"
+python3 - "$TMP/release.json" "$ASSET" "$FILE" <<'VERIFY' || fail "Weryfikacja SHA-256 nie powiodła się."
+import hashlib
+import json
+import sys
+
+metadata, url, filename = sys.argv[1:]
+with open(metadata, encoding="utf-8") as stream:
+    digests = [a.get("digest") for a in json.load(stream)["assets"] if a.get("browser_download_url") == url]
+digest = hashlib.sha256()
+with open(filename, "rb") as stream:
+    for block in iter(lambda: stream.read(1024 * 1024), b""):
+        digest.update(block)
+sys.exit(digests != ["sha256:" + digest.hexdigest()])
+VERIFY
+ok "Zweryfikowano SHA-256."
 
 step 3 "Instaluję"
 

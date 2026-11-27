@@ -299,11 +299,12 @@ test('collectRelaunchArgs drops Electron internals, keeps user/launcher args', (
     '--profile=work'
   ]
 
-  assert.deepEqual(collectRelaunchArgs(argv), [
+  assert.deepEqual(collectRelaunchArgs(argv, 'linux'), [
     '--no-sandbox',
     'aievolution-jarvis://open/session/abc',
     '--profile=work'
   ])
+  assert.deepEqual(collectRelaunchArgs(['--no-sandbox', 'hermes://open'], 'win32'), ['hermes://open'])
   assert.deepEqual(collectRelaunchArgs(undefined), [])
 })
 

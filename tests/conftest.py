@@ -1803,3 +1803,16 @@ def _moa_caches_isolated():
     yield
     moa._preset_cache.clear()
     moa._runtime_cache.clear()
+
+@pytest.fixture(autouse=True)
+def isolated_provider_keyring(monkeypatch):
+    """Tests must never read or write the developer's OS password manager."""
+    from unittest.mock import Mock
+    from hermes_cli import provider_keyring
+
+    entries = {}
+    backend = Mock()
+    backend.get_password.side_effect = lambda service, account: entries.get((service, account))
+    backend.set_password.side_effect = lambda service, account, value: entries.update({(service, account): value})
+    monkeypatch.setattr(provider_keyring, "_native_backend", lambda: backend)
+    return backend

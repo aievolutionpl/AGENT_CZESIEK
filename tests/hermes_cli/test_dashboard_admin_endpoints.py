@@ -74,7 +74,9 @@ class TestMcpEndpoints:
         env_text = (hermes_home / ".env").read_text()
         assert secret not in config_text
         assert "Bearer ${MCP_BEARER_SERVER_API_KEY}" in config_text
-        assert f"MCP_BEARER_SERVER_API_KEY={secret}" in env_text
+        from agent.secret_scope import load_env_file
+        assert secret not in env_text
+        assert load_env_file(hermes_home / ".env")["MCP_BEARER_SERVER_API_KEY"] == secret
 
     def test_http_oauth_mode_is_persisted_for_existing_auth_flow(self):
         response = self.client.post(

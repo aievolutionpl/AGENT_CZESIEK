@@ -9,10 +9,13 @@
 # Parametry:
 #   -Version v0.17.2   konkretne wydanie zamiast najnowszego
 #   -NoLaunch          nie uruchamiaj aplikacji po instalacji
+#   -SignerSha256 HASH   wymagany odcisk SHA-256 certyfikatu wydawcy (opcja administratora)
 #   -DryRun            pokaż, co zostałoby pobrane, bez zmian na dysku
 
 param(
     [string]$Version = 'latest',
+    [ValidatePattern('^[0-9a-fA-F]{64}$')]
+    [string]$SignerSha256,
     [switch]$NoLaunch,
     [switch]$DryRun
 )
@@ -69,13 +72,33 @@ if ($DryRun) {
 }
 
 Step 2 'Pobieram Jarvisa'
-$installer = Join-Path $env:TEMP $asset.name
-Invoke-WebRequest -Uri $asset.browser_download_url -OutFile $installer -UseBasicParsing
-
-Ok 'Pobrano.'
-Step 3 'Instaluję (bez uprawnień administratora)'
-$process = Start-Process -FilePath $installer -ArgumentList '/S' -PassThru -Wait
-Remove-Item $installer -Force -ErrorAction SilentlyContinue
+if ($asset.digest -notmatch '^sha256:([0-9a-fA-F]{64})$') {
+    throw 'Wydanie nie zawiera sumy SHA-256 instalatora.'
+}
+$expectedHash = $Matches[1]
+$tempDir = New-Item -ItemType Directory -Path (Join-Path $env:TEMP ([guid]::NewGuid().ToString()))
+$installer = Join-Path $tempDir.FullName 'setup.exe'
+try {
+    Invoke-WebRequest -Uri $asset.browser_download_url -OutFile $installer -UseBasicParsing
+    if ((Get-FileHash -LiteralPath $installer -Algorithm SHA256).Hash -ne $expectedHash) {
+        throw 'Suma SHA-256 instalatora jest niezgodna. Instalacja przerwana.'
+    }
+    $signature = Get-AuthenticodeSignature -LiteralPath $installer
+    if ($signature.Status -ne 'Valid') {
+        throw 'Instalator nie ma prawidłowego podpisu Authenticode.'
+    }
+    if ($SignerSha256) {
+        $sha = [System.Security.Cryptography.SHA256]::Create()
+        try {
+            $actualSigner = [BitConverter]::ToString($sha.ComputeHash($signature.SignerCertificate.RawData)).Replace('-', '')
+        } finally { $sha.Dispose() }
+        if ($actualSigner -ne $SignerSha256) { throw 'Certyfikat wydawcy nie odpowiada wskazanemu odciskowi.' }
+    }
+    Step 3 'Instaluję zweryfikowany plik'
+    $process = Start-Process -FilePath $installer -ArgumentList '/S' -PassThru -Wait
+} finally {
+    Remove-Item -LiteralPath $tempDir.FullName -Recurse -Force -ErrorAction SilentlyContinue
+}
 if ($process.ExitCode -ne 0) { throw "Instalator zakończył się kodem $($process.ExitCode)." }
 
 $exe = Join-Path $env:LOCALAPPDATA "Programs\$AppName\$AppName.exe"

@@ -4,6 +4,7 @@ Runs the real script in ``--dry-run`` against a recorded release payload, so the
 selection logic is exercised end to end without network or disk changes.
 """
 
+import hashlib
 import json
 import os
 import subprocess
@@ -77,7 +78,8 @@ def test_linux_install_puts_a_working_launcher_with_its_icon_in_the_menu(tmp_pat
     icon.write_bytes(b"\x89PNG\r\n\x1a\n")
     release = tmp_path / "release.json"
     release.write_text(json.dumps({"tag_name": "v1.0.0", "assets": [
-        {"name": appimage.name, "browser_download_url": appimage.as_uri()},
+        {"name": appimage.name, "browser_download_url": appimage.as_uri(),
+         "digest": "sha256:" + hashlib.sha256(appimage.read_bytes()).hexdigest()},
     ]}))
     home = tmp_path / "home"
     home.mkdir()
@@ -96,3 +98,8 @@ def test_linux_install_puts_a_working_launcher_with_its_icon_in_the_menu(tmp_pat
     assert Path(icon_line.removeprefix("Icon=")).is_file()
     assert f'Exec="{installed}"' in entry
     assert "Co dalej" in result.stdout
+    original = installed.read_bytes()
+    appimage.write_bytes(b"changed after release")
+    rejected = subprocess.run(["bash", str(SCRIPT), "--no-launch"], capture_output=True, env=env)
+    assert rejected.returncode != 0
+    assert installed.read_bytes() == original

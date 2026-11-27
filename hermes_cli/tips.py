@@ -384,7 +384,7 @@ TIPS = [
     '/voice tts toggles TTS-only mode — agent replies out loud but you still type your prompts.',
     '/reload-skills re-scans ~/.hermes/skills/ so drop-in skills appear without restarting the session.',
     '/indicator kaomoji|emoji|unicode|ascii picks the TUI busy-indicator style shown during agent runs.',
-    '/debug uploads a support bundle (system info + logs) and returns shareable links — works in chat too.',
+    '/debug previews diagnostics in the terminal and explains private preview and sharing options in chat.',
     # --- CLI Subcommands & Flags ---
     'hermes -z "<prompt>" is the purest one-shot: final answer on stdout, nothing else — ideal for piping in scripts.',
     'hermes chat --pass-session-id injects the session ID into the system prompt so the agent can self-reference it.',

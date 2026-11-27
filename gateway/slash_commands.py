@@ -1174,6 +1174,12 @@ class GatewaySlashCommandsMixin(
     async def _handle_debug_command(self, event: MessageEvent) -> str:
         """Handle /debug — upload ONLY the summary (system info + log tails), never full logs, to
         protect privacy; ``hermes debug share`` from the CLI does full uploads."""
+        if event.get_command_args().strip().lower() != "share confirm":
+            return ("No diagnostics have been sent. Preview the report privately on the host with "
+                    "`hermes debug share --local`. To publish system information and recent log "
+                    "excerpts to paste.rs (fallback: dpaste.com), send `/debug share confirm`. "
+                    "Anyone with the link can read the report.")
+
         from hermes_cli.debug import (_GATEWAY_PRIVACY_NOTICE, _best_effort_sweep_expired_pastes,
                                       _capture_dump, _is_dpaste_url, _schedule_auto_delete,
                                       collect_debug_report, upload_to_pastebin)

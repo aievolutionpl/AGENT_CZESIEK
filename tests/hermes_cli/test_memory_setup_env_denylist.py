@@ -150,9 +150,9 @@ def test_explicit_hermes_home_writes_to_that_env_file(tmp_path):
 
     _write_env_vars({"MEM0_API_KEY": "m0-test-key-abc"}, hermes_home=home)
 
-    assert "MEM0_API_KEY=m0-test-key-abc\n" in (home / ".env").read_text(
-        encoding="utf-8"
-    )
+    from agent.secret_scope import load_env_file
+    assert "m0-test-key-abc" not in (home / ".env").read_text()
+    assert load_env_file(home / ".env")["MEM0_API_KEY"] == "m0-test-key-abc"
 
 
 def test_value_with_embedded_newline_is_stripped():

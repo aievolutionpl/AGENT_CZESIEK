@@ -161,7 +161,7 @@ export function wrapHandoffForDetachedConsole(
 /**
  * Electron/Chromium internal switches that must NOT be replayed on re-exec:
  * runtime artifacts of THIS launch, not user intent (ported from the deleted
- * update-relaunch.ts; #45205). `--no-sandbox` is deliberately kept — it is
+ * update-relaunch.ts; #45205). `--no-sandbox` is kept on Linux — it is
  * the user's sandbox opt-out and the signal that makes a relaunch safe when
  * chrome-sandbox isn't setuid.
  */
@@ -181,7 +181,7 @@ export const INTERNAL_ARG_PREFIXES = [
 
 /** Filter Electron internals from process.argv.slice(1) so the relaunched
  * app replays only user/launcher intent (deep links, app flags). */
-export function collectRelaunchArgs(argv: unknown): string[] {
+export function collectRelaunchArgs(argv: unknown, platform: NodeJS.Platform = process.platform): string[] {
   if (!Array.isArray(argv)) {
     return []
   }
@@ -190,6 +190,8 @@ export function collectRelaunchArgs(argv: unknown): string[] {
     if (typeof arg !== 'string' || arg.length === 0) {
       return false
     }
+
+    if (platform === 'win32' && arg.split('=', 1)[0] === '--no-sandbox') return false
 
     return !INTERNAL_ARG_PREFIXES.some(prefix =>
       prefix.endsWith('=') ? arg.startsWith(prefix) : arg === prefix || arg.startsWith(prefix + '=')

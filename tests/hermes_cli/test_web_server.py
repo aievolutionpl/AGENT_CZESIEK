@@ -1886,7 +1886,9 @@ class TestWebServerEndpoints:
         worker_cfg = (worker_home / "config.yaml").read_text()
         assert "worker-proxy" in worker_cfg
         assert env_var in worker_cfg
-        assert "sk-worker-secret" in (worker_home / ".env").read_text()
+        from agent.secret_scope import load_env_file
+        assert "sk-worker-secret" not in (worker_home / ".env").read_text()
+        assert load_env_file(worker_home / ".env")[env_var] == "sk-worker-secret"
 
         for leaked in (default_home / "config.yaml", default_home / ".env"):
             text = leaked.read_text() if leaked.exists() else ""
@@ -2714,7 +2716,9 @@ class TestNewEndpoints:
 
         assert secret not in config_text
         profile_env = (profile_dir / ".env").read_text(encoding="utf-8")
-        assert f"MCP_BEARER_SERVER_API_KEY={secret}" in profile_env
+        from agent.secret_scope import load_env_file
+        assert secret not in profile_env
+        assert load_env_file(profile_dir / ".env")["MCP_BEARER_SERVER_API_KEY"] == secret
         assert "Bearer Bearer" not in profile_env
         assert not (root / ".env").exists()
 

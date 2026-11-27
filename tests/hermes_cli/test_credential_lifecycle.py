@@ -136,7 +136,8 @@ def test_update_rotates_config_yaml_model_mirror(hermes_home):
 
     cfg_text = hermes_home.joinpath("config.yaml").read_text(encoding="utf-8")
     assert old not in cfg_text, "stale old key left in config.yaml (#62269)"
-    assert new in cfg_text, "config.yaml mirror not rotated to the new key"
+    assert new not in cfg_text
+    assert "${OPENAI_API_KEY}" in cfg_text
 
     from hermes_cli.config import load_env
 
@@ -285,7 +286,8 @@ def test_update_rotates_keyed_providers_mirror(hermes_home):
 
     cfg_text = hermes_home.joinpath("config.yaml").read_text(encoding="utf-8")
     assert old not in cfg_text, "stale key in providers.<id> shadows the rotation (#62269)"
-    assert new in cfg_text, "keyed providers mirror not rotated to the new key"
+    assert new not in cfg_text
+    assert "${OPENAI_API_KEY}" in cfg_text
 
 
 def test_delete_scrubs_keyed_providers_mirror(hermes_home):

@@ -184,10 +184,10 @@ export function GatewaySettings({ embedded = false }: { embedded?: boolean } = {
     void refreshConnectionsRegistry().catch(err => notifyError(err, g.failedLoad))
   }, [g.failedLoad])
 
-  // Opt-in OS-keychain encryption for stored gateway secrets. Read lazily via
+  // OS-keychain encryption for stored gateway secrets. Read lazily via
   // IPC (never touches the keychain); flipping it re-encodes stored secrets
   // in the main process and can legitimately prompt for keychain access.
-  const [keychainEncryption, setKeychainEncryptionState] = useState(false)
+  const [keychainEncryption, setKeychainEncryptionState] = useState(true)
   const [keychainEncryptionBusy, setKeychainEncryptionBusy] = useState(false)
 
   useEffect(() => {
