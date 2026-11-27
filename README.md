@@ -171,7 +171,9 @@ Wybierz dział, znajdź specjalistę i wstaw przykładowe zadanie albo własne p
 | **Dostawcy** | Logowanie obsługiwanym kontem lub własny klucz API, np. OpenRouter. |
 | **Głos** | Głosy Gemini, osobna zakładka ElevenLabs i ustawienia rozmowy Live. |
 | **Wygląd** | Profil współpracy, język, motyw, skala i opcje przejrzystości. |
-| **Czy wszystko działa?** | Diagnostyka modelu, głosu, mikrofonu i narzędzi. |
+| **Udostępnianie diagnostyki.** W terminalu `/debug` pokazuje raport lokalnie. W komunikatorze podaje instrukcję prywatnego podglądu. Dopiero `/debug share confirm` wysyła dane do paste.rs lub dpaste.com. Każdy z linkiem może je odczytać.
+
+**Czy wszystko działa?** | Diagnostyka modelu, głosu, mikrofonu i narzędzi. |
 | **Integracje** | Połączenia z usługami oraz ich zakresy dostępu. |
 
 <details>
@@ -431,7 +433,7 @@ Karta **Co Czesiek zrobił ostatnio** to dziennik decyzji (zatwierdzone, odrzuco
 
 **Treści od innych to dane, nie polecenia.** Maile, newsy, pliki z Dysku i tekst od współpracowników trafiają do modelu w znaczniku „dane zewnętrzne” z zasadą, że nie wykonuje on zawartych w nich instrukcji.
 
-**Klucze.** Zapisuj je tylko w polach aplikacji. Audyt (Integracje → zakładka **Klucze API**) sprawdza, jakie pliki z poświadczeniami istnieją, bez odczytu wartości, i jednym kliknięciem ustawia uprawnienia tylko dla właściciela. Magazyn kluczy systemu operacyjnego nie jest jeszcze zaimplementowany.
+**Klucze.** Zapisuj je tylko w polach aplikacji. Audyt (Integracje → zakładka **Klucze API**) sprawdza, jakie pliki z poświadczeniami istnieją, bez odczytu wartości, i jednym kliknięciem ustawia uprawnienia tylko dla właściciela. Hermes szyfruje zapisane klucze API dostawców, a klucz szyfrujący przechowuje w magazynie systemowym. Przy zwykłym uruchomieniu przenosi starsze, jawne wpisy aktywnego profilu do tego formatu. Jeśli magazyn jest niedostępny, istniejące wpisy pozostają czytelne, a zapis nowego klucza wymaga odblokowania magazynu. Po przeniesieniu kopii profilu na inny komputer przygotuj klucze dostawców do ponownego wpisania. Wcześniejsze kopie zapasowe mogą nadal zawierać jawne dane.
 
 **Co opuszcza komputer.** Połączenie z modelem w chmurze przekazuje mu treść potrzebną do zadania; w trybie Live do dostawcy głosu płynie dźwięk rozmowy. Jeśli poprosisz Cześka o spojrzenie na ekran, zależnie od skonfigurowanego modelu wizyjnego obraz może trafić do dostawcy w chmurze. Lokalna aplikacja nie oznacza przetwarzania całkowicie offline. Dostęp do plików, przeglądarki i terminala wynika z konfiguracji narzędzi oraz zgód.
 

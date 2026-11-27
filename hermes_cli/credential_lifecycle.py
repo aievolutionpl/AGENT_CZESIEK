@@ -186,8 +186,10 @@ def save_provider_env_credential(env_var: str, value: str) -> Dict[str, Any]:
     save_env_value(env_var, value)
 
     config_updates: List[str] = []
-    if value and old_value and old_value != value:
-        config_updates = _scrub_config_yaml_mirrors(old_value, value)
+    from hermes_cli.provider_keyring import is_api_key
+    if value and old_value and (old_value != value or is_api_key(env_var)):
+        replacement = "${" + env_var + "}" if is_api_key(env_var) else value
+        config_updates = _scrub_config_yaml_mirrors(old_value, replacement)
 
     # A prior removal may have suppressed this env source; a fresh save is an explicit re-add.
     providers = _providers_for_env_var(env_var)

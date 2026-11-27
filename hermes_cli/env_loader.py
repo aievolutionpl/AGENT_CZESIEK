@@ -347,7 +347,19 @@ def load_hermes_dotenv(
         _sanitize_env_file_if_needed(project_env_path)
 
     if user_env.exists():
+        from hermes_cli.provider_keyring import MARKER, migrate_legacy_keys, sealed_values
+        text = user_env.read_text(encoding="utf-8-sig", errors="replace")
+        from hermes_cli import _early_recovery
+        use_keyring = load_external_secrets and not _early_recovery._should_skip_external_secret_sources()
+        if use_keyring and ("API_KEY" in text or "_TOKEN" in text):
+            try:
+                migrate_legacy_keys(user_env, text)
+            except Exception:
+                logger.warning("Could not migrate legacy API keys in this profile; unlock the OS credential store to retry.")
+            text = user_env.read_text(encoding="utf-8-sig", errors="replace")
         _load_dotenv_with_fallback(user_env, override=True)
+        if use_keyring and MARKER in text:
+            os.environ.update(sealed_values(text))
         loaded.append(user_env)
         _clear_known_keys_missing_from_dotenv(user_env)  # mirrors reload_env(): inherited keys must not leak
 

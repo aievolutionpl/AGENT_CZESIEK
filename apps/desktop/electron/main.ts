@@ -472,17 +472,9 @@ import {
   terminateOwnedWindowsDashboardForUpdate
 } from './windows-remote-lifecycle'
 import {
-  alreadyHasNoSandbox,
-  buildNoSandboxRelaunchArgs,
-  decideWindowsSandboxLaunch,
-  fallbackMarker,
   grantAllApplicationPackagesAcl,
-  markerAfterSuccessfulBoot,
   readSandboxMarker,
-  type SandboxFallbackReason,
   shouldAttemptAclRepair,
-  shouldRelaunchForGpuSandboxCrash,
-  shouldRelaunchForRendererSandboxCrashLoop,
   writeSandboxMarker
 } from './windows-sandbox-fallback'
 import { installWindowsSystemCaTrust } from './windows-system-ca'
@@ -599,26 +591,7 @@ if (PASSWORD_STORE.store) {
   console.log(`[hermes] using password-store backend: ${PASSWORD_STORE.store}`)
 }
 
-// Windows sandbox / GPU breakpoint crash recovery (#38216).
-//
-// Some hosts (AMD RX 6000 drivers, orphan AppContainer SIDs under %LOCALAPPDATA%,
-// missing S-1-15-2-2 ACEs) kill Chromium's sandboxed GPU/renderer children with
-// 0x80000003. After enough GPU deaths the browser process FATAL-exits before the
-// UI is usable. Must run before app `ready` so `--no-sandbox` applies to child
-// processes. The sticky marker recovers Start Menu / shortcut launches that
-// never go through `hermes desktop`; it is version-scoped so an app update
-// re-probes the sandbox instead of degrading forever.
-//
-// `windowsSandboxFallbackActive` = this process runs without the Chromium
-// sandbox (any cause, including a manual --no-sandbox flag) — guards the
-// relaunch handlers. `windowsSandboxFallbackSticky` = the fallback machinery
-// engaged and the marker must stay `fallback` after a successful boot; a
-// manual flag alone is honored but never made sticky.
-let windowsSandboxFallbackActive = false
-let windowsSandboxFallbackSticky = false
-let windowsSandboxFallbackReason: SandboxFallbackReason = 'boot-loop'
-let windowsNoSandboxRelaunchAttempted = false
-
+// Repair AppContainer access after an interrupted boot while keeping Chromium sandboxed.
 if (IS_WINDOWS) {
   const windowsUserData = app.getPath('userData')
   const priorMarker = readSandboxMarker(windowsUserData)
@@ -639,65 +612,7 @@ if (IS_WINDOWS) {
     }
   }
 
-  const sandboxDecision = decideWindowsSandboxLaunch({
-    argv: process.argv,
-    env: process.env,
-    marker: priorMarker,
-    appVersion: app.getVersion()
-  })
-
-  windowsSandboxFallbackActive = sandboxDecision.enable
-  windowsSandboxFallbackSticky = sandboxDecision.nextMarker.state === 'fallback'
-
-  if (sandboxDecision.nextMarker.state === 'fallback' && sandboxDecision.nextMarker.reason) {
-    windowsSandboxFallbackReason = sandboxDecision.nextMarker.reason
-  }
-
-  if (sandboxDecision.enable && sandboxDecision.reason !== 'already-enabled') {
-    app.commandLine.appendSwitch('no-sandbox')
-    process.env.ELECTRON_DISABLE_SANDBOX = '1'
-    console.log(
-      `[hermes] Windows sandbox fallback enabled (${sandboxDecision.reason}); launching with --no-sandbox (#38216)`
-    )
-  }
-
-  writeSandboxMarker(windowsUserData, sandboxDecision.nextMarker)
-
-  // Catch the first GPU breakpoint death and relaunch before Chromium's
-  // "GPU process isn't usable" FATAL abort ends the process with no recovery.
-  app.on('child-process-gone', (_event, details) => {
-    if (
-      !shouldRelaunchForGpuSandboxCrash({
-        details,
-        alreadyNoSandbox: windowsSandboxFallbackActive || alreadyHasNoSandbox(process.argv, process.env),
-        relaunchAttempted: windowsNoSandboxRelaunchAttempted
-      })
-    ) {
-      return
-    }
-
-    windowsNoSandboxRelaunchAttempted = true
-    windowsSandboxFallbackActive = true
-    windowsSandboxFallbackSticky = true
-    windowsSandboxFallbackReason = 'gpu-breakpoint'
-
-    try {
-      writeSandboxMarker(app.getPath('userData'), fallbackMarker('gpu-breakpoint', app.getVersion()))
-    } catch {
-      void 0
-    }
-
-    console.warn(
-      `[hermes] Windows GPU sandbox crashed (exit=${details?.exitCode}); relaunching once with --no-sandbox (#38216)`
-    )
-
-    try {
-      app.relaunch({ args: buildNoSandboxRelaunchArgs(process.argv.slice(1)) })
-      void exitAfterBackendShutdown(0)
-    } catch (error) {
-      console.error(`[hermes] --no-sandbox relaunch failed: ${error?.message || error}`)
-    }
-  })
+  writeSandboxMarker(windowsUserData, { state: 'booting' })
 }
 
 ipcMain.handle('hermes:get-remote-display-reason', () => REMOTE_DISPLAY_REASON)
@@ -2494,7 +2409,7 @@ function relaunchIntoSwappedBundle() {
 
   try {
     app.relaunch({
-      args: [...buildNoSandboxRelaunchArgs(process.argv.slice(1)), BUNDLE_SWAP_RELAUNCH_FLAG]
+      args: [...collectRelaunchArgs(process.argv.slice(1)), BUNDLE_SWAP_RELAUNCH_FLAG]
     })
   } catch (err) {
     rememberLog(`[updates] bundle-swap relaunch failed: ${err?.message || err}; continuing with the current build`)
@@ -4716,7 +4631,7 @@ async function applyUpdatesPosixHandoff(opts: any) {
   // (an exact port of update-relaunch.ts's decideRelaunchOutcome) relaunches
   // only a binary the rebuild replaced with a launchable sandbox helper —
   // replaying the original launch context (filtered args, cwd, sandbox
-  // opt-out) so a deep-link or --no-sandbox launch survives the update.
+  // opt-out on Linux) so user launch options survive the update.
   const targetApp = IS_MAC ? runningAppBundle() : process.execPath
 
   if (targetApp) {
@@ -9396,7 +9311,7 @@ function setSecretStoragePolicy(next: SecretStoragePolicy) {
  * opted out this must NOT probe safeStorage — isEncryptionAvailable() is
  * itself a keychain touch that raises the macOS dialog this feature exists
  * to avoid. We report `true` so no plain-text warning banners fire: storing
- * plaintext is the user's chosen (default) mode, not a degraded state.
+ * plaintext is the user's explicit choice, not a degraded state.
  */
 function probeSecureTokenStorage(): boolean {
   if (!secretStoragePolicy().on) {
@@ -9404,7 +9319,8 @@ function probeSecureTokenStorage(): boolean {
   }
 
   try {
-    return Boolean(safeStorage.isEncryptionAvailable())
+    return Boolean(safeStorage.isEncryptionAvailable()) &&
+        (process.platform !== 'linux' || safeStorage.getSelectedStorageBackend?.() !== 'basic_text')
   } catch {
     return false
   }
@@ -9460,71 +9376,41 @@ function rewriteAllStoredSecrets(shouldRewrite: (secret: any) => boolean, reenco
   // Native OAuth token store: baseUrl → blob.
   const io = _nativeTokenStoreIo()
 
+  let store
   try {
-    const store = JSON.parse(io.readStoreText())
+    store = JSON.parse(io.readStoreText())
+  } catch (error) {
+    if (error?.code === 'ENOENT') return touched
+    throw error
+  }
 
-    if (store && typeof store === 'object' && !Array.isArray(store)) {
+  if (store && typeof store === 'object' && !Array.isArray(store)) {
       const entries = Object.entries(store)
 
       if (entries.some(([, v]) => shouldRewrite(v))) {
         touched = true
         io.writeStoreText(JSON.stringify(Object.fromEntries(entries.map(([k, v]) => [k, reencode(v)]))))
       }
-    }
-  } catch {
-    // Missing/corrupt native token store: nothing to rewrite.
   }
 
   return touched
 }
 
 /**
- * One-shot legacy migration: builds before the opt-in policy wrote every
- * secret as a safeStorage blob. With encryption now defaulting OFF, decrypt
- * each stored blob once and rewrite it as plain so no future launch touches
- * the keychain. Marked `migrated` whether or not every blob decrypts — a
- * broken keychain costs at most ONE prompt (this pass), never one per
- * launch; blobs that would not decrypt are left in place and simply read as
- * absent from then on (classifyStoredSecret → 'drop'), so opting encryption
- * back ON later can still recover them on a healthy keychain.
- *
- * Runs before createWindow() so every later read sees the final encodings.
+ * Upgrade old plain desktop tokens when OS encryption is available.
+ * Leave unreadable stores intact and retry incomplete upgrades on a later launch.
  */
-function migrateLegacyEncryptedSecretsOnce() {
+function migrateLegacyPlainSecretsOnce() {
   const policy = secretStoragePolicy()
-
-  if (policy.on || policy.migrated) {
-    return
-  }
-
-  const needsMigration = (secret: any) => classifyStoredSecret(secret, policy) === 'migrate'
-
-  const reencode = (secret: any) => {
-    if (!needsMigration(secret)) {
-      return secret
-    }
-
-    const plaintext = decryptDesktopSecret(secret)
-
-    // Undecryptable now (locked/absent keychain): keep the blob for a
-    // potential future opt-in, but post-migration reads treat it as unset.
-    return plaintext ? { encoding: 'plain', value: plaintext } : secret
-  }
-
-  let touchedKeychain = false
-
+  if (!policy.on || policy.migrated) return
+  const needsEncryption = (secret: any) => secret?.encoding === 'plain' && Boolean(secret.value)
   try {
-    touchedKeychain = rewriteAllStoredSecrets(needsMigration, reencode)
-  } catch (error) {
-    const detail = error instanceof Error ? error.message : String(error)
-
-    rememberLog(`[secret-storage] legacy migration pass failed: ${detail}`)
-  }
-
-  setSecretStoragePolicy({ on: false, migrated: true })
-
-  if (touchedKeychain) {
-    rememberLog('[secret-storage] migrated legacy keychain-encrypted secrets to opt-out storage (one-shot pass)')
+    rewriteAllStoredSecrets(needsEncryption, secret =>
+      needsEncryption(secret) ? encryptDesktopSecretStrict(String(secret.value), safeStorage) : secret
+    )
+    setSecretStoragePolicy({ on: true, migrated: true })
+  } catch {
+    rememberLog('[secret-storage] keychain migration incomplete; will retry on next launch')
   }
 }
 
@@ -9550,7 +9436,8 @@ function applySecretStorageEncryption(on: boolean) {
     if (
       !(() => {
         try {
-          return Boolean(safeStorage.isEncryptionAvailable())
+          return Boolean(safeStorage.isEncryptionAvailable()) &&
+        (process.platform !== 'linux' || safeStorage.getSelectedStorageBackend?.() !== 'basic_text')
         } catch {
           return false
         }
@@ -9561,19 +9448,12 @@ function applySecretStorageEncryption(on: boolean) {
       )
     }
 
+    // Keep the secure policy after a partial write so mixed stores remain readable and retryable.
+    setSecretStoragePolicy({ on: true, migrated: false })
+    rewriteAllStoredSecrets(needsEncrypt, secret =>
+      needsEncrypt(secret) ? encryptDesktopSecretStrict(String(secret.value), safeStorage) : secret
+    )
     setSecretStoragePolicy({ on: true, migrated: true })
-
-    try {
-      rewriteAllStoredSecrets(needsEncrypt, secret =>
-        needsEncrypt(secret) ? encryptDesktopSecretStrict(String(secret.value), safeStorage) : secret
-      )
-    } catch (error) {
-      // Encryption failed midway: revert the policy so reads keep working
-      // against whatever encodings are on disk (mixed stores read fine —
-      // decryptDesktopSecret handles both encodings under either policy).
-      setSecretStoragePolicy({ on: false, migrated: true })
-      throw error
-    }
 
     return { on: true }
   }
@@ -9619,10 +9499,6 @@ function decryptDesktopSecret(secret) {
   }
 
   if (secret.encoding === SAFE_STORAGE_ENCODING) {
-    // Legacy blob under an opted-out policy: once the one-shot migration pass
-    // has run, never touch safeStorage again — a dead keychain would otherwise
-    // prompt on every read. Before that pass, decryption is allowed so the
-    // migration itself (and this launch's reads) can recover the value.
     if (classifyStoredSecret(secret, secretStoragePolicy()) === 'drop') {
       return ''
     }
@@ -15157,19 +15033,11 @@ function createWindow() {
       // first clean resize/move/close still captures the restored bounds (#56726).
       schedulePersistWindowState()
 
-      // #38216: clear the mid-boot marker only after a window is actually usable.
-      // Keep sticky `fallback` when we launched with --no-sandbox so the next
-      // Start Menu click does not re-enter the GPU FATAL crash loop. The marker
-      // records the app version so the next update re-probes the sandbox.
       if (IS_WINDOWS) {
         try {
           writeSandboxMarker(
             app.getPath('userData'),
-            markerAfterSuccessfulBoot({
-              fallbackActive: windowsSandboxFallbackSticky,
-              reason: windowsSandboxFallbackReason,
-              appVersion: app.getVersion()
-            })
+            { state: 'ok' }
           )
         } catch (error) {
           rememberLog(`[sandbox] marker update after main-window reveal failed: ${error?.message || error}`)
@@ -15228,43 +15096,7 @@ function createWindow() {
       reload: () => {
         mainWindow.webContents.reload()
       },
-      onCrashLoopSuppressed: details => {
-        // #38216 renderer flavor (same recovery as #56726, credit @Sahil-SS9):
-        // a deterministic Windows renderer crash loop with the sandbox
-        // breakpoint signature gets one --no-sandbox relaunch instead of a
-        // dead window. Gated on the exit code so unrelated crash loops don't
-        // silently drop the sandbox.
-        if (
-          !shouldRelaunchForRendererSandboxCrashLoop({
-            reason: details?.reason,
-            exitCode: details?.exitCode,
-            alreadyNoSandbox: windowsSandboxFallbackActive || alreadyHasNoSandbox(process.argv, process.env),
-            relaunchAttempted: windowsNoSandboxRelaunchAttempted
-          })
-        ) {
-          return
-        }
-
-        windowsNoSandboxRelaunchAttempted = true
-        windowsSandboxFallbackActive = true
-        windowsSandboxFallbackSticky = true
-        windowsSandboxFallbackReason = 'renderer-crash-loop'
-
-        try {
-          writeSandboxMarker(app.getPath('userData'), fallbackMarker('renderer-crash-loop', app.getVersion()))
-        } catch {
-          void 0
-        }
-
-        rememberLog('[renderer] Windows sandbox crash loop detected; relaunching once with --no-sandbox (#38216)')
-
-        try {
-          app.relaunch({ args: buildNoSandboxRelaunchArgs(process.argv.slice(1)) })
-          void exitAfterBackendShutdown(0)
-        } catch (err) {
-          rememberLog(`[renderer] --no-sandbox relaunch failed: ${err?.message || err}`)
-        }
-      },
+      onCrashLoopSuppressed: () => rememberLog('[renderer] crash recovery limit reached; sandbox remains active'),
       // #95575: a renderer that repeatedly fails to load (torn bundle after
       // an update, file locked by AV, missing index.html) used to sit on a
       // white screen with only a desktop.log line. Once the bounded reload
@@ -18336,7 +18168,7 @@ ipcMain.handle('hermes:version', async () => {
 // bundle now lives there.
 ipcMain.handle('hermes:app:relaunch', async () => {
   rememberLog('[updates] renderer requested an app relaunch (swapped bundle pending)')
-  app.relaunch({ args: buildNoSandboxRelaunchArgs(process.argv.slice(1)) })
+  app.relaunch({ args: collectRelaunchArgs(process.argv.slice(1)) })
   void exitAfterBackendShutdown(0)
 })
 
@@ -18757,12 +18589,8 @@ app.whenReady().then(() => {
     safeStorageApi: safeStorage
   })
 
-  // Keychain encryption is opt-in (default OFF). One-shot: rewrite any
-  // legacy safeStorage-encrypted secrets as plain so no later launch ever
-  // touches the OS keychain unless the user turns encryption on in
-  // Settings → Gateway. Must run before createWindow() and the first
-  // connection resolution.
-  migrateLegacyEncryptedSecretsOnce()
+  // Upgrade old plain tokens before the first connection is opened.
+  migrateLegacyPlainSecretsOnce()
 
   if (IS_MAC) {
     Menu.setApplicationMenu(buildApplicationMenu())
@@ -18986,13 +18814,9 @@ app.on('before-quit', event => {
     })
   }
 
-  // Clean quit mid-boot should not trip next-launch --no-sandbox (#38216).
-  // FATAL GPU aborts skip before-quit, leaving the `booting` marker in place.
-  // Keyed on sticky (not active): a manual --no-sandbox run still records a
-  // clean quit, while an engaged fallback keeps its sticky marker.
-  if (IS_WINDOWS && !windowsSandboxFallbackSticky) {
+  if (IS_WINDOWS) {
     try {
-      writeSandboxMarker(app.getPath('userData'), markerAfterSuccessfulBoot({ fallbackActive: false }))
+      writeSandboxMarker(app.getPath('userData'), { state: 'ok' })
     } catch {
       void 0
     }

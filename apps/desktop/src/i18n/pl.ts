@@ -2242,7 +2242,7 @@ export const pl = defineLocale({
         'Bezpieczne przechowywanie jest niedostępne, więc zapisany token leży niezaszyfrowany w pliku ustawień połączeń aplikacji na tej maszynie. Zainstaluj lub włącz GNOME Keyring albo KWallet, aby go zaszyfrować.',
       keychainEncryptionTitle: 'Szyfruj zapisane sekrety w systemowym pęku kluczy',
       keychainEncryptionDesc:
-        'Domyślnie wyłączone. Gdy włączone, tokeny bram i dane logowania są szyfrowane systemowym pękiem kluczy (Keychain Access, GNOME Keyring lub Windows DPAPI) — system może poprosić o zgodę lub hasło. Gdy wyłączone, są przechowywane jako zwykłe pliki czytelne tylko dla Twojego konta.',
+        'Domyślnie włączone. Gdy włączone, tokeny bram i dane logowania są szyfrowane systemowym pękiem kluczy (Keychain Access, GNOME Keyring lub Windows DPAPI) — system może poprosić o zgodę lub hasło. Gdy wyłączone, są przechowywane jako zwykłe pliki czytelne tylko dla Twojego konta.',
       keychainEncryptionFailed: 'Nie udało się zmienić szyfrowania sekretów',
       testRemote: 'Testuj połączenie zdalne',
       saveForRestart: 'Zapisz na następny start',
@@ -3124,7 +3124,7 @@ export const pl = defineLocale({
       backupDesc: 'Pakuje konfigurację, wspomnienia, umiejętności i sesje do ZIP-a',
       debugShare: 'Udostępnianie diagnostyki',
       debugShareDesc:
-        'Wysyła oczyszczony raport i logi, zwraca linki do udostępnienia (usuwają się automatycznie po 6 godz.)',
+        'Opublikować oczyszczony raport i logi w paste.rs lub dpaste.com? Każdy, kto ma link, będzie mógł je przeczytać.',
       debugShareRunning: 'Wysyłanie raportu diagnostycznego...',
       debugShareLinks: 'Linki do udostępnienia',
       debugShareFailed: 'Udostępnianie diagnostyki nie powiodło się',

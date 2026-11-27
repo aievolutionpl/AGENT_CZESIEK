@@ -776,6 +776,7 @@ class TestRunDebugSweepsOnInvocation:
 
         args = MagicMock()
         args.debug_command = None  # default → prints help
+        args.local = False
 
         with patch("hermes_cli.debug._sweep_expired_pastes") as mock_sweep:
             run_debug(args)
@@ -1056,24 +1057,16 @@ class TestDebugSlashCommand:
             self._handler()(cmd_original)
         return captured
 
-    def test_bare_debug_defaults_to_paste(self):
-        c = self._captured("/debug")
-        assert c["nous"] is False and c["local"] is False
-        assert c["lines"] == 200 and c["expire"] == 7
-        # The slash command IS the consent action → skip the [y/N] prompt
-        # (input() would hang inside prompt_toolkit's event loop).
-        assert c["yes"] is True
+    def test_bare_debug_previews_locally(self):
+        for command in ("", "/debug", "/debug nous", "/debug share", "/debug local"):
+            args = self._captured(command)
+            assert args["local"] and not args["yes"]
 
-
-    def test_word_parsing_is_case_insensitive(self):
-        c = self._captured("/debug NOUS")
-        assert c["nous"] is True
-
-
-    def test_no_arg_default_keyword(self):
-        # Calling with no cmd_original (legacy callers) must still work.
-        c = self._captured("")
-        assert c["nous"] is False and c["local"] is False
+    def test_explicit_destination_is_case_insensitive(self):
+        for dest in ("NOUS", "SHARE"):
+            args = self._captured(f"/debug {dest} confirm")
+            assert args["yes"] and not args["local"]
+            assert args["nous"] == (dest == "NOUS")
 
 
 class TestShareConsentGate:

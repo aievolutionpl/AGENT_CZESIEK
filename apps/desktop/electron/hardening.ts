@@ -168,7 +168,8 @@ function encryptDesktopSecret(value, safeStorageApi, options: { allowPlainText?:
   let encryptionAvailable = false
 
   try {
-    encryptionAvailable = Boolean(safeStorageApi?.isEncryptionAvailable?.())
+    encryptionAvailable = Boolean(safeStorageApi?.isEncryptionAvailable?.()) &&
+      (process.platform !== 'linux' || safeStorageApi?.getSelectedStorageBackend?.() !== 'basic_text')
   } catch {
     encryptionAvailable = false
   }

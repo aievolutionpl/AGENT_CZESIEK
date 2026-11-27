@@ -30,10 +30,18 @@ def _make_runner():
 
 
 class TestHandleDebugCommand:
+    @pytest.mark.parametrize("command", ["/debug", "/debug share", "/debug unexpected"])
+    @pytest.mark.asyncio
+    async def test_requires_explicit_public_share(self, command):
+        with patch("hermes_cli.debug.upload_to_pastebin") as upload:
+            result = await _make_runner()._handle_debug_command(_make_event(command))
+        upload.assert_not_called()
+        assert "/debug share confirm" in result
+
     @pytest.mark.asyncio
     async def test_debug_sweeps_expired_pastes_before_upload(self):
         runner = _make_runner()
-        event = _make_event()
+        event = _make_event("/debug share confirm")
 
         with patch("hermes_cli.debug._sweep_expired_pastes", return_value=(0, 0)) as mock_sweep, \
              patch("hermes_cli.debug._capture_dump", return_value="dump"), \

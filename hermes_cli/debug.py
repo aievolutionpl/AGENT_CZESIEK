@@ -484,8 +484,7 @@ def run_debug_share(args):
     redact = not getattr(args, "no_redact", False)
 
     if getattr(args, "local", False):
-        # Same collector as the upload path so the output matches exactly; no network I/O.
-        _best_effort_sweep_expired_pastes()
+        # Previewing locally must not contact a paste service.
         print("Collecting debug report...")
         bundle = collect_share_bundle(log_lines=log_lines, redact=redact)
         print(bundle["report"])
@@ -599,7 +598,8 @@ def run_debug_delete(args):
 
 def run_debug(args):
     """Route debug subcommands (sweeping expired pastes opportunistically on every call)."""
-    _best_effort_sweep_expired_pastes()
+    if not getattr(args, "local", False):
+        _best_effort_sweep_expired_pastes()
     handler = {"share": run_debug_share, "delete": run_debug_delete}.get(
         getattr(args, "debug_command", None))
     if handler is None:

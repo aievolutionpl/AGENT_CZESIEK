@@ -2360,12 +2360,21 @@ def load_env() -> Dict[str, str]:
         return dict(_env_cache[1])
 
     env_vars: Dict[str, str] = {}
-    for line in _read_env_lines(env_path) if env_path.exists() else ():
+    lines = _read_env_lines(env_path) if env_path.exists() else []
+    for line in lines:
         line = line.strip()
         if line and not line.startswith('#') and '=' in line:
             # Bash-compatible ``export KEY=...`` parses as ``KEY``.
             key, _, value = line.removeprefix('export ').partition('=')
             env_vars[key.strip()] = _parse_env_value(value)
+    from hermes_cli.provider_keyring import MARKER, sealed_values
+    text = "".join(lines)
+    if MARKER in text:
+        unlocked = sealed_values(text)
+        env_vars.update(unlocked)
+        # A locked keychain may be unlocked without a change to .env.
+        if not all(unlocked.values()):
+            return env_vars
     if cache_key is not None:
         _env_cache = (cache_key, dict(env_vars))
     return env_vars
@@ -2556,20 +2565,31 @@ def save_env_value(key: str, value: str):
     ensure_hermes_home()
     env_path = get_env_path()
 
-    lines = _read_env_lines(env_path) if env_path.exists() else []
-    serialized_value = _quote_env_value(value)
+    from hermes_cli.auth import _auth_store_lock
+    with _auth_store_lock(target_path=env_path.parent / ".env-write"):
+        _save_env_assignment(env_path, key, value)
+    _publish_env_value(key, value)
+    invalidate_env_cache()
 
-    idx = next((i for i, line in enumerate(lines) if _env_line_defines_key(line, key)), None)
-    if idx is not None:
-        lines[idx] = f"{key}={serialized_value}\n"
+
+def _save_env_assignment(env_path: Path, key: str, value: str) -> None:
+    lines = _read_env_lines(env_path) if env_path.exists() else []
+    from hermes_cli.provider_keyring import is_api_key, seal_value
+    serialized_value = seal_value(lines, key, value) if value and is_api_key(key) else _quote_env_value(value)
+
+    matching = [i for i, line in enumerate(lines) if _env_line_defines_key(line, key)]
+    assignment = f"{key}={serialized_value}\n"
+    if matching:
+        lines[matching[0]] = assignment
+        for i in reversed(matching[1:]):
+            del lines[i]
     else:
         if lines and not lines[-1].endswith("\n"):
             lines[-1] += "\n"
-        lines.append(f"{key}={serialized_value}\n")
+        lines.append(assignment)
 
     _write_env_lines(env_path, lines, preserve_mode=env_path.exists())
-    _publish_env_value(key, value)
-    invalidate_env_cache()
+
 
 
 def custom_endpoint_key_env(identity: str) -> str:
@@ -2592,11 +2612,13 @@ def remove_env_value(key: str) -> bool:
         _publish_env_value(key, None)
         return False
 
-    lines = _read_env_lines(env_path)
-    new_lines = [line for line in lines if not _env_line_defines_key(line, key)]
-    found = len(new_lines) < len(lines)
-    if found:
-        _write_env_lines(env_path, new_lines, preserve_mode=True)
+    from hermes_cli.auth import _auth_store_lock
+    with _auth_store_lock(target_path=env_path.parent / ".env-write"):
+        lines = _read_env_lines(env_path)
+        new_lines = [line for line in lines if not _env_line_defines_key(line, key)]
+        found = len(new_lines) < len(lines)
+        if found:
+            _write_env_lines(env_path, new_lines, preserve_mode=True)
     _publish_env_value(key, None)
     invalidate_env_cache()
     return found

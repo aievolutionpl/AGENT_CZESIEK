@@ -182,6 +182,9 @@ def load_env_file(env_path: Path) -> Dict[str, str]:
         key = key.strip()
         if sep and key:
             secrets[key] = _parse_env_value(_strip_inline_comment(value))
+    from hermes_cli.provider_keyring import MARKER, sealed_values
+    if MARKER in text:
+        secrets.update(sealed_values(text))
     return secrets
 
 

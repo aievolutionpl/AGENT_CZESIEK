@@ -21,6 +21,7 @@ from hermes_cli.web_server_profiles import (
 )
 from fastapi import HTTPException, Request
 from hermes_cli.config import DEFAULT_CONFIG, OPTIONAL_ENV_VARS, read_raw_config, custom_endpoint_key_env, coerce_provider_id, find_provider_entry, redact_key, _deep_merge
+from hermes_cli.provider_keyring import CredentialStoreUnavailable
 from hermes_cli.web_models import ConfigUpdate, EnvVarUpdate, EnvVarDelete, EnvVarReveal, CustomEndpointUpdate
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -53,6 +54,8 @@ _CATEGORY_ORDER = [
 ]
 
 
+
+
 @contextlib.contextmanager
 def _env_write_errors(log_msg: str, *, http_passthrough: bool):
     """``ValueError`` -> 400 with its message (save/remove_env_value reject
@@ -66,6 +69,8 @@ def _env_write_errors(log_msg: str, *, http_passthrough: bool):
             raise
         _log.exception(log_msg)
         raise HTTPException(status_code=500, detail="Internal server error")
+    except CredentialStoreUnavailable as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except Exception:

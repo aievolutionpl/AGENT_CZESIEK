@@ -2577,16 +2577,17 @@ class CLICommandsMixin:
 
     # ---- /debug, /update, /voice, /wake ---------------------------------------------------
     def _handle_debug_command(self, cmd_original: str = ""):
-        """Handle /debug [nous|local] — upload debug report + logs and print share URLs.
-        Default: public paste service; ``nous``: Nous-internal (staff-only); ``local``: render to
-        stdout, no upload. ``local`` wins if both are given (never touches the network)."""
+        """Preview locally unless the user explicitly confirms a destination."""
         from hermes_cli.debug import run_debug_share
         from types import SimpleNamespace
-        words = {w.lower() for w in cmd_original.split()[1:]}
-        local = "local" in words
-        # Typing /debug is the upload consent (yes=True); input() would hang in prompt_toolkit anyway.
+        args = cmd_original.lower().split()[1:]
+        public = args == ["share", "confirm"]
+        nous = args == ["nous", "confirm"]
+        if not public and not nous:
+            print("Local preview. Use /debug share confirm for a public paste "
+                  "or /debug nous confirm for Nous support.")
         run_debug_share(SimpleNamespace(
-            lines=200, expire=7, local=local, nous="nous" in words and not local, yes=True))
+            lines=200, expire=7, local=not (public or nous), nous=nous, yes=public or nous))
 
     def _handle_update_command(self) -> bool:
         """Handle /update — exit the session and relaunch as ``hermes update``. Returns True when
